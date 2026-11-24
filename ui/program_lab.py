@@ -173,6 +173,7 @@ class ProgramLab(QDialog):
         self.navigation=NavigationRail(self.inspector,parent.settings,'computer',self.t('COMPUTER','کامپیوتر'),
             ('cpu','registers','debug','alu','codes','clock','microcode','organization','pipeline','io'),self.fa)
         shell.insertWidget(0,self.navigation)
+        self.datapath.focus.toggled.connect(self.update_cpu_context)
         self.inspector.currentChanged.connect(self.update_cpu_context)
         self.source.textChanged.connect(self.invalidate)
         self.load()
@@ -181,8 +182,12 @@ class ProgramLab(QDialog):
     def update_cpu_context(self,*_):
         page=self.inspector.currentWidget()
         visible=page in tuple(self.tool_pages[key] for key in ("live","register-memory","debugger","alu","cycles"))
+        focused=page is self.datapath and self.datapath.focus.isChecked()
         if not visible:self.pause()
-        for widget in self.cpu_widgets:widget.setVisible(visible)
+        for widget in self.cpu_widgets:widget.setVisible(visible and not focused)
+        if focused:
+            # Preserve execution controls while maximizing the visualization.
+            self.cpu_widgets[2].show()
 
     def select_tool(self,route):
         """Stable learning route IDs, independent of displayed tab titles."""
@@ -253,7 +258,7 @@ class ProgramLab(QDialog):
         self.status.setText(self.t("Ready.","آماده."))
 
     def refresh(self,event=None):
-        self.datapath.set_state(self.cpu,None if self.cpu.in_progress else event)
+        self.datapath.set_state(self.cpu,self.cpu.pending_event or event)
         self.refresh_trace()
         values = self.cpu.registers()
         self.registers.setRowCount(len(values))

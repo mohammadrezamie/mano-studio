@@ -1119,3 +1119,30 @@ def test_navigation_rail_persian(workspace):
     lab.navigation.set_compact(True)
     assert "باز" in lab.navigation.toggle.accessibleName()
     lab.close()
+
+
+def test_live_architecture_canvas(workspace,app):
+    from ui.program_lab import ProgramLab
+    from ui.datapath_view import edge_routes
+    lab=ProgramLab(workspace)
+    lab.show();app.processEvents()
+    lab.step()
+    v=lab.datapath
+    assert v.last_step.mnemonic=="LDA" and v.groups.count()==6
+    snapshot=lab.cpu.registers().copy()
+    v.groups.setCurrentIndex(1)
+    assert v.group.timing==1 and edge_routes(v.group)==("M",("IR",))
+    assert v.group.control.value==v.last_step.word
+    assert lab.cpu.registers()==snapshot
+    v.groups.setCurrentIndex(4)
+    assert edge_routes(v.group)==("M",("DR",))
+    v.groups.setCurrentIndex(5)
+    assert edge_routes(v.group)==(None,()) and "ALU.DR" in v.signals.text()
+    v.focus.setChecked(True)
+    assert lab.cpu_widgets[1].isHidden() and not lab.cpu_widgets[2].isHidden()
+    assert not v.canvas.grab().isNull()
+    v.focus.setChecked(False)
+    assert not lab.cpu_widgets[1].isHidden()
+    lab.microstep()
+    assert v.group.timing==0 and v.last_step==lab.cpu.pending_event
+    lab.close()
