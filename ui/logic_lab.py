@@ -26,10 +26,11 @@ class LogicDiagram(QGraphicsView):
     moved = Signal(str, float, float)
     hint = Signal(str)
 
-    def __init__(self, theme, fa=False):
+    def __init__(self, theme, fa=False, symbol_style="ansi"):
         super().__init__()
         self.theme = theme
         self.fa = fa
+        self.symbol_style=symbol_style if symbol_style in ("ansi","iec") else "ansi"
         self.graph = QGraphicsScene(self)
         self.setScene(self.graph)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -182,7 +183,7 @@ class LogicDiagram(QGraphicsView):
             value=values[signal]
             if name in gate_names:
                 gate=gate_names[name]
-                draw_gate(scene,gate.op,x,y,tuple(values[i] for i in gate.inputs),value,PALETTES[self.theme])
+                draw_gate(scene,gate.op,x,y,tuple(values[i] for i in gate.inputs),value,PALETTES[self.theme],self.symbol_style)
                 label=gate.op
                 if len(gate.inputs)>2 and gate.op in ("XOR","XNOR"):
                     label="ODD" if gate.op=="XOR" else "EVEN"
@@ -387,7 +388,7 @@ class LogicLab(QDialog):
         self.route_warning.hide()
         layout.addWidget(self.route_warning)
         split=QSplitter(Qt.Orientation.Vertical)
-        self.diagram=LogicDiagram(parent.theme,self.fa)
+        self.diagram=LogicDiagram(parent.theme,self.fa,parent.settings.value("gate_symbol_style","ansi"))
         self.diagram.rewire.connect(self.rewire_pin)
         self.diagram.moved.connect(self.move_component)
         self.diagram.hint.connect(self.set_canvas_hint)

@@ -435,3 +435,24 @@ def test_persian_credits_and_optional_labs(workspace,monkeypatch):
     logic.canvas_edit.setChecked(True)
     assert logic.diagram.fa
     logic.close()
+
+
+def test_schematic_notation_preference(workspace):
+    from ui.preferences import Preferences
+    from ui.logic_lab import LogicLab
+    from ui.gate_symbols import rectangular_qualifier
+    settings=Preferences(workspace)
+    settings.symbols.setCurrentIndex(1)
+    assert workspace.settings.value("gate_symbol_style")=="iec"
+    settings.close()
+    lab=LogicLab(workspace)
+    lab.selector.setCurrentIndex(lab.selector.findData("xor"))
+    lab.pin_count.setValue(3)
+    assert lab.diagram.symbol_style=="iec"
+    assert rectangular_qualifier("XOR",2)=="=1"
+    assert rectangular_qualifier("XOR",3)=="2k+1"
+    assert rectangular_qualifier("XNOR",4)=="2k+1"
+    lab.choose_row(7,0)
+    assert lab.summary.text()=="Y = 1"
+    assert len([p for p in lab.diagram.ports if p[0]=="q" and p[1]>=0])==3
+    lab.close()

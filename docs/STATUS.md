@@ -134,3 +134,6 @@ Owner requires internationally recognizable components. Consulted Logisim docume
 
 ### Schematic implementation checkpoint
 Added net-aware wire notation and cached junction/ambiguity geometry, actual schematic warning markers, explicit multi-input parity labels and complemented Q display. Six pure regression cases authored. No copied code/assets; references in SCHEMATIC_STANDARD.md. Dense routing and visual acceptance still open; CI pending. No change to academic translator or release scope.
+
+### Schematic convention selection
+Added bilingual persistent ANSI-style/IEC-style gate notation setting; no change to simulation or pin anchors. Correctly distinguish two-input XOR from multi-input parity in rectangular qualifiers. Added GUI regression. Prior wire-notation run 45406594226 in progress at inspection, current exact-head CI pending. Academic translator blob verified unchanged. No new package, no release.

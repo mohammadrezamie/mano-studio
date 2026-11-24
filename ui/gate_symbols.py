@@ -1,6 +1,6 @@
 """Original distinctive-shape logic symbols and pin geometry for Qt schematics."""
 from PySide6.QtCore import QRectF
-from PySide6.QtGui import QBrush, QColor, QPainterPath, QPen
+from PySide6.QtGui import QBrush, QColor, QFont, QPainterPath, QPen
 from logic_engine import valid_arity
 
 WIDTH = 108
@@ -22,7 +22,16 @@ def output_point(x, y):
     return x + WIDTH, y + CENTER
 
 
-def draw_gate(scene, op, x, y, bits, output, palette):
+def rectangular_qualifier(op,count):
+    if not valid_arity(op,count):
+        raise ValueError("Invalid gate symbol arity")
+    if op in ("AND","NAND"): return "&"
+    if op in ("OR","NOR"): return "≥1"
+    if op in ("XOR","XNOR"): return "=1" if count==2 else "2k+1"
+    return "1"
+
+
+def draw_gate(scene, op, x, y, bits, output, palette, style="ansi"):
     """Draw actual pins and distinctive shapes. No invented package pin numbers."""
     if not valid_arity(op, len(bits)):
         raise ValueError("Invalid gate symbol arity")
@@ -38,7 +47,9 @@ def draw_gate(scene, op, x, y, bits, output, palette):
         line(0,offset,48,offset,bit)
     line(75,CENTER,WIDTH,CENTER,output)
     body=QPainterPath()
-    if op == "NOT":
+    if style == "iec":
+        body.addRect(QRectF(x+25,y+7,50,70))
+    elif op == "NOT":
         body.moveTo(x+25,y+9)
         body.lineTo(x+75,y+CENTER)
         body.lineTo(x+25,y+75)
@@ -54,13 +65,18 @@ def draw_gate(scene, op, x, y, bits, output, palette):
         body.cubicTo(x+42,y+55,x+42,y+29,x+22,y+7)
     body.closeSubpath()
     path(body,QPen(QColor(fg),1.6),QBrush(QColor(panel)))
-    if op in ("XOR","XNOR"):
+    if style == "iec":
+        label=scene.addSimpleText(rectangular_qualifier(op,len(bits)),QFont("Segoe UI",12,QFont.Weight.Bold))
+        label.setBrush(QBrush(QColor(fg)))
+        rect=label.boundingRect()
+        label.setPos(x+50-rect.width()/2,y+CENTER-rect.height()/2)
+    elif op in ("XOR","XNOR"):
         extra=QPainterPath()
         extra.moveTo(x+14,y+7)
         extra.cubicTo(x+34,y+29,x+34,y+55,x+14,y+77)
         path(extra,QPen(QColor(fg),1.6))
     # AND body's Bezier apex is x+75.25; OR is x+82; NOT x+75.
-    tip=82 if op in ("NOR","XNOR") else 75
+    tip=82 if style!="iec" and op in ("NOR","XNOR") else 75
     if invert:
         scene.addEllipse(QRectF(x+tip,y+CENTER-4.5,9,9),QPen(QColor(fg),1.6),QBrush(QColor(bg)))
     # Terminals are signal anchors, distinct from inversion bubbles.

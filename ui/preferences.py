@@ -1,7 +1,7 @@
 """Preferences and a user-triggered, nonblocking release check."""
 from PySide6.QtCore import QObject, QThread, Signal, Slot, Qt, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton, QPlainTextEdit
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton, QPlainTextEdit, QComboBox
 from update_service import release_info, RELEASES_PAGE, VERSION
 
 
@@ -37,6 +37,14 @@ class Preferences(QDialog):
             toggle.setChecked(self.settings.value(key, default, type=bool))
             toggle.toggled.connect(lambda value, k=key: self.change(k, value))
             layout.addWidget(toggle)
+        layout.addWidget(QLabel(self.text("Logic gate notation","نمادگذاری گیت‌های منطقی")))
+        self.symbols=QComboBox()
+        self.symbols.addItem(self.text("Distinctive shapes (ANSI-style)","نمادهای متمایز (سبک ANSI)"),"ansi")
+        self.symbols.addItem(self.text("Rectangular shapes (IEC-style)","نمادهای مستطیلی (سبک IEC)"),"iec")
+        index=self.symbols.findData(self.settings.value("gate_symbol_style","ansi"))
+        self.symbols.setCurrentIndex(max(0,index))
+        self.symbols.currentIndexChanged.connect(lambda _:self.change("gate_symbol_style",self.symbols.currentData()))
+        layout.addWidget(self.symbols)
         label = QLabel(self.text("Offline by design", "طراحی کاملاً آفلاین"))
         label.setObjectName("section")
         layout.addWidget(label)
