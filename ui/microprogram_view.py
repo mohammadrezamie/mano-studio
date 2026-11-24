@@ -1,8 +1,9 @@
 """Interactive Chapter 7 control memory, independent of the Basic Computer."""
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPlainTextEdit,
-    QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QPushButton,QSpinBox)
+    QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QPushButton,QSpinBox,QComboBox)
 from microprogram import MicroComputer,parse_image,demo_images,CONDITIONS,BRANCHES
+from microassembler import assemble_micro, DEMO_SOURCE, full_demo
 
 
 class MicroprogramView(QWidget):
@@ -15,6 +16,13 @@ class MicroprogramView(QWidget):
         note=QLabel(self.t("Chapter 7 model: 128 × 20 control store; 11-bit PC/AR. Not the Basic Computer ISA. Edit HEX address:word images, load, then execute one microinstruction.",
             "مدل فصل هفتم: حافظه کنترل ۱۲۸ × ۲۰ و PC/AR یازده‌بیتی. این مدل با پردازنده پایه متفاوت است. تصویر هگز آدرس:کلمه را ویرایش و بارگذاری کنید و ریزدستور را اجرا کنید."))
         note.setWordWrap(True);layout.addWidget(note)
+        mode_row=QHBoxLayout()
+        self.mode=QComboBox()
+        self.mode.addItem(self.t("Raw HEX","هگز خام"),"raw")
+        self.mode.addItem(self.t("Symbolic microassembly","اسمبلی نمادین ریزبرنامه"),"symbolic")
+        mode_row.addWidget(self.mode)
+        self.syntax=QLabel();self.syntax.setWordWrap(True);mode_row.addWidget(self.syntax,1)
+        layout.addLayout(mode_row)
         row=QHBoxLayout()
         self.control=QPlainTextEdit()
         self.data=QPlainTextEdit()
@@ -38,29 +46,53 @@ class MicroprogramView(QWidget):
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         layout.addWidget(self.table,1)
+        self.listing=QPlainTextEdit();self.listing.setReadOnly(True);self.listing.setMaximumHeight(65)
+        self.listing.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.listing.setAccessibleName(self.t("Assembled control image","تصویر اسمبل‌شده کنترل"));layout.addWidget(self.listing)
         self.status=QLabel();self.status.setWordWrap(True);layout.addWidget(self.status)
         self.control.textChanged.connect(self.invalidate);self.data.textChanged.connect(self.invalidate)
         self.entry.valueChanged.connect(self.invalidate)
+        self.mode.currentIndexChanged.connect(self.mode_changed)
+        self.mode_changed()
         self.example()
 
     def t(self,en,fa):return fa if self.fa else en
 
     def invalidate(self,*_):
         self.model=self.last=None
-        self.table.setRowCount(0);self.fields.clear();self.step_button.setEnabled(False)
+        self.table.setRowCount(0);self.fields.clear();self.listing.clear();self.step_button.setEnabled(False)
         self.status.setText(self.t("Images changed. Load again.","تصویر حافظه تغییر کرد؛ دوباره بارگذاری کنید."))
 
+    def mode_changed(self,*_):
+        symbolic=self.mode.currentData()=="symbolic"
+        self.syntax.setText(self.t("ORG decimal; label: operations CD BR AD; NEXT","ORG ده‌دهی؛ برچسب: عملیات CD BR AD؛ NEXT") if symbolic else self.t("HEX address:word","آدرس:کلمه هگز"))
+        # Changing notation never silently replaces user source.
+        self.invalidate()
+
     def example(self):
-        c,d=demo_images()
-        self.control.setPlainText("\n".join(f"{a:02X}:{w:05X}" for a,w in sorted(c.items())))
+        if self.mode.currentData()=="symbolic":
+            c,d=full_demo()
+            self.control.setPlainText(DEMO_SOURCE)
+        else:
+            c,d=demo_images()
+            self.control.setPlainText("\\n".join(f"{a:02X}:{w:05X}" for a,w in sorted(c.items())))
         self.data.setPlainText("\n".join(f"{a:03X}:{w:04X}" for a,w in sorted(d.items())))
         self.entry.setValue(64);self.load()
 
     def load(self):
         self.invalidate()
         try:
-            self.model=MicroComputer(parse_image(self.control.toPlainText(),128,1<<20),
-                parse_image(self.data.toPlainText(),2048,65536),self.entry.value())
+            if self.mode.currentData()=="symbolic":
+                result=assemble_micro(self.control.toPlainText())
+                if not result.ok:
+                    names={"LABEL":"برچسب نامعتبر یا تکراری","ADDRESS":"آدرس نامعتبر","OVERLAP":"آدرس تکراری یا خارج از محدوده","SYNTAX":"ساختار ریزدستور نامعتبر","OPERATION":"ریزعملیات نامعتبر","CONFLICT":"عملیات متعارض","TARGET":"مقصد نامعتبر","EMPTY":"ریزبرنامه خالی"}
+                    self.status.setText("\n".join(f"{e.line}: {names[e.code] if self.fa else e.code} {e.detail}" for e in result.errors[:8]))
+                    return
+                c=result.words
+            else:
+                c=parse_image(self.control.toPlainText(),128,1<<20)
+            self.model=MicroComputer(c,parse_image(self.data.toPlainText(),2048,65536),self.entry.value())
+            self.listing.setPlainText("\n".join(f"{a:02X}:{w:05X}" for a,w in sorted(c.items())))
         except ValueError as e:
             self.status.setText(self.t(str(e),"تصویر حافظه نامعتبر است؛ آدرس‌ها و کلمات هگز را بررسی کنید."));return
         self.step_button.setEnabled(True)

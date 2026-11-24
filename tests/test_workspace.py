@@ -720,3 +720,20 @@ def test_microprogram_inspector(workspace):
     view.example()
     assert view.model.car==64 and view.model.ac==0
     lab.close()
+
+
+def test_symbolic_microassembler_ui(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.microprogram
+    original=view.control.toPlainText()
+    view.mode.setCurrentIndex(view.mode.findData("symbolic"))
+    assert view.model is None and view.control.toPlainText()==original
+    view.example()
+    assert view.model.car==64 and "40:" in view.listing.toPlainText()
+    for _ in range(6):view.step()
+    assert view.model.ac==5
+    view.control.setPlainText("ADD, SUB U JMP NEXT")
+    view.load()
+    assert view.model is None and not view.listing.toPlainText() and view.status.text()
+    lab.close()
