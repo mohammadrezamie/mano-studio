@@ -5,6 +5,7 @@ from PySide6.QtGui import QPixmap, QPainter, QColor, QFont
 from PySide6.QtWidgets import QApplication, QSplashScreen
 from ui.theme import PALETTES, stylesheet
 from ui.strings import FA
+from ui.glass import paint_backdrop
 
 VERSION = "0.3.0-dev"
 
@@ -26,6 +27,7 @@ def main():
     pix.fill(QColor(bg))
     painter = QPainter(pix)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+    paint_backdrop(painter, pix.rect(), theme)
     painter.setPen(QColor(accent))
     painter.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
     painter.drawText(35, 85, "MANO STUDIO")
