@@ -31,8 +31,3 @@ jobs:
           name: desktop-previews-${{ matrix.os }}
           path: screenshots/
           if-no-files-found: error
-
-  development-build:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/feature/desktop-workspace' && startsWith(github.event.head_commit.message, 'build: candidate')
-    needs: test
-    uses: ./.github/workflows/windows-installer.yml

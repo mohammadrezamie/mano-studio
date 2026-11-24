@@ -95,3 +95,6 @@ Integrated debugger trace, breakpoint/continue/back, source mapping, CSV export,
 
 ### Reverse import checkpoint
 Added optional asm_to_rtl.py and File > Import ASM as RTL (canonical named instructions only; no data/directives/labels, no partial conversion). Forward verification through actual independent translate(), source file untouched, new unsaved document. All 25 instructions and invalid cases have regression coverage authored. Exact-head CI unavailable so far; no claim of runtime success.
+
+### CI recovery checkpoint
+No workflow runs or confirmed candidate binary at inspected newer heads since reusable-workflow change. Restored the last known working simple test matrix and manual-only Windows installer workflow (no reusable job). This is a recovery attempt, not evidence of root cause. Connector exposes no workflow dispatch action; exact-head runs need verification. Local container lacks PySide6 and GitHub DNS access. No public release.
