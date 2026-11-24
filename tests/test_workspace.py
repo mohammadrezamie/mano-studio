@@ -88,15 +88,16 @@ def test_pad_replaces_selection(workspace):
 
 def test_calm_preferences(workspace):
     from ui.preferences import Preferences
-    from ui.live_lab import LabDialog
+    from ui.program_lab import ProgramLab
     prefs = Preferences(workspace)
     prefs.change("glass_enabled", False)
     prefs.change("reduced_motion", True)
     assert not workspace.centralWidget().enabled
     assert workspace.settings.value("reduced_motion", type=bool)
-    lab = LabDialog(workspace, "en", "dark", workspace.settings)
+    lab = ProgramLab(workspace)
     lab.step()
-    assert not lab.frames.isActive()
+    assert lab.datapath.reduced_motion
+    assert lab.datapath.progress == 1.0
     assert lab.cpu.ac == 5
     lab.close()
     prefs.close()
@@ -123,7 +124,7 @@ def test_file_roundtrip_and_stale_export(workspace, tmp_path, monkeypatch):
 
 def test_core_does_not_request_network(workspace, monkeypatch):
     import socket
-    from ui.live_lab import LabDialog
+    from ui.program_lab import ProgramLab
     from ui.preferences import Preferences
     def blocked(*args, **kwargs):
         pytest.fail("Unexpected Python network request")
@@ -132,7 +133,7 @@ def test_core_does_not_request_network(workspace, monkeypatch):
     workspace.run_translation()
     assert workspace.output.toPlainText() == "LDA 100"
     prefs = Preferences(workspace)
-    lab = LabDialog(workspace, "en", "dark", workspace.settings)
+    lab = ProgramLab(workspace)
     lab.step()
     assert lab.cpu.ac == 5
     lab.close()
@@ -164,3 +165,19 @@ def test_logic_pin_count_and_truth_table(workspace):
     dialog.selector.setCurrentIndex(dialog.selector.findData("not"))
     assert len(dialog.buttons)==1 and not dialog.pin_count.isEnabled()
     dialog.close()
+
+
+def test_computer_single_state(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace,"ORG 000\nLDA 100\nADD 101\nSTA 102\nHLT\nORG 100\nDEC 5\nDEC 3\nDEC 0\nEND")
+    assert lab.datapath.cpu is lab.cpu
+    lab.step()
+    assert lab.datapath.event.mnemonic=="LDA" and lab.cpu.ac==5
+    lab.step()
+    assert lab.datapath.event.after["AC"]==8
+    lab.step()
+    assert lab.datapath.event.writes==((0x102,0,8),)
+    assert lab.cpu.memory[0x102]==8
+    lab.source.setPlainText("HLT")
+    assert lab.cpu is None and lab.datapath.cpu is None
+    lab.close()
