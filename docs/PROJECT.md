@@ -14,3 +14,6 @@ Confirm spelling, affiliation, title and permission before public attribution; d
 
 ## Expanded product decisions
 All 25 named Basic Computer instructions in the documented provisional dialect, both direct and indirect memory addressing. Three synchronized input modes: expert text, on-screen symbol/hex keypad, guided operation builder. Light, Dark, Night (warm low glare), persistent language and theme, splash with acknowledgment pending verification, bilingual diagnostic help. See [UI design](UI_DESIGN.md) and [maintenance](MAINTAINABILITY.md).
+
+## Permanent academic contract (owner clarification)
+Keep rtl_translator.py as a single standalone Python file throughout the entire project, with complete actual RTL-to-ASM rules, validation, diagnostics and CLI; no imports from any project module or third-party library. Professor reviews this source; the student must be able to understand and explain it independently. Keep readable bilingual explanatory comments, standalone examples and defense guide synchronized. The UI calls translate() directly; no decoy or duplicated implementation. The remaining optional software may use justified technologies and licensed resources. Documentation is continuously maintained before/during/after changes. No release or installer activity until requested.
