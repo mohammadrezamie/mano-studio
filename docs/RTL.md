@@ -13,5 +13,36 @@ One statement per line; blank lines and comments (# or ;) allowed; case insensit
 | PC ← 100 | BUN 100 | 4100 |
 | S ← 0 | HLT | 7001 |
 These are semantic shorthand: ADD also changes E; LDA uses DR internally. Document side effects. Arbitrary transfers such as AR ← PC are not directly expressible as assembly; reject unless a proven equivalent sequence exists. Do not promise universal RTL translation.
-Later support indirect memory, labels, BSA/ISZ, register-reference and I/O instructions, ORG/END/DEC/HEX assembler directives after checking Mano semantics. Two-pass assembler resolves symbols and validates address range. Simulator must model 16-bit wrap, carry, PC, memory, halt and supported instructions; distinguish instruction-level from timing-level simulation.
+The translator now recognizes all 25 named instructions. Labels and ORG/END/DEC/HEX assembler directives remain future work. Two-pass assembler resolves symbols and validates address range. Simulator must model 16-bit wrap, carry, PC, memory, halt and supported instructions; distinguish instruction-level from timing-level simulation.
 Example: memory[0x100]=5, memory[0x101]=3; LDA 100, ADD 101, STA 102, HLT yields memory[0x102]=8. Program starts at 000. Tests: spacing variants, case, malformed tokens, bounds, unsupported transfers, carry and source mapping.
+
+## Full canonical templates
+| ASM | RTL example |
+|---|---|
+| AND | `AC ← AC ∧ M[100]` |
+| ADD | `AC ← AC + M[100]` |
+| LDA | `AC ← M[100]` |
+| STA | `M[100] ← AC` |
+| BUN | `PC ← 100` |
+| BSA | `M[100] ← PC, PC ← 100 + 1` |
+| ISZ | `M[100] ← M[100] + 1, IF M[100] = 0 THEN PC ← PC + 1` |
+| CLA | `AC ← 0` |
+| CLE | `E ← 0` |
+| CMA | `AC ← ¬AC` |
+| CME | `E ← ¬E` |
+| CIR | `E:AC ← CIR(E:AC)` |
+| CIL | `E:AC ← CIL(E:AC)` |
+| INC | `AC ← AC + 1` |
+| SPA | `IF AC[15] = 0 THEN PC ← PC + 1` |
+| SNA | `IF AC[15] = 1 THEN PC ← PC + 1` |
+| SZA | `IF AC = 0 THEN PC ← PC + 1` |
+| SZE | `IF E = 0 THEN PC ← PC + 1` |
+| HLT | `S ← 0` |
+| INP | `AC[7:0] ← INPR, FGI ← 0` |
+| OUT | `OUTR ← AC[7:0], FGO ← 0` |
+| SKI | `IF FGI = 1 THEN PC ← PC + 1` |
+| SKO | `IF FGO = 1 THEN PC ← PC + 1` |
+| ION | `IEN ← 1` |
+| IOF | `IEN ← 0` |
+
+For all seven memory instructions, use `M[100]` in place of effective address `100` for indirect mode, e.g. `AC ← M[M[100]]` -> `LDA 100 I`. BSA/ISZ repeated address tokens must match apart from case/spacing. Effective address is latched before execution; ISZ condition is evaluated after 16-bit increment. PC denotes post-fetch PC; PC arithmetic is 12-bit, AC/memory arithmetic 16-bit. SPA includes zero. CIR/CIL rotate combined 17-bit E:AC. These are provisional instruction-level templates, not verbatim book microoperations. Unsupported syntax is rejected.
