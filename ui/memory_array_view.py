@@ -22,7 +22,6 @@ class MemoryArrayView(QWidget):
         layout.addLayout(config)
         row=QHBoxLayout()
         self.address=QSpinBox();self.address.setDisplayIntegerBase(16)
-        self.data=QSpinBox();self.data.setDisplayIntegerBase(16)
         # QSpinBox is signed 32-bit; the largest 32-bit word uses text instead.
         from PySide6.QtWidgets import QLineEdit
         self.word=QLineEdit("0000");self.word.setMaxLength(8)
@@ -61,7 +60,7 @@ class MemoryArrayView(QWidget):
             for lane,chip in enumerate(m.chips[bank]):
                 stored=chip.words[sel.local]
                 text=f"{chip.size} × {chip.word_bits}\nM[{sel.local:X}] = {stored:0{m.chip_bits//4}X}\nQ = "+("Z" if sel.cs_n[bank] else f"{stored:0{m.chip_bits//4}X}")
-                self.table.setItem(bank,lane,QTableWidgetItem(text))
+                self.table.setItem(bank,lane+2,QTableWidgetItem(text))
             self.table.setRowHeight(bank,78)
     def write(self):
         import re

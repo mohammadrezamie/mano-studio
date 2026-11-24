@@ -161,3 +161,6 @@ Prior RAM/ROM and data codes run 45442065237 at inspection: [{"name":"test (ubun
 
 ### Memory organization and bus implementation
 Added MemoryArray composition, register-bus resolution and transfer, integrated bank table and bus diagram under existing Memory & bus tab. 18 parameterized array cases plus bus and GUI regressions authored. Independent models, exact chip slices, no artificial state. Previous Ubuntu 309 passes verified; Windows result pending at previous inspection. Current exact-head CI pending. No release or change to academic translator.
+
+### Bank table review
+Fixed lane column offset so bank range/select cells are never overwritten, removed unused signed spin box, and added explicit table regression for active bank and both data slices. Prior memory/data codes CI evidence: [{"name":"test (ubuntu-latest)","status":"completed","conclusion":"success","summary":["2026-11-24T16:52:53.8571584Z 309 passed, 1 warning in 30.56s"]},{"name":"test (windows-latest)","status":"completed","conclusion":"success","summary":["2026-11-24T16:53:36.6612488Z 309 passed, 1 warning in 57.99s\r"]}]. Current head needs exact-head test and visual validation.

@@ -524,6 +524,9 @@ def test_memory_expansion_and_register_bus(workspace):
     assert view.model.chips[1][0].words[1]==0xCD
     assert view.model.chips[1][1].words[1]==0xAB
     assert view.model.read(1)==0
+    assert view.table.item(1,1).text()=="0"
+    assert "CD" in view.table.item(1,2).text()
+    assert "AB" in view.table.item(1,3).text()
     bus=lab.bus_view
     bus.words[0].setValue(0xA5)
     bus.en[0].setChecked(True)
