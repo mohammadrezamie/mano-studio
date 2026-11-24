@@ -5,6 +5,13 @@ An open-source bilingual desktop IDE for Morris Mano's Basic Computer. Planned: 
 
 **Status: Python translator supports all 25 named Mano instructions in the documented dialect; no downloadable desktop release yet.**
 
+## Desktop development preview (not yet runtime verified)
+```sh
+python -m pip install -r requirements.txt -r requirements-dev.txt
+python main.py
+```
+Three entry modes, three themes and bilingual settings are implemented in the preview. See [status](docs/STATUS.md) for remaining verification. No installer yet.
+
 ## Try the translator
 Python 3.10+; no runtime dependencies.
 ```sh
