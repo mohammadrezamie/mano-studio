@@ -1,4 +1,6 @@
 # Translator / راهنمای دفاع
+
+**فایل تکلیف استاد: [rtl_translator.py](../rtl_translator.py).** فقط همین فایل شامل الگوریتم موردنیاز دفاع است؛ سایر ماژول‌ها امکانات اختیاری نرم‌افزار هستند. برای دفاع فایل را مستقیماً از سورس پروژه باز کنید؛ نیازی به نمایش سورس داخل نرم‌افزار نیست.
 Run `python rtl_translator.py examples/add.rtl -o result.asm` with Python 3.10+. No runtime dependencies. Run `python -m pip install -r requirements-dev.txt` then `python -m pytest -q`.
 
 The engine splits input into lines, removes comments, matches each full statement against 32 regular-expression rules (25 mnemonics plus seven indirect variants), validates and pads hexadecimal addresses, then returns instructions with their source line and diagnostics. `TranslationResult.assembly` refuses export if any diagnostic exists. The CLI reads UTF-8 (including BOM), writes ASM only on success and returns nonzero on error. Existing output is left unchanged on invalid input. GUI must call `translate()` rather than implement duplicate rules.
