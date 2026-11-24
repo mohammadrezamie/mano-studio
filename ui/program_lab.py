@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QTextCursor
 from execution_history import ExecutionHistory
 from ui.arithmetic_view import ArithmeticView
+from ui.data_codes_view import DataCodesView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
@@ -115,6 +116,8 @@ class ProgramLab(QDialog):
         self.arithmetic=ArithmeticView(self.fa)
         alu_layout.addWidget(self.arithmetic)
         self.inspector.addTab(alu_page,self.t("Data & ALU","داده و ALU"))
+        self.codes=DataCodesView(self.fa)
+        self.inspector.addTab(self.codes,self.t("Data codes","کدهای داده"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
         self.input = QLineEdit()

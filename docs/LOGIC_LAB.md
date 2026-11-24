@@ -36,3 +36,6 @@ Eight new presets (see CURRICULUM_COVERAGE.md), all actual elementary gate netli
 
 ## Expanded synchronous models
 Five new 4-bit models: serial shift, universal shift, loadable up/down counter, ring and Johnson. All use pure state transition with non-mutating preview; formulas and bilingual explanations in Sequential tab. Scalable functional pin diagram and sampled waveforms; synchronous/ideal behavior, not package pinout, physical timing, or exact HC194 reset behavior. See CURRICULUM_COVERAGE.md. Regression pending.
+
+## Memory devices tab
+Integrated ideal RAM/ROM functional bus model, six organization choices, explicit active-low controls, selected address, visible storage and high-impedance Z output. A write happens only on Apply cycle; ROM never writes. Demo resets when organization changes. No physical chip pin numbers, electrical delays or persistence. See CURRICULUM_COVERAGE.md.

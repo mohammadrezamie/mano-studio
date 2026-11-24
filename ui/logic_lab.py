@@ -16,6 +16,7 @@ from wire_notation import analyze_wires
 from ui.circuit_editor import CircuitEditor
 from ui.localization import error_text
 from ui.sequential_view import SequentialView
+from ui.memory_view import MemoryView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES, STATUS
 
@@ -318,6 +319,8 @@ class LogicLab(QDialog):
         self.mode_tabs.addTab(combinational,self.t("Combinational","مدارهای ترکیبی"))
         self.sequential=SequentialView(parent.theme,self.fa)
         self.mode_tabs.addTab(self.sequential,self.t("Sequential","مدارهای ترتیبی"))
+        self.memory_view=MemoryView(parent.theme,self.fa)
+        self.mode_tabs.addTab(self.memory_view,self.t("Memory devices","قطعات حافظه"))
         layout=QVBoxLayout(combinational)
         title=QLabel(self.t("Logic Lab · Digital circuits","آزمایشگاه مدار منطقی"))
         title.setObjectName("brand")

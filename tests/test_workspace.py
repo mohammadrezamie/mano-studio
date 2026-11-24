@@ -485,3 +485,29 @@ def test_universal_shift_register_ui(workspace):
     view.pulse()
     assert view.model.value==11
     lab.close()
+
+
+def test_memory_and_data_codes_views(workspace):
+    from ui.logic_lab import LogicLab
+    from ui.program_lab import ProgramLab
+    lab=LogicLab(workspace)
+    view=lab.memory_view
+    view.address.setValue(3)
+    view.data.setValue(0xA5)
+    view.we.setChecked(False)
+    assert view.chip.words[3]==0
+    view.cycle()
+    assert view.chip.words[3]==0xA5
+    view.we.setChecked(True)
+    assert "A5" in view.summary.text()
+    view.cs.setChecked(True)
+    assert "Z" in view.summary.text()
+    lab.close()
+    computer=ProgramLab(workspace)
+    codes=computer.codes
+    codes.input.setText("09")
+    assert codes.output.toPlainText()=="0000 1001"
+    codes.mode.setCurrentIndex(1)
+    codes.input.setText("1010")
+    assert not codes.output.toPlainText()
+    computer.close()
