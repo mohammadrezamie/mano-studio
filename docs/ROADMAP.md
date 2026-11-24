@@ -7,3 +7,6 @@ Acceptance: sample RTL file -> correct ASM file; same output via builder; invali
 After stable RTL-to-ASM delivery, add assembly-to-canonical-RTL translation. Preserve forward mode, use shared instruction catalog, explicitly handle directives/labels, and test direct and indirect round trips. Reverse translation cannot recover arbitrary original RTL or formatting. Not required for initial academic delivery.
 
 Classroom target: week of 2026-11-30 to 2026-12-06. Prioritize a tested Windows RTL-to-ASM beta. See [release and comfort policy](RELEASE_POLICY.md). Defer advanced visual effects and complete simulator if needed.
+
+## Current priority override
+Development quality first. Installer/release and manual acceptance are deferred until owner explicitly requests them. Expand core assembler, instruction-level simulator, program lab, calm graphics and educational usability. Classroom review does not require a release. See RELEASE_POLICY.md.
