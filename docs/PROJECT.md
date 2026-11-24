@@ -1,0 +1,13 @@
+# Product specification
+Mano Studio — Build. Translate. Simulate. Learn.
+Free offline-first open-source desktop IDE for Morris Mano, Computer System Architecture, 3rd ed., chapters 4–6 (verify instructor edition). Academic origin: RTL text input to assembly file output. Standard assembler additionally converts assembly to machine code; do not confuse the two.
+## Requirements
+Windows 10/11 x64 standalone Setup.exe, no Python installation required; PySide6 GUI, Python core, PyInstaller and Inno Setup. English default and Persian selectable, mirrored UI but LTR code. Dark/light themes, split editors, line numbers, syntax highlighting, diagnostics with line numbers, visual operation builder (add/edit/delete/reorder), TXT/RTL import, ASM export. Later HEX/BIN export, two-pass assembler, CPU simulator, memory/register inspector, step/run/reset, educational explanations, examples, autosave/recovery, shortcuts and printable report.
+## Architecture
+rtl_translator.py at root: pure Python, no GUI dependencies; deterministic translate(text) returning instructions, source mapping and diagnostics; CLI optional. assembler.py and simulator.py separate. main.py launches ui/; assets/, locales/, tests/, examples/, installer/, docs/. GUI builder emits RTL text and uses same translator, never bypasses it. Ship readable translator source and View Translator Source action. QSettings for preferences. pytest. GitHub Actions Windows build and release artifacts; public Releases API for update check with timeout, semantic version comparison, stable releases only, user-initiated download via official release page; no silent install. Offline core, no telemetry. Unsigned installer may trigger SmartScreen; test on clean Windows.
+## UI
+VS Code-inspired original design: explorer left, RTL and ASM editors center, diagnostics bottom, inspector right; welcome screen, bilingual settings, About, learning center. No copied branding. Accessibility and keyboard navigation.
+## Academic acknowledgment
+Proposed Persian: مانو استودیو با الهام از پروژه آموزشی تعریف‌شده توسط استاد ارجمند سیاوش اسحقی، استاد درس معماری کامپیوتر و میکروکنترلر دانشگاه آزاد اسلامی واحد علوم و تحقیقات، شکل گرفته است. از ایشان برای ایجاد انگیزه در پیوند دانش نظری و یادگیری عملی صمیمانه سپاسگزاریم.
+English: Mano Studio originated from an academic project assigned by instructor Siavash Eshaghi (provisional spelling), Islamic Azad University, Science and Research Branch. We sincerely appreciate his encouragement of practical learning in computer architecture.
+Confirm spelling, affiliation, title and permission before public attribution; do not imply endorsement or formal advisor role. No verified personal profile yet.
