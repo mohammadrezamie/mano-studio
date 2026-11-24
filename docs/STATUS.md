@@ -7,3 +7,6 @@ Next: issue #2, implement actual PySide6 GUI (three input modes, file import/exp
 
 ## Latest checkpoint
 PR #9 remains active. Initial CI run 45388211041 failed before collection on Ubuntu (missing libEGL); Windows cancelled. Fix committed on feature/desktop-workspace: Linux Qt dependencies, independent matrix jobs, line-number gutter and diagnostic highlights, extra smoke tests, and capture_workspace.py to produce 18 actual desktop previews per OS as Actions artifacts. New CI results and visual review pending; no installer yet. Read branch STATUS.md plus PR commits and latest Actions logs before resuming. Avoid merging conflicting STATUS.md versions without reconciliation.
+
+## Mano Glass checkpoint
+Continue active PR #9 (`feature/desktop-workspace`). Previous screenshot/test workflow 45388500498 succeeded. New glass-inspired Qt design and animated four-instruction educational CPU demonstration committed on branch, with tests; new CI and visual review pending. Read branch docs/STATUS.md and docs/UI_DESIGN.md before resuming. Full simulator and native refraction are not implemented. Preserve P0 installer priority.
