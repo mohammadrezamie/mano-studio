@@ -339,10 +339,11 @@ class Workspace(QMainWindow):
         block = cursor.block()
         cursor.beginEditBlock()
         if not block.text().strip():
+            has_next = block.next().isValid()
             cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
             cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
-            cursor.insertText(rtl + ("\n" if not block.next().isValid() else ""))
-            if cursor.block().next().isValid():
+            cursor.insertText(rtl + ("" if has_next else "\n"))
+            if has_next:
                 cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
         elif block.next().isValid():
             cursor.setPosition(block.next().position())
@@ -410,7 +411,7 @@ class Workspace(QMainWindow):
             editor.ensureCursorVisible()
 
     def follow_source(self):
-        if self.mapping_active or not self.result or not self.result.ok:
+        if self.mapping_active or not self.result or not self.result.ok or self.translated_source != self.editor.toPlainText():
             return
         line = self.editor.textCursor().blockNumber() + 1
         for index, instruction in enumerate(self.result.instructions):
@@ -423,7 +424,7 @@ class Workspace(QMainWindow):
                 break
 
     def follow_output(self):
-        if self.mapping_active or not self.result or not self.result.ok:
+        if self.mapping_active or not self.result or not self.result.ok or self.translated_source != self.editor.toPlainText():
             return
         index = self.output.textCursor().blockNumber()
         if 0 <= index < len(self.result.instructions):
