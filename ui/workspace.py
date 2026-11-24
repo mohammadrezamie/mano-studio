@@ -96,6 +96,7 @@ class Workspace(QMainWindow):
                            ("Source", self.show_source), ("Live Lab", self.open_lab), ("About", self.about)]:
             toolbar.addWidget(self.button(name, slot))
         toolbar.addWidget(self.button("Program Lab", self.open_program_lab))
+        toolbar.addWidget(self.button("Logic Lab", self.open_logic_lab))
         toolbar.addStretch()
         toolbar.addWidget(self.button("Translate", self.run_translation, True))
         layout.addWidget(toolbar_frame)
@@ -457,6 +458,10 @@ class Workspace(QMainWindow):
         copy.clicked.connect(lambda: QApplication.clipboard().setText(source))
         layout.addWidget(copy)
         dialog.exec()
+
+    def open_logic_lab(self):
+        from ui.logic_lab import LogicLab
+        LogicLab(self).exec()
 
     def open_program_lab(self):
         from ui.program_lab import ProgramLab
