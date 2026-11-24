@@ -1,6 +1,6 @@
 """Live schematic, binary input controls and truth tables from one netlist."""
 from pathlib import Path
-from PySide6.QtCore import Qt, QRectF
+from PySide6.QtCore import Qt, QRectF, QPointF, Signal
 from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton,
@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
 )
 from logic_engine import CIRCUITS, ARITY, basic
 from circuit_document import CircuitDocument
+from schematic_routing import wire_route
 from ui.circuit_editor import CircuitEditor
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES
@@ -16,6 +17,10 @@ from ui.theme import PALETTES
 
 class LogicDiagram(QGraphicsView):
     """Auto layout by signal depth, with distinctive-shape symbols and pins."""
+    rewire = Signal(str, str, int)
+    moved = Signal(str, float, float)
+    hint = Signal(str)
+
     def __init__(self, theme):
         super().__init__()
         self.theme = theme
@@ -25,9 +30,17 @@ class LogicDiagram(QGraphicsView):
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.setMinimumHeight(280)
+        self.editing=False
+        self.positions={}
+        self.ports=[]
+        self.pending=None
+        self.drag_node=None
+        self.preview=None
+        self.setMouseTracking(True)
 
-    def draw(self, circuit, values):
+    def draw(self, circuit, values, placement=()):
         scene = self.graph
+        self.clear_gesture()
         scene.clear()
         bg,panel,raised,fg,muted,accent,border = PALETTES[self.theme]
         scene.setBackgroundBrush(QBrush(QColor(bg)))
@@ -53,6 +66,17 @@ class LogicDiagram(QGraphicsView):
         for col,names in columns.items():
             for index,name in enumerate(names):
                 positions[name] = (28+col*220, top+(height-len(names)*pitch)/2+index*pitch)
+        positions.update({name:(x,y) for name,x,y in placement if name in positions})
+        self.positions=positions
+        self.ports=[]
+        for name in circuit.inputs:
+            self.ports.append((name,-1,output_point(*positions[name])))
+        for gate in circuit.gates:
+            self.ports.append((gate.output,-1,output_point(*positions[gate.output])))
+            for i in range(len(gate.inputs)):
+                self.ports.append((gate.output,i,input_point(*positions[gate.output],i,len(gate.inputs))))
+        for name,_ in circuit.outputs:
+            self.ports.append(("@"+name,0,input_point(*positions["@"+name],0,1)))
         fanout = {}
         for src,dst,i,count in edges:
             fanout.setdefault(src,[]).append((dst,i,count))
@@ -62,9 +86,24 @@ class LogicDiagram(QGraphicsView):
             sx,sy = output_point(*positions[src])
             pen = QPen(QColor(accent if values[src] else muted),2 if values[src] else 1.1)
             trunk = sx + 8
-            scene.addLine(sx,sy,trunk,sy,pen).setZValue(-1)
+            if not placement:
+                scene.addLine(sx,sy,trunk,sy,pen).setZValue(-1)
             for dst,index,count in targets:
                 ex,ey = input_point(*positions[dst],index,count)
+                if placement:
+                    obstacles=[(x,y,x+WIDTH,y+HEIGHT) for name,(x,y) in positions.items() if name not in (src,dst)]
+                    # Protect source/target bodies too: pins sit at the edges.
+                    obstacles += [(positions[n][0],positions[n][1],positions[n][0]+WIDTH,positions[n][1]+HEIGHT) for n in (src,dst)]
+                    route,clear=wire_route((sx,sy),(ex,ey),obstacles,long_index)
+                    long_index+=1
+                    path=QPainterPath(QPointF(*route[0]))
+                    for point in route[1:]:
+                        path.lineTo(*point)
+                    route_pen=QPen(pen)
+                    if not clear:
+                        route_pen.setStyle(Qt.PenStyle.DashLine)
+                    scene.addPath(path,route_pen).setZValue(-1)
+                    continue
                 gap = depths[dst]-1
                 lane = lane_counts.get(gap,0)
                 lane_counts[gap] = lane+1
@@ -83,7 +122,7 @@ class LogicDiagram(QGraphicsView):
                     path.lineTo(middle,ey)
                 path.lineTo(ex,ey)
                 scene.addPath(path,pen).setZValue(-1)
-            if len(targets)>1:
+            if len(targets)>1 and not placement:
                 scene.addEllipse(QRectF(trunk-3,sy-3,6,6),pen,QBrush(pen.color()))
         gate_names={gate.output:gate for gate in circuit.gates}
         output_signals=dict(circuit.outputs)
@@ -112,7 +151,100 @@ class LogicDiagram(QGraphicsView):
                 text_at(title,x+25,y+CENTER-19,fg,10)
                 text_at(str(value),x+69,y+CENTER, color,12)
                 scene.addEllipse(QRectF(pin_x-2,y+CENTER-2,4,4),QPen(QColor(color)),QBrush(QColor(color)))
-        scene.setSceneRect(scene.itemsBoundingRect().adjusted(-16,-16,16,16))
+        if self.editing:
+            for name,pin,(x,y) in self.ports:
+                dot=scene.addEllipse(QRectF(x-5,y-5,10,10),QPen(QColor(accent),1.5),QBrush(QColor(panel)))
+                dot.setZValue(3)
+                dot.setToolTip(f"{name}: " + ("source" if pin<0 else f"pin {pin+1}"))
+        scene.setSceneRect(scene.itemsBoundingRect().adjusted(-40,-40,40,40))
+
+    def clear_gesture(self):
+        if self.preview is not None:
+            self.graph.removeItem(self.preview)
+            self.preview=None
+        self.pending=None
+        self.drag_node=None
+
+    def set_editing(self, enabled):
+        self.clear_gesture()
+        self.editing=enabled
+        self.setDragMode(QGraphicsView.DragMode.NoDrag if enabled else QGraphicsView.DragMode.ScrollHandDrag)
+
+    def port_at(self, point, receiving=None):
+        best=None
+        distance=12**2
+        for name,pin,(x,y) in self.ports:
+            if receiving is not None and (pin>=0)!=receiving:
+                continue
+            screen=self.mapFromScene(QPointF(x,y))
+            delta=(screen.x()-point.x())**2+(screen.y()-point.y())**2
+            if delta<=distance:
+                best=(name,pin,(x,y))
+                distance=delta
+        return best
+
+    def mousePressEvent(self,event):
+        if not self.editing or event.button()!=Qt.MouseButton.LeftButton:
+            return super().mousePressEvent(event)
+        point=event.position().toPoint()
+        target=self.port_at(point,True) if self.pending else None
+        if target:
+            source=self.pending[0]
+            self.clear_gesture()
+            self.rewire.emit(source,target[0],target[1])
+            return
+        source=self.port_at(point,False)
+        if source:
+            self.clear_gesture()
+            self.pending=source
+            x,y=source[2]
+            self.preview=self.graph.addLine(x,y,x,y,QPen(QColor(PALETTES[self.theme][5]),2,Qt.PenStyle.DashLine))
+            self.preview.setZValue(4)
+            self.hint.emit("source")
+            return
+        self.clear_gesture()
+        p=self.mapToScene(point)
+        for name,(x,y) in reversed(list(self.positions.items())):
+            if QRectF(x+9,y,WIDTH-18,HEIGHT).contains(p):
+                self.drag_node=(name,p.x()-x,p.y()-y)
+                self.preview=self.graph.addRect(QRectF(x,y,WIDTH,HEIGHT),QPen(QColor(PALETTES[self.theme][5]),1.5,Qt.PenStyle.DashLine))
+                self.preview.setZValue(4)
+                return
+
+    def mouseMoveEvent(self,event):
+        if not self.editing or self.preview is None:
+            return super().mouseMoveEvent(event)
+        p=self.mapToScene(event.position().toPoint())
+        if self.pending:
+            x,y=self.pending[2]
+            self.preview.setLine(x,y,p.x(),p.y())
+        elif self.drag_node:
+            _,dx,dy=self.drag_node
+            self.preview.setRect(QRectF(p.x()-dx,p.y()-dy,WIDTH,HEIGHT))
+
+    def mouseReleaseEvent(self,event):
+        if self.editing and self.drag_node and event.button()==Qt.MouseButton.LeftButton:
+            name,dx,dy=self.drag_node
+            p=self.mapToScene(event.position().toPoint())
+            x,y=round((p.x()-dx)/10)*10,round((p.y()-dy)/10)*10
+            self.clear_gesture()
+            if abs(x-self.positions[name][0])+abs(y-self.positions[name][1])<6:
+                return
+            if any(QRectF(x,y,WIDTH,HEIGHT).adjusted(-6,-6,6,6).intersects(QRectF(xx,yy,WIDTH,HEIGHT))
+                   for other,(xx,yy) in self.positions.items() if other!=name):
+                self.hint.emit("overlap")
+                return
+            self.moved.emit(name,float(x),float(y))
+            return
+        if not self.editing:
+            super().mouseReleaseEvent(event)
+
+    def keyPressEvent(self,event):
+        if self.editing and event.key()==Qt.Key.Key_Escape and (self.pending or self.drag_node):
+            self.clear_gesture()
+            self.hint.emit("ready")
+            return
+        super().keyPressEvent(event)
 
     def fit(self):
         if not self.graph.itemsBoundingRect().isEmpty():
