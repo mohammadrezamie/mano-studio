@@ -36,5 +36,7 @@ def wire_route(start,end,obstacles,lane=0):
         return not any(segment_hits(p,q,rect) for p,q in zip(points,points[1:]) for rect in obstacles)
     def length(points):
         return sum(abs(p[0]-q[0])+abs(p[1]-q[1]) for p,q in zip(points,points[1:]))
-    valid=[p for p in candidates if clear(p)]
-    return (min(valid,key=length),True) if valid else (candidates[0],False)
+    for points in sorted(candidates,key=length):
+        if clear(points):
+            return points,True
+    return candidates[0],False
