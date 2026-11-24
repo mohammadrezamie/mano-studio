@@ -91,10 +91,19 @@ class Workspace(QMainWindow):
         toolbar_frame = QFrame()
         toolbar_frame.setObjectName("glassBar")
         toolbar = QHBoxLayout(toolbar_frame)
-        for name, slot in [("New", self.new_file), ("Open RTL", self.open_file),
-                           ("Save RTL", self.save_file), ("Export ASM", self.export_file),
-                           ("Source", self.show_source), ("About", self.about)]:
-            toolbar.addWidget(self.button(name, slot))
+        self.menu_actions = []
+        for name, entries in [("File", [("New", self.new_file), ("Open RTL", self.open_file), ("Save RTL", self.save_file)]),
+                              ("Help", [("Instruction reference", self.open_instruction_reference), ("Source", self.show_source), ("About", self.about)])]:
+            button = QPushButton(self.t(name))
+            self.labels.append((button, name))
+            menu = QMenu(button)
+            for key, slot in entries:
+                action = menu.addAction(self.t(key))
+                action.triggered.connect(lambda checked=False, fn=slot: fn())
+                self.menu_actions.append((action, key))
+            button.setMenu(menu)
+            toolbar.addWidget(button)
+        toolbar.addWidget(self.button("Open RTL", self.open_file))
         labs = QPushButton(self.t("Labs"))
         self.labels.append((labs, "Labs"))
         self.lab_menu = QMenu(labs)
@@ -107,6 +116,9 @@ class Workspace(QMainWindow):
         toolbar.addWidget(labs)
         toolbar.addStretch()
         toolbar.addWidget(self.button("Translate", self.run_translation, True))
+        self.export_button = self.button("Export ASM", self.export_file)
+        self.export_button.setEnabled(False)
+        toolbar.addWidget(self.export_button)
         layout.addWidget(toolbar_frame)
         split = QSplitter(Qt.Orientation.Vertical)
         editors = QSplitter(Qt.Orientation.Horizontal)
@@ -126,7 +138,6 @@ class Workspace(QMainWindow):
         row.addWidget(self.button("Redo", self.editor.redo))
         row.addWidget(self.button("Instruction reference", self.open_instruction_reference))
         row.addStretch()
-        row.addWidget(self.button("Translate", self.run_translation, True))
         self.tabs.addTab(page, self.t("Editor"))
         self.tabs.addTab(self.pad(), self.t("Symbol pad"))
         self.tabs.addTab(self.builder(), self.t("Builder"))
@@ -150,6 +161,11 @@ class Workspace(QMainWindow):
         self.shortcut.activated.connect(self.run_translation)
         self.reference_shortcut = QShortcut(QKeySequence("Ctrl+Space"), self)
         self.reference_shortcut.activated.connect(self.open_instruction_reference)
+        self.file_shortcuts = []
+        for sequence, handler in [("Ctrl+O", self.open_file), ("Ctrl+S", self.save_file), ("Ctrl+N", self.new_file)]:
+            shortcut = QShortcut(QKeySequence(sequence), self)
+            shortcut.activated.connect(handler)
+            self.file_shortcuts.append(shortcut)
         self.relabel()
         self.statusBar().showMessage(self.t("Ready"))
         geometry = settings.value("geometry")
@@ -189,7 +205,7 @@ class Workspace(QMainWindow):
             ("Space", lambda: self.insert(" ")), ("Enter", lambda: self.insert("\n")),
             ("Backspace", lambda: self.move_cursor("delete")), ("◀", lambda: self.move_cursor("left")),
             ("▶", lambda: self.move_cursor("right")), ("Undo", self.editor.undo),
-            ("Redo", self.editor.redo), ("Translate", self.run_translation)]):
+            ("Redo", self.editor.redo)]):
             grid.addWidget(self.button(title, action), 5, index)
         return page
 
@@ -310,6 +326,7 @@ class Workspace(QMainWindow):
         self.result = None
         self.translated_source = None
         self.output.clear()
+        self.export_button.setEnabled(False)
         self.table.setRowCount(0)
         self.editor.mark_errors(())
         self.statusBar().showMessage(self.t("Input changed — translate again"))
@@ -319,6 +336,7 @@ class Workspace(QMainWindow):
         self.result = translate(source)
         self.translated_source = source
         self.output.setPlainText(self.result.assembly if self.result.ok else "")
+        self.export_button.setEnabled(self.result.ok)
         self.render_errors()
         self.statusBar().showMessage(self.t("Translation successful" if self.result.ok else "Translation failed"))
 
@@ -351,7 +369,7 @@ class Workspace(QMainWindow):
     def relabel(self):
         for widget, key in self.labels:
             widget.setText(self.t(key))
-        for action, key in self.lab_actions:
+        for action, key in self.lab_actions + self.menu_actions:
             action.setText(self.t(key))
         for index, title in enumerate(("Editor", "Symbol pad", "Builder")):
             self.tabs.setTabText(index, self.t(title))
