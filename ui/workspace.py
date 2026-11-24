@@ -99,7 +99,7 @@ class Workspace(QMainWindow):
         self.labels.append((labs, "Labs"))
         self.lab_menu = QMenu(labs)
         self.lab_actions = []
-        for key, slot in [("Live Lab", self.open_lab), ("Program Lab", self.open_program_lab), ("Logic Lab", self.open_logic_lab)]:
+        for key, slot in [("Computer", self.open_program_lab), ("Logic Lab", self.open_logic_lab)]:
             action = self.lab_menu.addAction(self.t(key))
             action.triggered.connect(lambda checked=False, fn=slot: fn())
             self.lab_actions.append((action, key))
@@ -495,10 +495,6 @@ class Workspace(QMainWindow):
             self.run_translation()
             return
         ProgramLab(self, result.assembly).exec()
-
-    def open_lab(self):
-        from ui.live_lab import LabDialog
-        LabDialog(self, self.language, self.theme, self.settings).exec()
 
     def about(self):
         QMessageBox.about(self, "Mano Studio", "Mano Studio · 0.3.0-dev\n" + self.t("Academic project · Morris Mano Basic Computer") + "\nMIT · " + self.t("Open source") + "\nhttps://github.com/mohammadrezamie/mano-studio")
