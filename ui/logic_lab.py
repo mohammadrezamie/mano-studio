@@ -32,6 +32,9 @@ class LogicDiagram(QGraphicsView):
         self.setMinimumHeight(280)
         self.editing=False
         self.positions={}
+        self.route_cache={}
+        self.route_key=None
+        self.unrouted=0
         self.ports=[]
         self.pending=None
         self.drag_node=None
@@ -66,7 +69,22 @@ class LogicDiagram(QGraphicsView):
         for col,names in columns.items():
             for index,name in enumerate(names):
                 positions[name] = (28+col*220, top+(height-len(names)*pitch)/2+index*pitch)
-        positions.update({name:(x,y) for name,x,y in placement if name in positions})
+        fixed={name:(x,y) for name,x,y in placement if name in positions}
+        positions.update(fixed)
+        # Keep new components from covering saved positions after a table edit.
+        occupied=list(fixed.values())
+        for name,(x,y) in positions.items():
+            if name in fixed:
+                continue
+            while any(abs(x-xx)<WIDTH+6 and abs(y-yy)<HEIGHT+6 for xx,yy in occupied):
+                y+=pitch
+            positions[name]=(x,y)
+            occupied.append((x,y))
+        route_key=(tuple(positions.items()),tuple(edges))
+        if route_key!=self.route_key:
+            self.route_cache.clear()
+            self.route_key=route_key
+        self.unrouted=0
         self.positions=positions
         self.ports=[]
         for name in circuit.inputs:
@@ -94,13 +112,17 @@ class LogicDiagram(QGraphicsView):
                     obstacles=[(x,y,x+WIDTH,y+HEIGHT) for name,(x,y) in positions.items() if name not in (src,dst)]
                     # Protect source/target bodies too: pins sit at the edges.
                     obstacles += [(positions[n][0],positions[n][1],positions[n][0]+WIDTH,positions[n][1]+HEIGHT) for n in (src,dst)]
-                    route,clear=wire_route((sx,sy),(ex,ey),obstacles,long_index)
+                    key=(src,dst,index)
+                    if key not in self.route_cache:
+                        self.route_cache[key]=wire_route((sx,sy),(ex,ey),obstacles,long_index)
+                    route,clear=self.route_cache[key]
                     long_index+=1
                     path=QPainterPath(QPointF(*route[0]))
                     for point in route[1:]:
                         path.lineTo(*point)
                     route_pen=QPen(pen)
                     if not clear:
+                        self.unrouted+=1
                         route_pen.setStyle(Qt.PenStyle.DashLine)
                     scene.addPath(path,route_pen).setZValue(-1)
                     continue
@@ -318,6 +340,11 @@ class LogicLab(QDialog):
         self.summary.setWordWrap(True)
         self.summary.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         layout.addWidget(self.summary)
+        self.route_warning=QLabel(self.t("Dashed wires need clearer routing; move components or use Auto layout.","سیم‌های خط‌چین مسیر آزاد ندارند؛ اجزا را جابه‌جا کنید یا چیدمان خودکار را بزنید."))
+        self.route_warning.setWordWrap(True)
+        self.route_warning.setProperty("state","error")
+        self.route_warning.hide()
+        layout.addWidget(self.route_warning)
         split=QSplitter(Qt.Orientation.Vertical)
         self.diagram=LogicDiagram(parent.theme)
         self.diagram.rewire.connect(self.rewire_pin)
@@ -423,6 +450,8 @@ class LogicLab(QDialog):
     def rewire_pin(self,source,target,pin):
         try:
             document=self.document.reconnect(source,target,pin)
+            if document!=self.document:
+                document=document.with_positions(self.diagram.positions)
         except ValueError as exc:
             self.set_canvas_hint(str(exc))
             return
@@ -561,6 +590,7 @@ class LogicLab(QDialog):
         values=self.circuit.evaluate(self.inputs)
         self.summary.setText("   |   ".join(f"{name} = {values[signal]}" for name,signal in self.circuit.outputs))
         self.diagram.draw(self.circuit,values,self.document.positions)
+        self.route_warning.setVisible(bool(self.diagram.unrouted))
         bits=tuple(self.inputs.values())
         row=next(i for i,(inputs,_) in enumerate(self.rows) if inputs==bits)
         self.table.selectRow(row)
