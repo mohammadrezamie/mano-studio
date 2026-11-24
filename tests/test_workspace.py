@@ -140,16 +140,41 @@ def test_core_does_not_request_network(workspace, monkeypatch):
     prefs.close()
 
 
-def test_reference_lookup(workspace):
-    from ui.instruction_reference import InstructionReference
-    dialog=InstructionReference(workspace)
-    assert len(dialog.rows)==25
-    dialog.search.setText("LDA")
-    dialog.address.setText("ABC")
-    dialog.indirect.setChecked(True)
-    assert dialog.rows[0][2:]==("AC ← M[M[ABC]]","LDA ABC I")
-    dialog.select()
-    assert dialog.chosen=="AC ← M[M[ABC]]"
+def test_integrated_reference_lookup(workspace):
+    workspace.open_instruction_reference()
+    assert workspace.tabs.currentIndex()==2
+    workspace.instruction_search.setText("LDA")
+    workspace.address.setText("ABC")
+    workspace.indirect.setChecked(True)
+    assert workspace.operations.currentData()=="LDA"
+    assert workspace.template()=="AC ← M[M[ABC]]"
+    assert "LDA ABC I" in workspace.preview.text()
+    workspace.insert_instruction()
+    assert workspace.editor.toPlainText()=="AC ← M[M[ABC]]\n"
+    workspace.instruction_search.setText("no such instruction")
+    assert not workspace.insert_button.isEnabled()
+    workspace.instruction_search.clear()
+    assert workspace.operations.count()==25
+
+
+def test_source_output_mapping(workspace):
+    from PySide6.QtGui import QTextCursor
+    workspace.editor.setPlainText("# note\nAC ← M[100]\n\nS ← 0")
+    workspace.run_translation()
+    assert workspace.output.toPlainText()=="LDA 100\nHLT"
+    workspace.editor.setTextCursor(QTextCursor(workspace.editor.document().findBlockByNumber(3)))
+    assert workspace.output.textCursor().blockNumber()==1
+    workspace.output.setTextCursor(QTextCursor(workspace.output.document().findBlockByNumber(0)))
+    assert workspace.editor.textCursor().blockNumber()==1
+
+
+def test_builder_preserves_neighboring_lines(workspace):
+    from PySide6.QtGui import QTextCursor
+    workspace.editor.setPlainText("AC ← 0\nS ← 0")
+    workspace.editor.setTextCursor(QTextCursor(workspace.editor.document().firstBlock()))
+    workspace.operations.setCurrentIndex(workspace.operations.findData("CLE"))
+    workspace.insert_instruction()
+    assert workspace.editor.toPlainText()=="AC ← 0\nE ← 0\nS ← 0"
 
 
 def test_logic_pin_count_and_truth_table(workspace):
