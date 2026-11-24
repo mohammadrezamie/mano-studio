@@ -241,6 +241,9 @@ class Workspace(QMainWindow):
     def builder(self):
         page = QWidget()
         box = QVBoxLayout(page)
+        self.instruction_search = QLineEdit()
+        self.instruction_search.setPlaceholderText(self.t("Search instructions"))
+        box.addWidget(self.instruction_search)
         top = QHBoxLayout()
         self.operations = QComboBox()
         for name in TEMPLATES:
@@ -269,33 +272,58 @@ class Workspace(QMainWindow):
         self.preview.setWordWrap(True)
         box.addWidget(self.preview)
         row = QHBoxLayout()
-        row.addWidget(self.button("Insert instruction", self.insert_instruction, True))
-        row.addWidget(self.button("Replace line", lambda: self.edit_line("replace")))
+        self.insert_button = self.button("Insert instruction", self.insert_instruction, True)
+        self.replace_button = self.button("Replace line", lambda: self.edit_line("replace"))
+        row.addWidget(self.insert_button)
+        row.addWidget(self.replace_button)
         row.addWidget(self.button("Delete line", lambda: self.edit_line("delete")))
         row.addWidget(self.button("Move up", lambda: self.edit_line("up")))
         row.addWidget(self.button("Move down", lambda: self.edit_line("down")))
         box.addLayout(row)
         self.operations.currentIndexChanged.connect(self.update_preview)
+        self.instruction_search.textChanged.connect(self.filter_instructions)
         self.address.textChanged.connect(self.update_preview)
         self.indirect.toggled.connect(self.update_preview)
         self.update_preview()
         return page
 
+    def filter_instructions(self):
+        query = self.instruction_search.text().strip().casefold()
+        previous = self.operations.currentData()
+        names = NAMES if self.language == "fa" else EN_NAMES
+        self.operations.blockSignals(True)
+        self.operations.clear()
+        for mnemonic, template in TEMPLATES.items():
+            searchable = " ".join((mnemonic, names[mnemonic], template)).casefold()
+            if query in searchable:
+                self.operations.addItem(f"{mnemonic} — {names[mnemonic]}", mnemonic)
+        if self.operations.findData(previous) >= 0:
+            self.operations.setCurrentIndex(self.operations.findData(previous))
+        self.operations.blockSignals(False)
+        self.update_preview()
+
     def template(self):
         name = self.operations.currentData()
+        if name is None:
+            raise ValueError("No matching instruction")
         memory = "{a}" in TEMPLATES[name]
         return build_rtl(name, self.address.text() if memory else "",
                          self.indirect.isChecked() if memory else False)
 
     def update_preview(self):
-        memory = "{a}" in TEMPLATES[self.operations.currentData()]
+        name = self.operations.currentData()
+        memory = name is not None and "{a}" in TEMPLATES[name]
         self.address.setEnabled(memory)
         self.indirect.setEnabled(memory)
+        valid = False
         try:
             rtl = self.template()
             self.preview.setText(rtl + "    →    " + translate(rtl).assembly)
+            valid = True
         except ValueError:
-            self.preview.setText(self.t("Choose 000–FFF."))
+            self.preview.setText(self.t("No matching instruction") if name is None else self.t("Choose 000–FFF."))
+        self.insert_button.setEnabled(valid)
+        self.replace_button.setEnabled(valid)
 
     def insert_instruction(self):
         try:
@@ -304,9 +332,22 @@ class Workspace(QMainWindow):
             QMessageBox.warning(self, self.t("Invalid address"), self.t("Choose 000–FFF."))
             return
         cursor = self.editor.textCursor()
-        cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock)
-        prefix = "\n" if cursor.block().text().strip() else ""
-        cursor.insertText(prefix + rtl + "\n")
+        cursor.clearSelection()
+        block = cursor.block()
+        cursor.beginEditBlock()
+        if not block.text().strip():
+            cursor.movePosition(QTextCursor.MoveOperation.StartOfBlock)
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock, QTextCursor.MoveMode.KeepAnchor)
+            cursor.insertText(rtl + ("\n" if not block.next().isValid() else ""))
+            if cursor.block().next().isValid():
+                cursor.movePosition(QTextCursor.MoveOperation.NextBlock)
+        elif block.next().isValid():
+            cursor.setPosition(block.next().position())
+            cursor.insertText(rtl + "\n")
+        else:
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock)
+            cursor.insertText("\n" + rtl + "\n")
+        cursor.endEditBlock()
         self.editor.setTextCursor(cursor)
         self.editor.setFocus()
 
@@ -392,9 +433,8 @@ class Workspace(QMainWindow):
             self.tabs.setTabText(index, self.t(title))
         for index, title in enumerate(("Light", "Dark", "Night")):
             self.themes.setItemText(index, self.t(title))
-        names = NAMES if self.language == "fa" else EN_NAMES
-        for index, mnemonic in enumerate(TEMPLATES):
-            self.operations.setItemText(index, f"{mnemonic} — {names[mnemonic]}")
+        self.instruction_search.setPlaceholderText(self.t("Search instructions"))
+        self.filter_instructions()
         self.table.setHorizontalHeaderLabels([self.t(k) for k in ("Line", "Column", "Code", "Help")])
         self.render_errors()
         self.update_preview()
@@ -508,16 +548,9 @@ class Workspace(QMainWindow):
         dialog.exec()
 
     def open_instruction_reference(self):
-        from ui.instruction_reference import InstructionReference
-        dialog = InstructionReference(self)
-        if dialog.exec() and dialog.chosen:
-            cursor = self.editor.textCursor()
-            cursor.clearSelection()
-            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock)
-            prefix = "\n" if cursor.block().text().strip() else ""
-            cursor.insertText(prefix + dialog.chosen + "\n")
-            self.editor.setTextCursor(cursor)
-            self.editor.setFocus()
+        self.tabs.setCurrentIndex(2)
+        self.instruction_search.setFocus()
+        self.instruction_search.selectAll()
 
     def open_logic_lab(self):
         from ui.logic_lab import LogicLab
