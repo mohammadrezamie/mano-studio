@@ -547,13 +547,13 @@ def test_cycle_inspector_and_reverse(workspace):
     assert lab.cycles.groups.rowCount()==6
     lab.cycles.select(4)
     assert "ABCD" in lab.cycles.memory.text()
-    assert lab.cycles.event.after["AC"]==0xABCD
+    assert lab.cycles.current_trace.after["AC"]==0xABCD
     lab.step()
     assert lab.cycles.groups.rowCount()==4
     lab.trace_selected(0,0)
-    assert lab.cycles.event.mnemonic=="LDA"
+    assert lab.cycles.current_trace.mnemonic=="LDA"
     lab.back()
-    assert lab.cycles.event.mnemonic=="LDA"
+    assert lab.cycles.current_trace.mnemonic=="LDA"
     lab.back()
     assert lab.cycles.groups.rowCount()==0
     lab.close()

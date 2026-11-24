@@ -170,3 +170,6 @@ Verified previous memory array/bus exact-head run 45442794121: test (windows-lat
 
 ### CPU cycle implementation
 Actual CPU assignments recorded as timing-group snapshots for all named instructions and interrupt entry; read-only bilingual inspector and historical selection. Existing instruction boundary API and reverse history preserved; no second CPU, no live microstep or exact interrupt latch/SC claim. 36 core regression cases and one GUI case authored; exact-head pending. Prior memory/bus run 330 passes each OS. Preserve translator and Windows delivery scope.
+
+### Blocking regression repair
+Run 45443855329 failed on both platforms: CycleView.event shadowed QWidget.event, causing Qt layout initialization to fail. Renamed the stored trace to current_trace throughout code/tests. Do not claim previous cycle revision passed. Exact-head CI still required before acceptance. Next: real live timing groups using a single resumable CPU engine, rollback/replay of bounded partial instruction and I/O boundary guards.

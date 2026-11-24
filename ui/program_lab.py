@@ -294,7 +294,7 @@ class ProgramLab(QDialog):
 
     def refresh_trace(self):
         latest=self.history.entries[-1].event if self.history and self.history.entries else None
-        if self.cycles.event is not latest:self.cycles.show_event(latest)
+        if self.cycles.current_trace is not latest:self.cycles.show_event(latest)
         self.back_button.setEnabled(bool(self.history and self.history.entries))
         rows=self.trace_rows()
         if rows!=self.visible_trace:

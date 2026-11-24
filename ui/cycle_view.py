@@ -6,7 +6,7 @@ class CycleView(QWidget):
     def __init__(self,fa=False):
         super().__init__()
         self.fa=fa
-        self.event=None
+        self.current_trace=None
         layout=QVBoxLayout(self)
         self.note=QLabel(self.t("Recorded timing groups from the executed instruction. Select a row to inspect its before/after state. Not live clock stepping; SC, interrupt latch R and electrical delays are not simulated.","گروه‌های زمانی ثبت‌شده از اجرای واقعی دستور. برای مشاهده وضعیت قبل و بعد، یک ردیف را انتخاب کنید. اجرای تک‌چرخه زنده، SC، ثبات وقفه R و تأخیر الکتریکی شبیه‌سازی نشده‌اند."))
         self.note.setWordWrap(True);layout.addWidget(self.note)
@@ -29,7 +29,7 @@ class CycleView(QWidget):
         self.show_event(None)
     def t(self,en,fa):return fa if self.fa else en
     def show_event(self,event):
-        self.event=event
+        self.current_trace=event
         self.groups.setRowCount(0);self.detail.setRowCount(0);self.memory.clear()
         if event is None:
             self.title.setText(self.t("Execute an instruction or select a debugger row.","یک دستور اجرا کنید یا ردیفی از اشکال‌زدا انتخاب کنید."));return
@@ -43,8 +43,8 @@ class CycleView(QWidget):
         if event.microevents:self.groups.setCurrentCell(0,0);self.select(0)
     def select(self,row):
         self.detail.setRowCount(0);self.memory.clear()
-        if self.event is None or not 0<=row<len(self.event.microevents):return
-        g=self.event.microevents[row]
+        if self.current_trace is None or not 0<=row<len(self.current_trace.microevents):return
+        g=self.current_trace.microevents[row]
         names=list(g.before)
         self.detail.setRowCount(len(names))
         for i,name in enumerate(names):
