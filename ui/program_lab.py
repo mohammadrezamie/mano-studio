@@ -11,6 +11,7 @@ from PySide6.QtGui import QTextCursor
 from execution_history import ExecutionHistory
 from ui.arithmetic_view import ArithmeticView
 from ui.data_codes_view import DataCodesView
+from ui.cycle_view import CycleView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
@@ -118,6 +119,8 @@ class ProgramLab(QDialog):
         self.inspector.addTab(alu_page,self.t("Data & ALU","داده و ALU"))
         self.codes=DataCodesView(self.fa)
         self.inspector.addTab(self.codes,self.t("Data codes","کدهای داده"))
+        self.cycles=CycleView(self.fa)
+        self.inspector.addTab(self.cycles,self.t("Instruction cycle","چرخه دستور"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
         self.input = QLineEdit()
@@ -290,6 +293,8 @@ class ProgramLab(QDialog):
                 for entry in self.history.entries for e in (entry.event,)]
 
     def refresh_trace(self):
+        latest=self.history.entries[-1].event if self.history and self.history.entries else None
+        if self.cycles.event is not latest:self.cycles.show_event(latest)
         self.back_button.setEnabled(bool(self.history and self.history.entries))
         rows=self.trace_rows()
         if rows!=self.visible_trace:
@@ -323,6 +328,7 @@ class ProgramLab(QDialog):
         rows=self.trace_rows()
         if 0<=row<len(rows):
             self.select_address(int(rows[row][1],16))
+            self.cycles.show_event(self.history.entries[row].event)
 
     def write_trace(self,path):
         with Path(path).open("w",encoding="utf-8-sig",newline="") as stream:

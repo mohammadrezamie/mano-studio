@@ -538,3 +538,22 @@ def test_memory_expansion_and_register_bus(workspace):
     bus.transfer()
     assert bus.words[1].value()==0xA5
     lab.close()
+
+
+def test_cycle_inspector_and_reverse(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace,"LDA 100\nHLT\nORG 100\nHEX ABCD\nEND")
+    lab.step()
+    assert lab.cycles.groups.rowCount()==6
+    lab.cycles.select(4)
+    assert "ABCD" in lab.cycles.memory.text()
+    assert lab.cycles.event.after["AC"]==0xABCD
+    lab.step()
+    assert lab.cycles.groups.rowCount()==4
+    lab.trace_selected(0,0)
+    assert lab.cycles.event.mnemonic=="LDA"
+    lab.back()
+    assert lab.cycles.event.mnemonic=="LDA"
+    lab.back()
+    assert lab.cycles.groups.rowCount()==0
+    lab.close()

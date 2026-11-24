@@ -1,4 +1,4 @@
-"""Instruction-level Mano CPU; no GUI or network dependency.
+"""Instruction-level Mano CPU with actual timing-group snapshots; no GUI or network.
 
 Only named instructions are accepted, not combined register-reference bits.
 Interrupts are modeled at instruction boundaries, not clock-cycle timing.
@@ -6,6 +6,17 @@ Interrupts are modeled at instruction boundaries, not clock-cycle timing.
 from dataclasses import dataclass
 from mano_isa import FIXED_BY_CODE, MEMORY_BY_CODE
 from word_arithmetic import alu
+
+
+@dataclass(frozen=True)
+class MicroEvent:
+    timing: int
+    phase: str
+    rtl: str
+    before: dict
+    after: dict
+    reads: tuple
+    writes: tuple
 
 
 @dataclass(frozen=True)
@@ -17,6 +28,7 @@ class StepEvent:
     before: dict
     after: dict
     writes: tuple
+    microevents: tuple = ()
 
 
 class CPU:
@@ -52,65 +64,122 @@ class CPU:
         return self.outr
 
     def step(self):
+        """Complete one instruction atomically at the public boundary.
+
+        Each recorded group is produced by the actual assignments below,
+        not by replaying a second simulator. Invalid opcodes leave state intact.
+        """
         if self.halted:
             return None
         before = self.registers()
         address = self.pc
-        writes = []
-        def store(a, v):
-            writes.append((a, self.memory[a], v))
-            self.memory[a] = v
+        writes, reads, groups = [], [], []
+        prior = before
+        wi = ri = 0
+
+        def read(a):
+            v=self.memory[a]
+            reads.append((a,v))
+            return v
+
+        def store(a,v):
+            writes.append((a,self.memory[a],v))
+            self.memory[a]=v
+
+        def mark(timing,phase,rtl):
+            nonlocal prior,wi,ri
+            after=self.registers()
+            groups.append(MicroEvent(timing,phase,rtl,prior,after,tuple(reads[ri:]),tuple(writes[wi:])))
+            prior=after
+            wi,ri=len(writes),len(reads)
+
+        def finish(word,op,effective):
+            return StepEvent(address,word,op,effective,before,self.registers(),tuple(writes),tuple(groups))
+
         if self.ien and (self.fgi or self.fgo):
-            self.tr = self.pc
-            self.ar = 0
-            store(0, self.pc)
-            self.pc, self.ien = 1, 0
-            return StepEvent(address, 0, "INT", 0, before, self.registers(), tuple(writes))
-        word = self.memory[address]
-        opcode = (word >> 12) & 7
-        op = MEMORY_BY_CODE[opcode] if opcode < 7 else FIXED_BY_CODE.get(word)
+            self.tr=self.pc
+            self.ar=0
+            mark(0,"interrupt","AR ← 0, TR ← PC")
+            store(0,self.tr)
+            self.pc=0
+            mark(1,"interrupt","M[AR] ← TR, PC ← 0")
+            self.pc,self.ien=1,0
+            mark(2,"interrupt","PC ← PC + 1, IEN ← 0")
+            return finish(0,"INT",0)
+
+        # Preflight instruction validity without recording an architectural read.
+        word=self.memory[address]
+        opcode=(word>>12)&7
+        op=MEMORY_BY_CODE[opcode] if opcode<7 else FIXED_BY_CODE.get(word)
         if op is None:
             raise ValueError(f"Unsupported instruction {word:04X} at {address:03X}")
-        self.ir = word
-        self.pc = (self.pc + 1) & 0xFFF
-        self.ar = word & 0xFFF
-        effective = None
-        if opcode < 7:
-            if word & 0x8000:
-                self.ar = self.memory[self.ar] & 0xFFF
-            effective = a = self.ar
-            if op in ("AND", "ADD", "LDA", "ISZ"):
-                self.dr = self.memory[a]
-            if op == "AND": self.ac = alu("AND",self.ac,self.dr).word
-            elif op == "ADD":
-                result = alu("ADD",self.ac,self.dr)
-                self.ac, self.e = result.word, result.carry
-            elif op == "LDA": self.ac = self.dr
-            elif op == "STA": store(a, self.ac)
-            elif op == "BUN": self.pc = a
-            elif op == "BSA":
-                store(a, self.pc)
-                self.ar = self.pc = (a + 1) & 0xFFF
-            elif op == "ISZ":
-                self.dr = (self.dr + 1) & 0xFFFF
-                store(a, self.dr)
-                if not self.dr: self.pc = (self.pc + 1) & 0xFFF
-        elif op == "CLA": self.ac = 0
-        elif op == "CLE": self.e = 0
-        elif op == "CMA": self.ac = alu("NOT",self.ac).word
-        elif op == "CME": self.e ^= 1
-        elif op in ("CIR", "CIL"):
-            result = alu(op,self.ac,carry_in=self.e)
-            self.ac,self.e = result.word,result.carry
-        elif op == "INC": self.ac = alu("INC",self.ac).word
-        elif op in ("SPA", "SNA", "SZA", "SZE", "SKI", "SKO"):
-            condition = {"SPA": not self.ac & 0x8000, "SNA": bool(self.ac & 0x8000),
-                         "SZA": self.ac == 0, "SZE": self.e == 0,
-                         "SKI": self.fgi == 1, "SKO": self.fgo == 1}[op]
-            if condition: self.pc = (self.pc + 1) & 0xFFF
-        elif op == "HLT": self.halted = True
-        elif op == "INP": self.ac, self.fgi = (self.ac & 0xFF00) | self.inpr, 0
-        elif op == "OUT": self.outr, self.fgo = self.ac & 0xFF, 0
-        elif op == "ION": self.ien = 1
-        elif op == "IOF": self.ien = 0
-        return StepEvent(address, word, op, effective, before, self.registers(), tuple(writes))
+        self.ar=self.pc
+        mark(0,"fetch","AR ← PC")
+        self.ir=read(self.ar)
+        self.pc=(self.pc+1)&0xFFF
+        mark(1,"fetch","IR ← M[AR], PC ← PC + 1")
+        self.ar=self.ir&0xFFF
+        mark(2,"decode","AR ← IR(0–11), decode opcode and I")
+        effective=None
+        if opcode<7:
+            if word&0x8000:
+                self.ar=read(self.ar)&0xFFF
+                mark(3,"indirect","AR ← M[AR](0–11)")
+            else:
+                mark(3,"direct","Direct address — no register transfer")
+            effective=a=self.ar
+            if op in ("AND","ADD","LDA","ISZ"):
+                self.dr=read(a)
+                mark(4,"execute","DR ← M[AR]")
+            if op=="AND":
+                self.ac=alu("AND",self.ac,self.dr).word
+                mark(5,"execute","AC ← AC ∧ DR")
+            elif op=="ADD":
+                result=alu("ADD",self.ac,self.dr)
+                self.ac,self.e=result.word,result.carry
+                mark(5,"execute","AC ← AC + DR, E ← Cout")
+            elif op=="LDA":
+                self.ac=self.dr
+                mark(5,"execute","AC ← DR")
+            elif op=="STA":
+                store(a,self.ac)
+                mark(4,"execute","M[AR] ← AC")
+            elif op=="BUN":
+                self.pc=a
+                mark(4,"execute","PC ← AR")
+            elif op=="BSA":
+                store(a,self.pc)
+                self.ar=(a+1)&0xFFF
+                mark(4,"execute","M[AR] ← PC, AR ← AR + 1")
+                self.pc=self.ar
+                mark(5,"execute","PC ← AR")
+            elif op=="ISZ":
+                self.dr=(self.dr+1)&0xFFFF
+                mark(5,"execute","DR ← DR + 1")
+                store(a,self.dr)
+                if not self.dr:self.pc=(self.pc+1)&0xFFF
+                mark(6,"execute","M[AR] ← DR; if DR = 0: PC ← PC + 1")
+        else:
+            rtl=""
+            if op=="CLA":self.ac=0;rtl="AC ← 0"
+            elif op=="CLE":self.e=0;rtl="E ← 0"
+            elif op=="CMA":self.ac=alu("NOT",self.ac).word;rtl="AC ← ¬AC"
+            elif op=="CME":self.e^=1;rtl="E ← ¬E"
+            elif op in ("CIR","CIL"):
+                result=alu(op,self.ac,carry_in=self.e)
+                self.ac,self.e=result.word,result.carry
+                rtl="(E, AC) ← "+op+"(E, AC)"
+            elif op=="INC":self.ac=alu("INC",self.ac).word;rtl="AC ← AC + 1"
+            elif op in ("SPA","SNA","SZA","SZE","SKI","SKO"):
+                conditions={"SPA":("AC(15) = 0",not self.ac&0x8000),"SNA":("AC(15) = 1",bool(self.ac&0x8000)),
+                    "SZA":("AC = 0",self.ac==0),"SZE":("E = 0",self.e==0),"SKI":("FGI = 1",self.fgi==1),"SKO":("FGO = 1",self.fgo==1)}
+                condition,taken=conditions[op]
+                if taken:self.pc=(self.pc+1)&0xFFF
+                rtl="if "+condition+": PC ← PC + 1"
+            elif op=="HLT":self.halted=True;rtl="S ← 0"
+            elif op=="INP":self.ac,self.fgi=(self.ac&0xFF00)|self.inpr,0;rtl="AC(0–7) ← INPR, FGI ← 0"
+            elif op=="OUT":self.outr,self.fgo=self.ac&0xFF,0;rtl="OUTR ← AC(0–7), FGO ← 0"
+            elif op=="ION":self.ien=1;rtl="IEN ← 1"
+            elif op=="IOF":self.ien=0;rtl="IEN ← 0"
+            mark(3,"io" if word&0x8000 else "register",rtl)
+        return finish(word,op,effective)
