@@ -691,7 +691,7 @@ class Workspace(QMainWindow):
         from ui.program_lab import ProgramLab
         result = translate(self.editor.toPlainText())
         if not result.ok:
-            self.run_translation()
+            ProgramLab(self).exec()
             return
         assembly = result.assembly
         if self.active_example and self.editor.toPlainText() == self.active_example.rtl:

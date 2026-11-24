@@ -1,9 +1,15 @@
 """Live program workspace: actual assembler and CPU, not the fixed demo."""
+from pathlib import Path
+import csv
+import re
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QPlainTextEdit, QTableWidget, QTableWidgetItem, QHeaderView,
-    QAbstractItemView, QSplitter, QSpinBox, QLineEdit, QTabWidget)
+    QAbstractItemView, QSplitter, QSpinBox, QLineEdit, QTabWidget, QFileDialog, QMessageBox, QWidget)
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QTextCursor
+from execution_history import ExecutionHistory
+from ui.arithmetic_view import ArithmeticView
 from assembler import assemble
 from simulator import CPU
 from ui.workspace import code_editor
@@ -29,8 +35,10 @@ class ProgramLab(QDialog):
         self.cpu = None
         self.program = None
         self.steps = 0
+        self.history = None
+        self.break_resume = None
         self.timer = QTimer(self)
-        self.timer.timeout.connect(self.step)
+        self.timer.timeout.connect(self.run_tick)
         layout = QVBoxLayout(self)
         intro = QLabel(self.t("Assemble and execute your own program, one instruction at a time.",
             "برنامه خود را اسمبل کنید و اجرای هر دستور را مرحله‌به‌مرحله ببینید."))
@@ -47,11 +55,12 @@ class ProgramLab(QDialog):
         controls = QHBoxLayout()
         for en, fa, slot in [("Load example","مثال جمع",self.example),
             ("Assemble / Reset","اسمبل و بازنشانی",self.load),
-            ("Step","گام بعد",self.step),("Run","اجرا",self.run),
+            ("Back","گام قبل",self.back),("Step","گام بعد",self.step),("Run","اجرا",self.run),
             ("Pause","توقف موقت",self.pause)]:
             b = QPushButton(self.t(en,fa))
             b.clicked.connect(slot)
             controls.addWidget(b)
+            if en=="Back":self.back_button=b
         self.speed = QSpinBox()
         self.speed.setRange(100, 2000)
         self.speed.setValue(600)
@@ -72,6 +81,38 @@ class ProgramLab(QDialog):
         self.datapath=DatapathView(parent.theme, parent.settings.value("reduced_motion", False, type=bool) or not parent.settings.value("lab_motion", True, type=bool))
         self.inspector.addTab(self.datapath,self.t("Live view","نمای زنده"))
         self.inspector.addTab(lower,self.t("Registers & memory","ثبات‌ها و حافظه"))
+        trace_page=QWidget()
+        trace_layout=QVBoxLayout(trace_page)
+        trace_tools=QHBoxLayout()
+        self.break_address=QLineEdit()
+        self.break_address.setMaxLength(3)
+        self.break_address.setPlaceholderText(self.t("Breakpoint HEX","نقطه توقف هگز"))
+        trace_tools.addWidget(self.break_address)
+        for en,fa,fn in [("Toggle breakpoint","تغییر نقطه توقف",self.toggle_breakpoint),
+                         ("Export trace","خروجی رد اجرا",self.export_trace)]:
+            button=QPushButton(self.t(en,fa))
+            button.clicked.connect(fn)
+            trace_tools.addWidget(button)
+        trace_layout.addLayout(trace_tools)
+        self.break_label=QLabel()
+        trace_layout.addWidget(self.break_label)
+        self.trace=QTableWidget(0,7)
+        self.trace.setHorizontalHeaderLabels(["#","PC","Word","OP","EA","AC","Next PC"])
+        self.trace.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.trace.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.trace.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.trace.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.trace.cellClicked.connect(self.trace_selected)
+        trace_layout.addWidget(self.trace)
+        self.inspector.addTab(trace_page,self.t("Debugger","اشکال‌زدا"))
+        alu_page=QWidget()
+        alu_layout=QVBoxLayout(alu_page)
+        use_registers=QPushButton(self.t("Use AC, DR & E","استفاده از AC، DR و E"))
+        use_registers.clicked.connect(self.use_registers)
+        alu_layout.addWidget(use_registers)
+        self.arithmetic=ArithmeticView(self.fa)
+        alu_layout.addWidget(self.arithmetic)
+        self.inspector.addTab(alu_page,self.t("Data & ALU","داده و ALU"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
         self.input = QLineEdit()
@@ -96,6 +137,10 @@ class ProgramLab(QDialog):
     def invalidate(self):
         self.pause()
         self.cpu = self.program = None
+        self.history = None
+        self.break_resume = None
+        self.steps=0
+        self.refresh_trace()
         self.machine.clear()
         self.datapath.set_state(None)
         self.registers.setRowCount(0)
@@ -110,7 +155,10 @@ class ProgramLab(QDialog):
         self.pause()
         self.program = assemble(self.source.toPlainText())
         self.cpu = None
+        self.history = None
+        self.break_resume = None
         self.steps = 0
+        self.refresh_trace()
         if not self.program.ok:
             self.datapath.set_state(None)
             self.machine.setPlainText("\n".join(f"{e.line}: {e.message}" for e in self.program.errors))
@@ -120,12 +168,14 @@ class ProgramLab(QDialog):
             return
         self.machine.setPlainText(self.program.listing())
         self.cpu = CPU(self.program.words, self.program.entry)
+        self.history = ExecutionHistory(self.cpu)
         self.addresses = set(self.program.words)
         self.refresh()
         self.status.setText(self.t("Ready.","آماده."))
 
     def refresh(self,event=None):
         self.datapath.set_state(self.cpu,event)
+        self.refresh_trace()
         values = self.cpu.registers()
         self.registers.setRowCount(len(values))
         for row,(name,value) in enumerate(values.items()):
@@ -155,7 +205,7 @@ class ProgramLab(QDialog):
             self.status.setText(self.t("Step limit reached. Reset to continue.","حد اجرای گام‌ها رسید؛ بازنشانی کنید."))
             return
         try:
-            event = self.cpu.step()
+            event = self.history.step()
         except ValueError as error:
             self.pause()
             self.status.setText(str(error))
@@ -163,8 +213,9 @@ class ProgramLab(QDialog):
         if event is None:
             self.pause()
             return
-        self.steps += 1
+        self.steps = self.history.steps
         self.refresh(event)
+        self.select_address(event.address)
         self.status.setText(f"{event.address:03X} · {event.mnemonic} · AC={self.cpu.ac:04X} · PC={self.cpu.pc:03X}")
         if self.cpu.halted:
             self.pause()
@@ -172,6 +223,16 @@ class ProgramLab(QDialog):
     def run(self):
         if self.cpu and not self.cpu.halted:
             self.timer.start(self.speed.value())
+
+    def run_tick(self):
+        if self.history and self.history.should_break() and self.break_resume != self.cpu.pc:
+            self.break_resume=self.cpu.pc
+            self.pause()
+            self.status.setText(self.t("Breakpoint at ","توقف در ")+f"{self.cpu.pc:03X}")
+            self.select_address(self.cpu.pc)
+            return
+        self.break_resume=None
+        self.step()
 
     def pause(self):
         self.timer.stop()
@@ -181,16 +242,84 @@ class ProgramLab(QDialog):
     def send_input(self):
         if self.cpu:
             try:
+                self.pause()
                 self.cpu.input_byte(int(self.input.text(),16))
+                self.history.barrier()
                 self.refresh()
             except ValueError as error:
                 self.status.setText(str(error))
 
     def read_output(self):
         if self.cpu:
+            self.pause()
             byte = self.cpu.output_byte()
+            if byte is not None:self.history.barrier()
             self.refresh()
             self.status.setText(self.t("No output pending.","خروجی آماده نیست.") if byte is None else f"OUT: {byte:02X}")
+
+    def back(self):
+        self.pause()
+        if self.history and self.history.back():
+            self.steps=self.history.steps
+            self.break_resume=None
+            self.refresh()
+            self.select_address(self.cpu.pc)
+            self.status.setText(self.t("Reversed to PC=","بازگشت به PC=")+f"{self.cpu.pc:03X}")
+
+    def toggle_breakpoint(self):
+        if self.history is None:return
+        raw=self.break_address.text().strip()
+        if not re.fullmatch(r"[0-9a-fA-F]{1,3}",raw):
+            self.status.setText(self.t("Enter 000–FFF.","آدرس 000 تا FFF وارد کنید."))
+            return
+        self.history.toggle_breakpoint(int(raw,16))
+        self.break_resume=None
+        self.refresh_trace()
+
+    def trace_rows(self):
+        if not self.history:return []
+        return [(entry.number,f"{e.address:03X}",f"{e.word:04X}",e.mnemonic,
+                 "—" if e.effective_address is None else f"{e.effective_address:03X}",
+                 f"{e.after['AC']:04X}",f"{e.after['PC']:03X}")
+                for entry in self.history.entries for e in (entry.event,)]
+
+    def refresh_trace(self):
+        self.back_button.setEnabled(bool(self.history and self.history.entries))
+        rows=self.trace_rows()
+        self.trace.setRowCount(len(rows))
+        for i,row in enumerate(rows):
+            for j,value in enumerate(row):
+                self.trace.setItem(i,j,QTableWidgetItem(str(value)))
+        if rows:self.trace.scrollToBottom()
+        self.break_label.setText(self.t("Breakpoints: ","نقاط توقف: ")+
+            (", ".join(f"{a:03X}" for a in sorted(self.history.breakpoints)) if self.history and self.history.breakpoints else "—"))
+
+    def select_address(self,address):
+        if not self.program or address not in self.program.source_lines:return
+        block=self.source.document().findBlockByNumber(self.program.source_lines[address]-1)
+        if block.isValid():
+            self.source.setTextCursor(QTextCursor(block))
+            self.source.ensureCursorVisible()
+
+    def trace_selected(self,row,column):
+        rows=self.trace_rows()
+        if 0<=row<len(rows):
+            self.select_address(int(rows[row][1],16))
+
+    def write_trace(self,path):
+        with Path(path).open("w",encoding="utf-8-sig",newline="") as stream:
+            writer=csv.writer(stream)
+            writer.writerow(["Step","PC","Word","Mnemonic","EA","AC","Next PC"])
+            writer.writerows(self.trace_rows())
+
+    def export_trace(self):
+        path,_=QFileDialog.getSaveFileName(self,self.t("Export trace","خروجی رد اجرا"),"trace.csv","CSV (*.csv)")
+        if path:
+            try:self.write_trace(Path(path) if Path(path).suffix else Path(path).with_suffix(".csv"))
+            except OSError as exc:QMessageBox.warning(self,self.t("Export failed","خروجی ناموفق"),str(exc))
+
+    def use_registers(self):
+        if self.cpu:self.arithmetic.set_operands(self.cpu.ac,self.cpu.dr,self.cpu.e)
 
     def done(self,result):
         self.pause()

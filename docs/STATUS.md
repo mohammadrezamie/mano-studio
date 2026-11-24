@@ -89,3 +89,6 @@ Owner requests ambitious continued development with selective research/reuse, qu
 
 ### Core checkpoint
 Added fixed-width 4/8/12/16-bit representation and ripple ALU, shared with CPU ADD/AND/CMA/INC/CIR/CIL without changing Mano E semantics. Added bounded reversible execution history using existing StepEvent register and memory deltas, breakpoints and explicit external-I/O barriers. Tests added; GUI integration next. Design inspiration: chapter 3/4 and GDB record/replay (https://sourceware.org/gdb/current/onlinedocs/gdb.html/Process-Record-and-Replay.html); original implementation, no code copied.
+
+### Computer integration checkpoint
+Integrated debugger trace, breakpoint/continue/back, source mapping, CSV export, external-I/O barrier and shared Data & ALU view in existing Computer inspector. No separate lab; independent Computer access with invalid RTL now opens example instead of blocking. New UI regression authored; pending CI.

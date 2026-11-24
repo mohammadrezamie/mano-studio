@@ -324,3 +324,29 @@ def test_integrated_sequential_view(workspace):
     view.pulse()
     assert view.model.value==1
     lab.close()
+
+
+def test_computer_debugger_and_alu(workspace,tmp_path):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace,"LDA 100\nADD 101\nSTA 102\nHLT\nORG 100\nHEX 7FFF\nDEC 1\nDEC 0")
+    lab.break_address.setText("002")
+    lab.toggle_breakpoint()
+    lab.run_tick()
+    lab.run_tick()
+    lab.run_tick()
+    assert lab.steps==2 and lab.cpu.pc==2
+    assert lab.trace.rowCount()==2
+    lab.use_registers()
+    assert lab.arithmetic.a.text()=="8000"
+    lab.arithmetic.a.setText("7FFF")
+    lab.arithmetic.b.setText("0001")
+    assert lab.arithmetic.result.word==0x8000 and lab.arithmetic.result.overflow
+    lab.run_tick()
+    assert lab.cpu.memory[0x102]==0x8000 and lab.steps==3
+    lab.back()
+    assert lab.cpu.memory[0x102]==0 and lab.cpu.pc==2
+    assert lab.source.textCursor().blockNumber()==2
+    path=tmp_path/"trace.csv"
+    lab.write_trace(path)
+    assert len(path.read_text(encoding="utf-8-sig").splitlines())==3
+    lab.close()
