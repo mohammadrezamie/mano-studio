@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QComboBox,
     QPlainTextEdit, QLineEdit, QCheckBox, QTabWidget, QSplitter, QVBoxLayout,
     QHBoxLayout, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView,
-    QFileDialog, QMessageBox, QDialog, QAbstractItemView, QScrollArea,
+    QFileDialog, QMessageBox, QDialog, QAbstractItemView, QScrollArea, QFrame,
 )
 import re
 from rtl_translator import translate
@@ -14,6 +14,7 @@ from instruction_catalog import TEMPLATES, build_rtl
 from ui.strings import FA, HELP, NAMES, EN_NAMES
 from ui.theme import PALETTES, stylesheet
 from ui.code_editor import CodeEditor
+from ui.glass import GlassRoot
 
 LTR = Qt.LayoutDirection.LeftToRight
 
@@ -60,10 +61,14 @@ class Workspace(QMainWindow):
         self.labels = []
         self.setWindowTitle("Mano Studio")
         self.resize(1240, 790)
-        root = QWidget()
+        root = GlassRoot(self.theme)
         self.setCentralWidget(root)
         layout = QVBoxLayout(root)
-        header = QHBoxLayout()
+        layout.setContentsMargins(16, 14, 16, 10)
+        layout.setSpacing(10)
+        header_frame = QFrame()
+        header_frame.setObjectName("glassBar")
+        header = QHBoxLayout(header_frame)
         brand = QLabel("MANO STUDIO")
         brand.setObjectName("brand")
         header.addWidget(brand)
@@ -81,15 +86,17 @@ class Workspace(QMainWindow):
         self.themes.setCurrentIndex(max(0, self.themes.findData(self.theme)))
         self.themes.currentIndexChanged.connect(self.change_theme)
         header.addWidget(self.themes)
-        layout.addLayout(header)
-        toolbar = QHBoxLayout()
+        layout.addWidget(header_frame)
+        toolbar_frame = QFrame()
+        toolbar_frame.setObjectName("glassBar")
+        toolbar = QHBoxLayout(toolbar_frame)
         for name, slot in [("New", self.new_file), ("Open RTL", self.open_file),
                            ("Save RTL", self.save_file), ("Export ASM", self.export_file),
                            ("Source", self.show_source), ("About", self.about)]:
             toolbar.addWidget(self.button(name, slot))
         toolbar.addStretch()
         toolbar.addWidget(self.button("Translate", self.run_translation, True))
-        layout.addLayout(toolbar)
+        layout.addWidget(toolbar_frame)
         split = QSplitter(Qt.Orientation.Vertical)
         editors = QSplitter(Qt.Orientation.Horizontal)
         self.editor, self.output = code_editor(), code_editor(True)
@@ -352,6 +359,8 @@ class Workspace(QMainWindow):
         self.theme = self.themes.currentData()
         self.settings.setValue("theme", self.theme)
         QApplication.instance().setStyleSheet(stylesheet(self.theme))
+        self.centralWidget().theme = self.theme
+        self.centralWidget().update()
 
     def confirm_discard(self):
         if not self.editor.document().isModified():
