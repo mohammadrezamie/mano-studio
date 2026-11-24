@@ -17,3 +17,6 @@ Owner direction 2026-11-24. Supersedes additive feature lists. Quality and usabi
 
 ## Engineering gate
 Before adding a new feature, identify existing capability to reuse, user task, why existing UI is insufficient, and acceptance criteria. Prefer an existing view over a new window. One source of truth per domain; independent pure Python translator preserved. No duplicated menus or engines. Every substantive change committed to GitHub during the working turn; update issue and STATUS.md with actual work, known limitations and next checkpoint. Repository commits are the live record of changes performed, not a claim of unattended development between chats. Keep draft PR #9 as active development and do not publish releases.
+
+## Research and documentation-first workflow
+For each new owner instruction, commit its interpretation and planned scope to documentation before code edits. Record research links, relevant design patterns, license and reuse decisions. Reuse open-source code only after checking exact license, notices and compatibility; ideas may inspire original implementations. Update status after each meaningful code checkpoint. Research is purposeful, not a mandate to add features. Current step 2: consolidate instruction builder/reference and source mapping, keep one RTL document.
