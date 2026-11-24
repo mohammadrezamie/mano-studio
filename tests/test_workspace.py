@@ -757,3 +757,36 @@ def test_microprogram_reverse_and_sequencer(workspace):
     view.control.setPlainText("40:00000")
     assert view.history is None and view.trace.rowCount()==0
     lab.close()
+
+
+def test_microinstruction_builder_and_source_navigation(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.microprogram
+    builder=view.builder
+    initial=view.control.toPlainText()
+    builder.address.setValue(90)
+    builder.fields[0].setCurrentIndex(builder.fields[0].findData(1))
+    builder.fields[1].setCurrentIndex(builder.fields[1].findData(1))
+    assert builder.word is None and not builder.append_button.isEnabled()
+    builder.fields[1].setCurrentIndex(0)
+    assert builder.word is not None
+    builder.append()
+    assert view.model is None and view.control.toPlainText().startswith(initial)
+    appended=view.control.toPlainText()
+    builder.append()
+    assert view.control.toPlainText()==appended
+    view.load()
+    for _ in range(3):view.step()
+    live=view.model.registers()
+    view.inspect_history(0)
+    assert view.model.registers()==live and view.last.before["CAR"]==64
+    assert view.control.textCursor().selectedText().startswith("40:")
+    view.mode.setCurrentIndex(view.mode.findData("symbolic"))
+    view.example()
+    view.step()
+    assert "FETCH:" in view.control.textCursor().selectedText()
+    builder.address.setValue(91)
+    builder.append()
+    assert "ORG 91" in view.control.toPlainText() and view.history is None
+    lab.close()

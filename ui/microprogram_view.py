@@ -1,11 +1,13 @@
 """Interactive Chapter 7 control memory, independent of the Basic Computer."""
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPlainTextEdit,
     QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QPushButton,QSpinBox,QComboBox,QTabWidget)
 from microprogram import MicroComputer,parse_image,demo_images,CONDITIONS,BRANCHES
 from microassembler import assemble_micro, DEMO_SOURCE, full_demo
 from microprogram_history import MicroHistory
 from ui.microsequencer_view import MicrosequencerView
+from ui.microinstruction_builder import MicroinstructionBuilder
 
 
 class MicroprogramView(QWidget):
@@ -15,6 +17,7 @@ class MicroprogramView(QWidget):
         self.model=None
         self.history=None
         self.last=None
+        self.source_lines={}
         layout=QVBoxLayout(self)
         note=QLabel(self.t("Chapter 7 model: 128 × 20 control store; 11-bit PC/AR. Not the Basic Computer ISA. Edit raw or symbolic control source, load, then execute one microinstruction.",
             "مدل فصل هفتم: حافظه کنترل ۱۲۸ × ۲۰ و PC/AR یازده‌بیتی. این مدل با پردازنده پایه متفاوت است. متن خام یا نمادین حافظه کنترل را ویرایش و بارگذاری کنید و ریزدستور را اجرا کنید."))
@@ -60,6 +63,9 @@ class MicroprogramView(QWidget):
         self.trace.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.trace.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.detail_tabs.addTab(self.trace,self.t("History","تاریخچه"))
+        self.builder=MicroinstructionBuilder(fa,self.append_word)
+        self.detail_tabs.addTab(self.builder,self.t("Build control word","ساخت کلمه کنترل"))
+        self.trace.cellClicked.connect(self.inspect_history)
         layout.addWidget(self.detail_tabs,1)
         self.listing=QPlainTextEdit();self.listing.setReadOnly(True);self.listing.setMaximumHeight(65)
         self.listing.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
@@ -75,6 +81,7 @@ class MicroprogramView(QWidget):
 
     def invalidate(self,*_):
         self.model=self.last=self.history=None
+        self.source_lines={}
         self.sequencer.set_trace(None);self.trace.setRowCount(0);self.back_button.setEnabled(False)
         self.table.setRowCount(0);self.fields.clear();self.listing.clear();self.step_button.setEnabled(False)
         self.status.setText(self.t("Images changed. Load again.","تصویر حافظه تغییر کرد؛ دوباره بارگذاری کنید."))
@@ -105,12 +112,15 @@ class MicroprogramView(QWidget):
                     self.status.setText("\n".join(f"{e.line}: {names[e.code] if self.fa else e.code} {e.detail}" for e in result.errors[:8]))
                     return
                 c=result.words
+                source_lines=result.source_lines
             else:
                 c=parse_image(self.control.toPlainText(),128,1<<20)
+                source_lines={int(line.split(':',1)[0].strip(),16):i for i,raw in enumerate(self.control.toPlainText().splitlines(),1) if (line:=raw.split('#',1)[0].strip())}
             self.model=MicroComputer(c,parse_image(self.data.toPlainText(),2048,65536),self.entry.value())
             self.listing.setPlainText("\n".join(f"{a:02X}:{w:05X}" for a,w in sorted(c.items())))
         except ValueError as e:
             self.status.setText(self.t(str(e),"تصویر حافظه نامعتبر است؛ آدرس‌ها و کلمات هگز را بررسی کنید."));return
+        self.source_lines=source_lines
         self.history=MicroHistory(self.model)
         self.step_button.setEnabled(True)
         regs=self.model.registers();self.show_regs(regs,regs)
@@ -135,6 +145,7 @@ class MicroprogramView(QWidget):
 
     def show_step(self,g):
         self.last=g;self.sequencer.set_trace(g);self.show_regs(g.before,g.after)
+        self.select_source(g.before['CAR'])
         m=g.instruction
         self.fields.setText(f"F1 {m.f1:03b} | F2 {m.f2:03b} | F3 {m.f3:03b} | CD {m.cd:02b} | BR {m.br:02b} | AD {m.ad:07b}\n"
             +(", ".join(m.operations) or "NOP")+f" | {CONDITIONS[m.cd]}={int(g.condition)} | {BRANCHES[m.br]} | CAR ← {g.next_source} ({g.after['CAR']:02X})")
@@ -164,3 +175,32 @@ class MicroprogramView(QWidget):
             self.show_regs(regs,regs)
         self.refresh_history()
         self.status.setText(self.t("Microinstruction reversed.","ریزدستور واگرد شد."))
+
+
+    def append_word(self,address,word,symbolic):
+        original=self.control.toPlainText()
+        addition=symbolic if self.mode.currentData()=="symbolic" else f"{address:02X}:{word:05X}"
+        combined=original.rstrip()+("\n" if original.strip() else "")+addition
+        if self.mode.currentData()=="symbolic":
+            if not assemble_micro(combined).ok:return False
+        else:
+            try:parse_image(combined,128,1<<20)
+            except ValueError:return False
+        self.control.setPlainText(combined)
+        return True
+
+    def select_source(self,address):
+        line=self.source_lines.get(address)
+        if line is not None:
+            block=self.control.document().findBlockByNumber(line-1)
+            if block.isValid():
+                cursor=QTextCursor(block)
+                cursor.select(QTextCursor.SelectionType.LineUnderCursor)
+                self.control.setTextCursor(cursor)
+                self.control.ensureCursorVisible()
+
+    def inspect_history(self,row,*_):
+        if self.history is None or not 0<=row<len(self.history.entries):return
+        number,event=self.history.entries[row]
+        self.show_step(event)
+        self.status.setText(self.t("Historical step: ","مرحله تاریخی: ")+str(number)+" | "+self.t("Live CAR: ","CAR فعلی: ")+f"{self.model.car:02X}")
