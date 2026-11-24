@@ -468,3 +468,20 @@ def test_expanded_circuit_equations(workspace):
     assert lab.table.rowCount()==256
     assert "LT = less3" in lab.equations.toPlainText()
     lab.close()
+
+
+def test_universal_shift_register_ui(workspace):
+    from ui.logic_lab import LogicLab
+    lab=LogicLab(workspace)
+    view=lab.sequential
+    view.selector.setCurrentIndex(view.selector.findData("UNIVERSAL4"))
+    assert len(view.buttons)==8
+    for pin in ("D0","D2","S1","S0"):view.buttons[pin].setChecked(True)
+    assert view.model.value==0 and "0101" in view.rule.text()
+    view.pulse()
+    assert view.model.value==5
+    view.buttons["S0"].setChecked(False)
+    view.buttons["SL"].setChecked(True)
+    view.pulse()
+    assert view.model.value==11
+    lab.close()

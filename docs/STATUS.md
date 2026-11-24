@@ -146,3 +146,6 @@ Owner requests full-book mathematical and visual coverage with continuously upda
 
 ## Next sequential increment
 Verified previous combinational expansion on run 45407504795: test (windows-latest) 2026-11-24T13:51:28.4699929Z 290 passed, 1 warning in 50.22s; test (ubuntu-latest) 2026-11-24T13:50:43.8024044Z 290 passed, 1 warning in 25.66s. Expand clocked models in the existing Sequential tab: serial and universal shift, synchronous clear/load up/down counter, ring and Johnson counters. Add explicit next-state equations, pure preview, pin-count-aware diagrams/waveforms, exhaustive transition tests. Reference functional behavior from Nexperia 74HC194 overview and All About Circuits ring counter chapter; educational abstractions, not physical IC models. No public release or change to RTL assignment.
+
+### Sequential expansion checkpoint
+11 clocked models, pure shared next-state transition, explicit state equations and preview, scalable diagram/waveform. Exhaustive shift/universal/up-down transition tests, ring/Johnson cycle tests, GUI test authored. Prior combinational head confirmed 290 tests each OS, latest CI pending. Issue #11/#13 updated separately; no release or changes to academic translator.

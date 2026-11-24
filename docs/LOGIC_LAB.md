@@ -33,3 +33,6 @@ See SCHEMATIC_STANDARD.md. Original distinctive shapes and exact pin counts reta
 
 ## Expanded combinational components
 Eight new presets (see CURRICULUM_COVERAGE.md), all actual elementary gate netlists. Added Boolean equations tab beside truth table: generated equations from each gate plus output mapping, not a separate solver or a claim of minimized Boolean expressions. Bilingual titles/explanations; technical formulas unchanged. Prior ANSI/IEC notation exact-head run 45406811712: 281 passed on each OS. New regression cases pending CI.
+
+## Expanded synchronous models
+Five new 4-bit models: serial shift, universal shift, loadable up/down counter, ring and Johnson. All use pure state transition with non-mutating preview; formulas and bilingual explanations in Sequential tab. Scalable functional pin diagram and sampled waveforms; synchronous/ideal behavior, not package pinout, physical timing, or exact HC194 reset behavior. See CURRICULUM_COVERAGE.md. Regression pending.

@@ -2,7 +2,7 @@
 from PySide6.QtCore import Qt, QRectF, QPointF
 from PySide6.QtGui import QColor,QPainter,QPen,QFont,QPainterPath
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QGridLayout,QComboBox,QLabel,QPushButton
-from sequential_logic import ClockedCircuit, MODELS
+from sequential_logic import ClockedCircuit, MODELS, RULES
 from ui.theme import PALETTES
 
 TITLES={
@@ -12,6 +12,11 @@ TITLES={
     "SR":("Clocked SR flip-flop","فلیپ‌فلاپ SR ساعت‌دار"),
     "REG4":("4-bit register","ثبات ۴ بیتی"),
     "COUNT4":("4-bit up counter","شمارنده صعودی ۴ بیتی"),
+    "SHIFT4":("4-bit serial shift register","ثبات شیفت سری ۴ بیتی"),
+    "UNIVERSAL4":("4-bit universal shift register","ثبات شیفت عمومی ۴ بیتی"),
+    "UPDOWN4":("4-bit loadable up/down counter","شمارنده صعودی/نزولی بارپذیر ۴ بیتی"),
+    "RING4":("4-stage ring counter","شمارنده حلقوی ۴ مرحله‌ای"),
+    "JOHNSON4":("4-stage Johnson counter","شمارنده جانسون ۴ مرحله‌ای"),
 }
 
 
@@ -29,43 +34,44 @@ class ClockedDiagram(QWidget):
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         bg,panel,raised,fg,muted,accent,border=PALETTES[self.theme]
         p.fillRect(self.rect(),QColor(bg))
-        scale=min(self.width()/640,self.height()/205)
-        p.translate((self.width()-640*scale)/2,(self.height()-205*scale)/2)
-        p.scale(scale,scale)
         m=self.model
         inputs=list(m.inputs.items())+[("CLK",m.clock)]
         outputs=list(m.outputs.items())
-        body=QRectF(258,14,124,174)
+        design_height=max(205,75+24*max(len(inputs),len(outputs)))
+        scale=min(self.width()/640,self.height()/design_height)
+        p.translate((self.width()-640*scale)/2,(self.height()-design_height*scale)/2)
+        p.scale(scale,scale)
+        body=QRectF(238,14,164,design_height-30)
         p.setBrush(QColor(panel))
         p.setPen(QPen(QColor(fg),1.5))
         p.drawRect(body)
         p.setFont(QFont("Segoe UI",12,QFont.Weight.Bold))
-        p.drawText(QRectF(260,14,120,27),Qt.AlignmentFlag.AlignCenter,m.kind)
+        p.drawText(QRectF(238,14,164,27),Qt.AlignmentFlag.AlignCenter,m.kind)
         p.setFont(QFont("Consolas",11))
         for i,(name,value) in enumerate(inputs):
-            y=51+i*min(23,118/max(1,len(inputs)-1))
+            y=51+i*24
             color=QColor(accent if value else muted)
             p.setPen(QPen(color,2 if value else 1))
-            p.drawLine(QPointF(160,y),QPointF(258,y))
+            p.drawLine(QPointF(160,y),QPointF(238,y))
             p.drawText(QRectF(80,y-10,70,20),Qt.AlignmentFlag.AlignRight,f"{name} {value}")
             if name=="CLK":
-                path=QPainterPath(QPointF(258,y-7))
-                path.lineTo(270,y)
-                path.lineTo(258,y+7)
+                path=QPainterPath(QPointF(238,y-7))
+                path.lineTo(250,y)
+                path.lineTo(238,y+7)
                 p.setPen(QPen(QColor(fg),1.5))
                 p.drawPath(path)
             else:
                 p.setPen(QColor(fg))
-                p.drawText(QRectF(265,y-10,55,20),Qt.AlignmentFlag.AlignLeft,name)
+                p.drawText(QRectF(245,y-10,70,20),Qt.AlignmentFlag.AlignLeft,name)
         for i,(name,value) in enumerate(outputs):
             name = "Q\u0305" if name=="Qbar" else name
-            y=51+i*32
+            y=51+i*24
             color=QColor(accent if value else muted)
             p.setPen(QPen(color,2 if value else 1))
-            p.drawLine(QPointF(382,y),QPointF(480,y))
+            p.drawLine(QPointF(402,y),QPointF(480,y))
             p.drawText(QRectF(490,y-10,80,20),Qt.AlignmentFlag.AlignLeft,f"{name} {value}")
             p.setPen(QColor(fg))
-            p.drawText(QRectF(320,y-10,55,20),Qt.AlignmentFlag.AlignRight,name)
+            p.drawText(QRectF(325,y-10,70,20),Qt.AlignmentFlag.AlignRight,name)
         p.end()
 
 
@@ -153,6 +159,10 @@ class SequentialView(QWidget):
         self.waveform=WaveformView(theme,self.fa)
         self.waveform.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         layout.addWidget(self.waveform,3)
+        self.rule=QLabel()
+        self.rule.setWordWrap(True)
+        self.rule.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        layout.addWidget(self.rule)
         self.status=QLabel()
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
@@ -176,6 +186,10 @@ class SequentialView(QWidget):
             self.buttons[name]=button
             self.input_layout.addWidget(button,i//6,i%6)
         self.diagram.model=self.waveform.model=self.model
+        formula,en,fa=RULES[self.model.kind]
+        self.note.setText(self.t(en,fa)+"\n"+self.t("Rising-edge model; event order, not physical delay.","مدل لبه بالارونده؛ ترتیب رویدادها، نه تأخیر فیزیکی."))
+        self.diagram.setMinimumHeight(max(155,60+18*(len(self.model.pins)+1)))
+        self.waveform.setMinimumHeight(max(245,45+18*(1+len(self.model.pins)+len(self.model.outputs))))
         self.status.clear()
         self.refresh()
 
@@ -215,5 +229,11 @@ class SequentialView(QWidget):
         self.clock.blockSignals(False)
         self.summary.setText("   |   ".join(f"{n} = {v}" for n,v in self.model.outputs.items())+
                              (f"    HEX = {self.model.value:X}" if self.model.width>1 else ""))
+        formula=RULES[self.model.kind][0]
+        try:
+            next_value=f"{self.model.next_value():0{self.model.width}b}"
+        except ValueError:
+            next_value=self.t("Invalid","نامعتبر")
+        self.rule.setText(formula+"\n"+self.t("Next rising edge: ","لبه بالارونده بعدی: ")+next_value)
         self.diagram.update()
         self.waveform.update()
