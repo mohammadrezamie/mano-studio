@@ -27,7 +27,7 @@ class CacheCanvas(QWidget):
             p.setPen(QPen(QColor(accent if e and e.address==addr else border),1.5));p.setBrush(QColor(panel))
             p.drawRoundedRect(QRectF(x,8,240,68),8,8)
             font=QFont("Segoe UI");font.setPixelSize(13);p.setFont(font);p.setPen(QColor(muted))
-            p.drawText(QRectF(x+10,13,220,20),Qt.AlignmentFlag.AlignCenter,label+f" · {bits} bit")
+            p.drawText(QRectF(x+10,13,220,20),Qt.AlignmentFlag.AlignCenter,label+f" · {bits} "+v.t("bit","بیت"))
             font=QFont("Consolas");font.setPixelSize(23);font.setBold(True);p.setFont(font);p.setPen(QColor(fg))
             p.drawText(QRectF(x+10,35,220,32),Qt.AlignmentFlag.AlignCenter,f"{value:0{bits}b}" if bits else "—")
         p.setFont(QFont("Consolas",10));p.setPen(QColor(muted))
@@ -52,6 +52,7 @@ class CacheView(QWidget):
         layout.addLayout(config)
         row=QHBoxLayout();self.address=QSpinBox();self.address.setRange(0,1023);self.address.setDisplayIntegerBase(16)
         self.value=QSpinBox();self.value.setRange(0,65535);self.value.setDisplayIntegerBase(16)
+        self.address.setLayoutDirection(Qt.LayoutDirection.LeftToRight);self.value.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         row.addWidget(QLabel("AR HEX"));row.addWidget(self.address);row.addWidget(QLabel("DATA HEX"));row.addWidget(self.value)
         for en,fa_label,fn in (("Read","خواندن",lambda:self.access(False)),("Write","نوشتن",lambda:self.access(True)),("Flush dirty","تخلیه خطوط تغییریافته",self.flush),("Conflict demo","مثال تداخل",self.example)):
             b=QPushButton(self.t(en,fa_label));b.clicked.connect(fn);row.addWidget(b)
@@ -80,7 +81,7 @@ class CacheView(QWidget):
     def refresh(self):
         m=self.model
         rate=100*m.hits/m.accesses if m.accesses else 0
-        self.stats.setText(f"HIT {m.hits}   ·   MISS {m.misses}   ·   {rate:.1f}%   |   RAM R {m.ram_reads} / W {m.ram_writes}")
+        self.stats.setText(self.t("Hits","اصابت")+f" {m.hits} · "+self.t("Misses","عدم اصابت")+f" {m.misses} · {rate:.1f}% | RAM "+self.t("Read / write","خواندن / نوشتن")+f" {m.ram_reads} / {m.ram_writes}")
         self.lines.setRowCount(8)
         for index,ways in enumerate(m.lines):
             for way,line in enumerate(ways):
@@ -96,7 +97,7 @@ class CacheView(QWidget):
         self.canvas.update()
     def access(self,write=False):
         e=self.last=self.model.access(self.address.value(),self.value.value() if write else None)
-        result="HIT" if e.hit else "MISS"
+        result=self.t("Hit","اصابت") if e.hit else self.t("Miss","عدم اصابت")
         values=(e.number,"W" if write else "R",f"{e.address:03X}",f"{e.tag:X}/{e.index:X}/{e.offset}",result,e.way,f"{e.value:04X}",
                 "—" if e.evicted_block is None else f"{e.evicted_block:02X}"+(" WB" if e.written_back else ""),f"{e.ram_reads}/{e.ram_writes}")
         if self.trace.rowCount()>=512:self.trace.removeRow(0)

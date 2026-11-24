@@ -63,7 +63,7 @@ class MultiprocessorView(QWidget):
         self.address=QSpinBox();self.address.setRange(0,63);self.address.setDisplayIntegerBase(16)
         self.value=QSpinBox();self.value.setRange(0,65535);self.value.setDisplayIntegerBase(16)
         for name,w in (("P",self.master),("AR HEX",self.address),("DATA HEX",self.value)):
-            row.addWidget(QLabel(name));row.addWidget(w)
+            w.setLayoutDirection(Qt.LayoutDirection.LeftToRight);row.addWidget(QLabel(name));row.addWidget(w)
         for en,fa_label,write in (("Queue read","صف خواندن",False),("Queue write","صف نوشتن",True)):
             b=QPushButton(self.t(en,fa_label));b.clicked.connect(lambda checked=False,w=write:self.enqueue(w));row.addWidget(b)
         layout.addLayout(row)

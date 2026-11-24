@@ -1360,3 +1360,37 @@ def test_all_learning_routes_locale_and_document_integrity(workspace,language):
         elif tool.lab=="computer":computer.select_tool(tool.route)
     assert snapshot==(workspace.editor.toPlainText(),workspace.output.toPlainText())
     for dialog in (center,logic,computer):dialog.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_memory_serial_localized_transaction_feedback(workspace,language):
+    from PySide6.QtCore import Qt
+    from ui.logic_lab import LogicLab
+    from ui.program_lab import ProgramLab
+    from ui.virtual_memory_view import translation_route
+    fa=language=="fa"
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    logic=LogicLab(workspace);logic.select_tool("virtual-memory")
+    v=logic.address_translation.paging
+    assert translation_route(v.last)==()
+    v.access(False)
+    assert translation_route(v.last)==("va","tlb","pt","backing","pa")
+    v.access(False)
+    assert translation_route(v.last)==("va","tlb","pa")
+    # Remove the TLB mapping via accesses to other still-resident pages.
+    for a in (16,32,0):v.address.setValue(a);v.access(False)
+    assert not v.last.fault and not v.last.tlb_hit
+    assert translation_route(v.last)==("va","tlb","pt","pa")
+    assert ("اصابت TLB" if fa else "TLB hits") in v.stats.text()
+    assert v.address.layoutDirection()==Qt.LayoutDirection.LeftToRight
+    assert not v.canvas.grab().isNull()
+    logic.select_tool("cache");c=logic.cache
+    c.access();assert c.status.text()==("عدم اصابت" if fa else "Miss")
+    c.access();assert c.status.text()==("اصابت" if fa else "Hit")
+    lab=ProgramLab(workspace);lab.select_tool("serial")
+    s=lab.io_organization.serial
+    s.parity.setCurrentIndex(1);s.flip.setCurrentIndex(s.flip.findData(1))
+    s.start();s.finish()
+    assert ("خطای توازن" if fa else "Parity error") in s.status.text()
+    assert s.payload.layoutDirection()==Qt.LayoutDirection.LeftToRight
+    lab.close();logic.close()

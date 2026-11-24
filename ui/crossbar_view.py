@@ -33,7 +33,7 @@ class CrossbarCanvas(QWidget):
             y=79+i*53
             tile(10,y-21,143,42,any(a==i for a,b in grants))
             label(10,y-20,143,20,f"P{i}  Q:{len(m.queues[i])}",15)
-            label(10,y,143,20,f"WAIT {m.waited[i]}",12,muted)
+            label(10,y,143,20,v.t("WAIT","انتظار")+f" {m.waited[i]}",12,muted)
             line(153,y,710,y)
         for bank in range(4):
             x=215+bank*145
@@ -52,7 +52,7 @@ class CrossbarCanvas(QWidget):
                 p.setPen(QPen(QColor(accent if granted else fg if requested else border),2 if granted else 1))
                 p.setBrush(QColor(accent if granted else panel))
                 p.drawRoundedRect(QRectF(x-7,y-7,14,14),3,3)
-                if requested and not granted:label(x+9,y-12,30,22,"REQ",9,muted)
+                if requested and not granted:label(x+9,y-12,42,22,v.t("REQ","درخواست"),9,muted)
         label(10,260,780,24,v.t("Closed switch = granted · outlined request = waiting","کلید بسته = مجوز · درخواست بدون مجوز = انتظار"),13,muted)
         p.end()
 

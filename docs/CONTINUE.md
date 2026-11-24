@@ -12,3 +12,7 @@ Active repository mohammadrezamie/mano-studio; draft PR #9, branch feature/deskt
 4. Update CONTINUE, STATUS, relevant docs and issues #13/#12/#10 and PR #9 after coherent changes, with actual test evidence. No unverified screenshots, release or full-book claims.
 
 Current visual evidence checkpoint: CI will capture each unique route in both languages (dark), plus existing selected three-theme images. Verify artifact/manifest and inspect actual images, never infer native visual acceptance. Cache run 45485766455 green; other latest runs pending at inspection. No release.
+
+
+## Beta correctness and localization: real translation path
+Corrected virtual-memory canvas: TLB hit uses a distinct bypass to physical address, resident TLB miss uses page table, page fault visits simulated backing storage with dirty writeback/load indication. Active routes are derived from completed model events, not an invented timing sequence; inactive paths dashed, labels distinguish bypass, fault and load. Localized CAM match/priority, paging counters/status, cache hit/miss and traffic, serial format and start/parity/stop/overrun errors and counters; technical hex controls explicitly LTR, crossbar wait/request labels localized. Added both-language transaction-feedback test for the three real paging cases, cache hit/miss and serial parity error. Existing scientific models unchanged. Prior CI still pending at inspection; latest cache run 45485766455 success, no latest exact-head pass or native visual acceptance claimed. No new dependencies, installer or translator changes.

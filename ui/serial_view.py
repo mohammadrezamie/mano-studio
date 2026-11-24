@@ -55,13 +55,13 @@ class SerialView(QWidget):
           "بازه‌های بیت هم‌تراز ایده‌آل، بیت کم‌ارزش اول. یک بیت را برای آزمون خطای شروع، توازن یا پایان تغییر دهید. فقط فریم معتبر وارد مدل FIFO می‌شود؛ پایان فریم IRQ3 را فعال می‌کند."))
         note.setWordWrap(True);layout.addWidget(note)
         row=QHBoxLayout();self.bits=QComboBox()
-        for n in (5,6,7,8):self.bits.addItem(f"{n} bit",n)
+        for n in (5,6,7,8):self.bits.addItem(f"{n} "+self.t("bit","بیت"),n)
         self.bits.setCurrentIndex(3)
         self.parity=QComboBox()
         for en,fa_label,key in (("No parity","بدون توازن","none"),("Even","زوج","even"),("Odd","فرد","odd")):self.parity.addItem(self.t(en,fa_label),key)
         self.stops=QComboBox()
-        for n in (1,2):self.stops.addItem(f"{n} STOP",n)
-        self.payload=QSpinBox();self.payload.setRange(0,255);self.payload.setDisplayIntegerBase(16);self.payload.setValue(0xA5)
+        for n in (1,2):self.stops.addItem(f"{n} "+self.t("stop bit","بیت پایان"),n)
+        self.payload=QSpinBox();self.payload.setRange(0,255);self.payload.setDisplayIntegerBase(16);self.payload.setValue(0xA5);self.payload.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.flip=QComboBox()
         for widget in (self.bits,self.parity,self.stops):row.addWidget(widget);widget.currentIndexChanged.connect(self.configure)
         row.addWidget(QLabel("HEX"));row.addWidget(self.payload);row.addWidget(self.flip)
@@ -130,14 +130,14 @@ class SerialView(QWidget):
         if result is None:state=f"RX SHIFT = {m.shift:02X} · {len(m.rx)}/{len(m.tx)}"
         else:
             errors=[]
-            if result.start_error:errors.append("START")
-            if result.parity_error:errors.append("PARITY")
-            if result.framing_error:errors.append("STOP")
-            if m.overrun:errors.append("OVERRUN")
+            if result.start_error:errors.append(self.t("Start error","خطای شروع"))
+            if result.parity_error:errors.append(self.t("Parity error","خطای توازن"))
+            if result.framing_error:errors.append(self.t("Stop error","خطای پایان"))
+            if m.overrun:errors.append(self.t("FIFO overrun","سرریز FIFO"))
             state=f"RX {result.value:02X}  ·  "+(" / ".join(errors) if errors else self.t("Accepted","پذیرفته شد"))
         self.status.setText(state)
         self.queue.setText(f"FIFO {m.fifo.depth}/{m.fifo.capacity}  ·  "+" ".join(f"{w:02X}" for w in m.fifo.contents())+
-          f"  |  FRAMES {m.completed} · ERR {m.errors} · DROP {m.dropped}")
+          " | "+self.t("Frames","فریم‌ها")+f" {m.completed} · "+self.t("Errors","خطاها")+f" {m.errors} · "+self.t("Dropped","حذف‌شده")+f" {m.dropped}")
         self.canvas.update()
     def hideEvent(self,event):
         self.timer.stop();self.refresh();super().hideEvent(event)
