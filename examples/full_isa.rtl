@@ -1,0 +1,26 @@
+# Instruction syntax demonstration, not a runnable program
+AC ← AC ∧ M[100]
+AC ← AC + M[100]
+AC ← M[100]
+M[100] ← AC
+PC ← 100
+M[100] ← PC, PC ← 100 + 1
+M[100] ← M[100] + 1, IF M[100] = 0 THEN PC ← PC + 1
+AC ← 0
+E ← 0
+AC ← ¬AC
+E ← ¬E
+E:AC ← CIR(E:AC)
+E:AC ← CIL(E:AC)
+AC ← AC + 1
+IF AC[15] = 0 THEN PC ← PC + 1
+IF AC[15] = 1 THEN PC ← PC + 1
+IF AC = 0 THEN PC ← PC + 1
+IF E = 0 THEN PC ← PC + 1
+S ← 0
+AC[7:0] ← INPR, FGI ← 0
+OUTR ← AC[7:0], FGO ← 0
+IF FGI = 1 THEN PC ← PC + 1
+IF FGO = 1 THEN PC ← PC + 1
+IEN ← 1
+IEN ← 0
