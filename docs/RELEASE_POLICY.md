@@ -14,3 +14,6 @@ Do not pursue installer builds, release preparation, tags, public prereleases, o
 
 ## Owner exception — first internal development candidate
 Latest owner requests the first version built and testing in GitHub. Permit a single development candidate artifact and existing installer smoke on deliberate `build: candidate` commit (documented in docs/BUILD_CANDIDATE.md). No public release, tag, stable version, production deployment, or claim of visual signoff. Internal version 0.3.0-dev.1; later builds require deliberate candidate commit/manual dispatch.
+
+## CI recovery override
+Keep the proven simple Tests matrix; the alternative automatic candidate orchestration was not observable in the connected Actions results. Build candidate only via manual Windows workflow dispatch until a verified automatic route exists. Source application smoke is included in regression tests. No public release/tag, no claim of an executable until its artifact and smoke are verified.
