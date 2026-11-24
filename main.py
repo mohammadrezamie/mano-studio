@@ -3,7 +3,7 @@ import sys
 from PySide6.QtCore import Qt, QSettings
 from PySide6.QtGui import QPixmap, QPainter, QColor, QFont
 from PySide6.QtWidgets import QApplication, QSplashScreen
-from ui.theme import PALETTES, stylesheet
+from ui.theme import PALETTES, apply_theme
 from ui.strings import FA
 from ui.glass import paint_backdrop
 
@@ -21,7 +21,7 @@ def smoke_test(report_path):
     try:
         app = QApplication([sys.argv[0]])
         app.setStyle("Fusion")
-        app.setStyleSheet(stylesheet("dark"))
+        apply_theme(app, "dark")
         with tempfile.TemporaryDirectory() as directory:
             settings = QSettings(str(Path(directory) / "smoke.ini"), QSettings.Format.IniFormat)
             window = Workspace(settings)
@@ -57,7 +57,7 @@ def main():
     app.setLayoutDirection(Qt.LayoutDirection.RightToLeft if language == "fa" else Qt.LayoutDirection.LeftToRight)
     app.setStyle("Fusion")
     glass_enabled = settings.value("glass_enabled", True, type=bool)
-    app.setStyleSheet(stylesheet(theme, glass_enabled))
+    apply_theme(app, theme, glass_enabled)
     bg, panel, raised, fg, muted, accent, border = PALETTES[theme]
     pix = QPixmap(640, 310)
     pix.fill(QColor(bg))
