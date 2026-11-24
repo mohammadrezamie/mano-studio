@@ -61,7 +61,7 @@ class Workspace(QMainWindow):
         self.labels = []
         self.setWindowTitle("Mano Studio")
         self.resize(1240, 790)
-        root = GlassRoot(self.theme)
+        root = GlassRoot(self.theme, settings.value("glass_enabled", True, type=bool))
         self.setCentralWidget(root)
         layout = QVBoxLayout(root)
         layout.setContentsMargins(16, 14, 16, 10)
@@ -86,6 +86,7 @@ class Workspace(QMainWindow):
         self.themes.setCurrentIndex(max(0, self.themes.findData(self.theme)))
         self.themes.currentIndexChanged.connect(self.change_theme)
         header.addWidget(self.themes)
+        header.addWidget(self.button("Settings", self.open_preferences))
         layout.addWidget(header_frame)
         toolbar_frame = QFrame()
         toolbar_frame.setObjectName("glassBar")
@@ -358,9 +359,18 @@ class Workspace(QMainWindow):
     def change_theme(self):
         self.theme = self.themes.currentData()
         self.settings.setValue("theme", self.theme)
-        QApplication.instance().setStyleSheet(stylesheet(self.theme))
+        self.apply_appearance()
+
+    def apply_appearance(self):
+        enabled = self.settings.value("glass_enabled", True, type=bool)
+        QApplication.instance().setStyleSheet(stylesheet(self.theme, enabled))
         self.centralWidget().theme = self.theme
+        self.centralWidget().enabled = enabled
         self.centralWidget().update()
+
+    def open_preferences(self):
+        from ui.preferences import Preferences
+        Preferences(self).exec()
 
     def confirm_discard(self):
         if not self.editor.document().isModified():
