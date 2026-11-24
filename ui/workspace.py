@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QComboBox,
     QPlainTextEdit, QLineEdit, QCheckBox, QTabWidget, QSplitter, QVBoxLayout,
     QHBoxLayout, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView,
-    QFileDialog, QMessageBox, QDialog, QAbstractItemView, QScrollArea, QFrame, QMenu,
+    QFileDialog, QMessageBox, QAbstractItemView, QScrollArea, QFrame, QMenu,
 )
 import re
 from rtl_translator import translate
@@ -95,7 +95,7 @@ class Workspace(QMainWindow):
         toolbar = QHBoxLayout(toolbar_frame)
         self.menu_actions = []
         for name, entries in [("File", [("New", self.new_file), ("Open RTL", self.open_file), ("Save RTL", self.save_file), ("Save RTL as", self.save_as)]),
-                              ("Help", [("Instruction reference", self.open_instruction_reference), ("Source", self.show_source), ("About", self.about)])]:
+                              ("Help", [("Instruction reference", self.open_instruction_reference), ("About", self.about)])]:
             button = QPushButton(self.t(name))
             self.labels.append((button, name))
             menu = QMenu(button)
@@ -618,26 +618,6 @@ class Workspace(QMainWindow):
             QMessageBox.warning(self, self.t("File error"), str(exc))
             return
         self.statusBar().showMessage(self.t("Assembly exported"))
-
-    def show_source(self):
-        import sys
-        base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
-        try:
-            source = (base / "rtl_translator.py").read_text(encoding="utf-8")
-        except OSError as exc:
-            QMessageBox.warning(self, self.t("File error"), str(exc))
-            return
-        dialog = QDialog(self)
-        dialog.setWindowTitle("rtl_translator.py")
-        dialog.resize(850, 640)
-        layout = QVBoxLayout(dialog)
-        editor = code_editor(True)
-        editor.setPlainText(source)
-        layout.addWidget(editor)
-        copy = QPushButton(self.t("Copy"))
-        copy.clicked.connect(lambda: QApplication.clipboard().setText(source))
-        layout.addWidget(copy)
-        dialog.exec()
 
     def open_instruction_reference(self):
         self.tabs.setCurrentIndex(2)
