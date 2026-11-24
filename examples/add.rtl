@@ -1,0 +1,5 @@
+# Addresses are hexadecimal. Initialize memory separately.
+AC ← M[100]
+AC ← AC + M[101]
+M[102] ← AC
+S ← 0
