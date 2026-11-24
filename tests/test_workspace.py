@@ -384,3 +384,34 @@ def test_alu_base_switch_preserves_word(workspace):
     assert view.a.text()=="0111111111111111"
     assert view.result.word==0x8000
     lab.close()
+
+
+def test_number_conversion_only(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.arithmetic
+    view.op.setCurrentIndex(0)
+    view.a.setText("FF")
+    assert view.representation.rowCount()==1
+    assert view.representation.item(0,1).text()=="0000000011111111"
+    assert view.representation.item(0,2).text()=="000377"
+    assert view.representation.item(0,3).text()=="00FF"
+    assert view.representation.item(0,4).text()=="255"
+    assert view.stages.isHidden()
+    lab.close()
+
+def test_reverse_builder_and_mapping(workspace):
+    from PySide6.QtGui import QTextCursor
+    workspace.direction_box.setCurrentIndex(1)
+    workspace.operations.setCurrentIndex(workspace.operations.findData("LDA"))
+    workspace.address.setText("100")
+    workspace.indirect.setChecked(True)
+    workspace.insert_instruction()
+    assert workspace.editor.toPlainText()=="LDA 100 I\n"
+    workspace.editor.setPlainText("# note\nLDA 100 I\n\nHLT")
+    workspace.run_translation()
+    workspace.editor.setTextCursor(QTextCursor(workspace.editor.document().findBlockByNumber(3)))
+    assert workspace.output.textCursor().blockNumber()==1
+    workspace.output.setTextCursor(QTextCursor(workspace.output.document().firstBlock()))
+    assert workspace.editor.textCursor().blockNumber()==1
+    workspace.editor.document().setModified(False)

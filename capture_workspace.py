@@ -33,6 +33,19 @@ def main():
                     target = output / f"{language}-{theme}-{mode}.png"
                     if not window.grab().save(str(target)):
                         raise RuntimeError(f"Could not save {target}")
+                window.editor.document().setModified(False)
+                window.direction_box.setCurrentIndex(1)
+                window.editor.setPlainText("LDA 100 I\nADD 101\nSTA 102\nHLT")
+                window.run_translation()
+                window.tabs.setCurrentIndex(0)
+                app.processEvents()
+                target=output/f"{language}-{theme}-reverse.png"
+                if not window.grab().save(str(target)):
+                    raise RuntimeError(f"Could not save {target}")
+                window.editor.document().setModified(False)
+                window.direction_box.setCurrentIndex(0)
+                window.editor.setPlainText("AC ← M[100]\nAC ← AC + M[101]\nM[102] ← AC\nS ← 0")
+                window.run_translation()
                 # Capture actual optional labs too, without opening modal exec loops.
                 lab=LogicLab(window)
                 lab.resize(1360,900)
@@ -75,6 +88,11 @@ def main():
                     target=output/f"{language}-{theme}-{suffix}.png"
                     if not computer.grab().save(str(target)):
                         raise RuntimeError(f"Could not save {target}")
+                computer.arithmetic.op.setCurrentIndex(0)
+                app.processEvents()
+                target=output/f"{language}-{theme}-bases.png"
+                if not computer.grab().save(str(target)):
+                    raise RuntimeError(f"Could not save {target}")
                 computer.close()
         window.editor.document().setModified(False)
         window.close()

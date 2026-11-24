@@ -62,6 +62,7 @@ FA = {
     "No instructions": "دستوری وجود ندارد",
 }
 HELP = {
+    "UNSUPPORTED_ASM": ("Only named instructions with hexadecimal addresses and optional I are supported. Labels and data directives cannot be reconstructed safely.", "فقط دستورات نام‌دار با آدرس هگزادسیمال و I اختیاری پذیرفته می‌شوند. بازسازی برچسب‌ها و دستورات داده مجاز نیست."),
     "ADDRESS_RANGE": (
         "Address must contain 1–3 hexadecimal digits (000–FFF). Example: AC ← M[FFF].",
         "آدرس باید ۱ تا ۳ رقم هگزادسیمال (000 تا FFF) داشته باشد. نمونه: AC ← M[FFF]."),

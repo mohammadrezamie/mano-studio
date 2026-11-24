@@ -25,6 +25,7 @@ class ArithmeticView(QWidget):
         self.op=QComboBox()
         self.op.addItems(OPERATIONS)
         self.op.insertItem(0,self.t("Convert bases","تبدیل مبنا"),"convert")
+        self.op.setCurrentIndex(1)
         row.addWidget(self.op,1)
         self.cin=QCheckBox("Cin / E")
         row.addWidget(self.cin)
@@ -52,10 +53,10 @@ class ArithmeticView(QWidget):
         self.flags.setObjectName("section")
         self.flags.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         layout.addWidget(self.flags)
-        note=QLabel(self.t("C: carry (SUB: no borrow). V: signed overflow. N: sign. Z: zero. Teaching flags are not extra Mano CPU registers.",
+        self.note=QLabel(self.t("C: carry (SUB: no borrow). V: signed overflow. N: sign. Z: zero. Teaching flags are not extra Mano CPU registers.",
              "C: نقلی (در تفریق: بدون قرض). V: سرریز علامت‌دار. N: علامت. Z: صفر. این پرچم‌های آموزشی ثبات‌های اضافی مانو نیستند."))
-        note.setWordWrap(True)
-        layout.addWidget(note)
+        self.note.setWordWrap(True)
+        layout.addWidget(self.note)
         self.stages=QTableWidget(0,6)
         self.stages.setHorizontalHeaderLabels(["Bit","A","B′ / B","Cin","Sum","Cout"])
         self.stages.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -110,6 +111,10 @@ class ArithmeticView(QWidget):
         base=self.base.currentData()
         op="CONVERT" if self.op.currentData()=="convert" else self.op.currentText()
         binary=op in ("ADD","ADC","SUB","AND","OR","XOR")
+        conversion=op=="CONVERT"
+        self.note.setVisible(not conversion)
+        self.stages.setVisible(not conversion)
+        self.representation.setRowCount(1 if conversion else 3)
         self.b.setEnabled(binary)
         self.cin.setEnabled(op in ("ADC","CIR","CIL"))
         self.representation.clearContents()
@@ -125,7 +130,8 @@ class ArithmeticView(QWidget):
             return
         self.status.clear()
         self.result=result
-        for row,(label,word) in enumerate((("A",a),("B",b if binary else None),("Result",result.word if result else None))):
+        words=(("A",a),) if conversion else (("A",a),("B",b if binary else None),("Result",result.word))
+        for row,(label,word) in enumerate(words):
             values=[label]+(list(representations(word,width).values()) if word is not None else ["—"]*5)
             for col,value in enumerate(values):
                 item=QTableWidgetItem(value)

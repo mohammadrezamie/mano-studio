@@ -735,6 +735,8 @@ class Workspace(QMainWindow):
             QMessageBox.warning(self, self.t("No valid output"), self.t("Translate the input successfully before exporting."))
             return
         suggested = str(self.path.with_suffix(self.output_suffix())) if self.path else str(Path(self.last_directory()) / ((self.active_example.key if self.active_example else "untitled") + self.output_suffix()))
+        if self.path and Path(suggested)==self.path:
+            suggested=str(self.path.with_name(self.path.stem+"-converted"+self.output_suffix()))
         name, _ = QFileDialog.getSaveFileName(self, self.t("Export ASM" if self.direction=="forward" else "Export RTL"), suggested, "Assembly (*.asm)" if self.direction=="forward" else "RTL (*.rtl)")
         if not name:
             return
