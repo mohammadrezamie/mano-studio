@@ -206,3 +206,29 @@ def test_computer_single_state(workspace):
     lab.source.setPlainText("HLT")
     assert lab.cpu is None and lab.datapath.cpu is None
     lab.close()
+
+
+def test_example_workflow(workspace, tmp_path, monkeypatch):
+    from example_catalog import EXAMPLES
+    from PySide6.QtWidgets import QFileDialog
+    workspace.load_example(EXAMPLES[0])
+    assert workspace.path is None and workspace.result.ok
+    assert not workspace.editor.document().isModified()
+    assert workspace.output.toPlainText()=="LDA 100\nADD 101\nSTA 102\nHLT"
+    target=tmp_path/"my-example"
+    monkeypatch.setattr(QFileDialog,"getSaveFileName",lambda *a:(str(target),""))
+    assert workspace.save_as()
+    assert workspace.path==target.with_suffix(".rtl")
+    assert workspace.path.read_text(encoding="utf-8")==EXAMPLES[0].rtl
+    workspace.new_file()
+    assert workspace.path is None and workspace.active_example is None
+    assert workspace.result is None and not workspace.export_button.isEnabled()
+
+
+def test_example_cancel_preserves_document(workspace, monkeypatch):
+    from example_catalog import EXAMPLES
+    workspace.editor.setPlainText("S ← 0")
+    monkeypatch.setattr(workspace,"confirm_discard",lambda:False)
+    workspace.load_example(EXAMPLES[0])
+    assert workspace.editor.toPlainText()=="S ← 0"
+    assert workspace.active_example is None
