@@ -1,5 +1,11 @@
 """Centralized UI text; code tokens always remain untranslated."""
 FA = {
+    "Examples": "مثال‌ها",
+    "Untitled": "بدون عنوان",
+    "Save RTL as": "ذخیره RTL با نام جدید",
+    "RTL saved": "فایل RTL ذخیره شد",
+    "Assembly exported": "فایل اسمبلی ذخیره شد",
+    "Input and output must be different files": "فایل ورودی و خروجی باید متفاوت باشند",
     "Search instructions": "جست‌وجوی دستور یا عبارت RTL",
     "No matching instruction": "دستور مطابقی یافت نشد",
     "File": "فایل",
