@@ -47,7 +47,16 @@ def smoke_test(report_path):
             for _ in range(4):
                 computer.step()
             assert computer.cpu.halted and computer.cpu.memory[0x102] == 8
+            computer.back()
+            assert not computer.cpu.halted
+            computer.back()
+            assert computer.cpu.memory[0x102] == 0
+            computer.arithmetic.a.setText("7FFF")
+            computer.arithmetic.b.setText("0001")
+            assert computer.arithmetic.result.word == 0x8000 and computer.arithmetic.result.overflow
             computer.close()
+            from asm_to_rtl import reverse_translate
+            assert reverse_translate("LDA 100 I\nHLT").ok
             lab = LogicLab(window)
             lab.selector.setCurrentIndex(lab.selector.findData("full_adder"))
             lab.choose_row(7,0)

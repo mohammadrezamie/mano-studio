@@ -101,3 +101,6 @@ No workflow runs or confirmed candidate binary at inspected newer heads since re
 
 ### Interaction refinement
 ALU base switching preserves valid operands rather than silently reinterpreting them; invalid text remains available for correction. Trace table incrementally appends and handles bounded rollover rather than recreating every cell each step. Extended screenshots to debugger/ALU in all languages and themes. Recovered original simple regression workflow; run 45402185504 in progress at inspection. New changes require new CI confirmation.
+
+### Candidate recovery and expanded smoke
+Restored simple matrix confirmed: run 45402185504 at ddadc84dae86526c6d4f39f010c202a574182619 completed 265 tests on each platform. Interaction refinement c4884a1c2d2198700da6f4c09573e5600a0075d4 run 45402415040 in progress at inspection. Added source smoke to matrix and expanded it for debugger reversal, ALU and reverse import. Replaced unavailable reusable build invocation with ordinary dependent Windows job, explicitly triggered by candidate commit or manual dispatch. Legacy manual workflow retained as fallback. This candidate requests actual portable/installer artifacts after matrix passes; no release/tag. Latest build and visual acceptance not confirmed.

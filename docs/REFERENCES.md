@@ -18,3 +18,7 @@ Research decisions: consolidate builder and reference in one searchable panel, p
 
 ## Read-only TakinTech research — 2026-11-24
 Inspected TakinTech AGENTS.md, START_HERE, canonical documentation map, CI_BUDGET and discovered skills via GitHub read-only. Read canonical .agents/skills/ui-ux-pro-max/SKILL.md, frontend-design/SKILL.md, tna-theme-day-night/SKILL.md, tna-free-local-ci/SKILL.md, tna-e2e-browser-qa/SKILL.md, technical-debt/SKILL.md (relevant excerpts). Adopted general patterns: shared semantic colors, labeled controls, no decorative motion, exact-head CI evidence, explicit candidate build, source/owner boundaries. Laravel/web-specific implementation not applicable. No skill scripts executed, no code/assets copied, no TakinTech writes. No new dependencies.
+
+## Chapter coverage and debugger design
+- Morris Mano, Computer System Architecture, 3rd ed., chapters 3–4: fixed-width representation and arithmetic/logic/shift operations; chapter 5–6: Basic Computer and programming. https://studylib.net/doc/28115245/manuel-computer-system-architecture-by-morris-mano-- (chapter section indexing; independent original implementation, no text or figures imported).
+- https://sourceware.org/gdb/current/onlinedocs/gdb.html/Process-Record-and-Replay.html — bounded execution log and reverse navigation inspiration; original StepEvent-based implementation, no source copied.

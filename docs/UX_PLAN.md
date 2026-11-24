@@ -41,3 +41,6 @@ Previous pin-editor revision verified 192 tests on each platform (45397436379). 
 
 ### First development candidate
 Sequential models and waveform view integrated within Logic Lab. First build candidate explicitly authorized for GitHub Actions artifact only; see BUILD_CANDIDATE.md. No stable/public release, preserve academic core. Exact-head CI and visual acceptance required before signoff.
+
+### Step 5 — integrated chapter coverage checkpoint
+Added data representation and shared word arithmetic, 16 ALU operations with ripple stages, debugger with bounded reverse step and breakpoint trace, canonical reverse import. Previous exact head verified 265 tests per OS (45402185504). Latest base switching/trace optimization and new candidate smoke pending. Remaining: actual screenshots review, deeper instruction cycle and memory organization, classroom RTL dialect confirmation. No new standalone lab for these features.

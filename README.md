@@ -10,7 +10,7 @@ An open-source bilingual desktop IDE for Morris Mano's Basic Computer. Planned: 
 python -m pip install -r requirements.txt -r requirements-dev.txt
 python main.py
 ```
-Three entry modes, three themes, Computer and Logic Lab are implemented. See [development candidate](docs/BUILD_CANDIDATE.md), [live Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [status](docs/STATUS.md). No published release. Development artifacts are not stable releases.
+Three entry modes, three themes, Computer (assembler, CPU, reversible debugger, Data & ALU), and Digital Logic (editable combinational schematic, clocked components and waveform) are implemented. Optional canonical ASM-to-RTL import is available in the same editor. See [development candidate](docs/BUILD_CANDIDATE.md), [live Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [status](docs/STATUS.md). No published release. Development artifacts are not stable releases.
 
 ## Academic assignment — فایل تکلیف استاد
 
