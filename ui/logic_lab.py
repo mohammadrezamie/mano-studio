@@ -152,10 +152,12 @@ class LogicLab(QDialog):
             row.addWidget(button)
         layout.addLayout(row)
         actions=QHBoxLayout()
+        self.document_buttons=[]
         for en,fa,fn in [("Edit circuit","ویرایش مدار",self.edit_circuit),("Open circuit","باز کردن مدار",self.open_circuit),("Save circuit","ذخیره مدار",self.save_circuit),("Undo edit","واگرد ویرایش",self.undo_edit)]:
             button=QPushButton(self.t(en,fa))
             button.clicked.connect(fn)
             actions.addWidget(button)
+            self.document_buttons.append(button)
             if en=="Undo edit":
                 self.undo_button=button
         actions.addStretch()
@@ -186,7 +188,7 @@ class LogicLab(QDialog):
         self.circuit_editor=CircuitEditor(self.fa)
         self.stack.addWidget(self.circuit_editor)
         self.circuit_editor.applied.connect(self.apply_document)
-        self.circuit_editor.cancelled.connect(lambda:self.stack.setCurrentIndex(0))
+        self.circuit_editor.cancelled.connect(self.cancel_edit)
         layout.addWidget(self.stack,1)
         self.selector.currentIndexChanged.connect(self.load)
         self.pin_count.valueChanged.connect(self.load)
@@ -215,7 +217,7 @@ class LogicLab(QDialog):
         self.show_circuit()
 
     def show_circuit(self):
-        self.stack.setCurrentIndex(0)
+        self.cancel_edit()
         self.undo_button.setEnabled(bool(self.history))
         self.inputs={name:0 for name in self.circuit.inputs}
         self.description.setText(self.circuit.explanation[self.fa]+"  |  "+self.t("Inputs / Outputs", "ورودی / خروجی")+f": {len(self.circuit.inputs)} / {len(self.circuit.outputs)}")
@@ -254,6 +256,21 @@ class LogicLab(QDialog):
     def edit_circuit(self):
         self.circuit_editor.load(self.document)
         self.stack.setCurrentIndex(1)
+        self.selector.setEnabled(False)
+        self.pin_count.setEnabled(False)
+        self.input_widget.setEnabled(False)
+        for button in self.document_buttons:
+            button.setEnabled(False)
+
+    def cancel_edit(self):
+        self.stack.setCurrentIndex(0)
+        self.selector.setEnabled(True)
+        key=self.selector.currentData()
+        self.pin_count.setEnabled(key.upper() in ARITY and key!="not")
+        self.input_widget.setEnabled(True)
+        for button in self.document_buttons:
+            button.setEnabled(True)
+        self.undo_button.setEnabled(bool(self.history))
 
     def install_document(self,document,dirty):
         circuit=document.compile()
@@ -272,7 +289,7 @@ class LogicLab(QDialog):
             self.history=self.history[-30:]
             self.install_document(document,True)
         else:
-            self.stack.setCurrentIndex(0)
+            self.cancel_edit()
 
     def undo_edit(self):
         if self.history:
@@ -317,6 +334,8 @@ class LogicLab(QDialog):
         self.history=[(document,True) for document,_ in self.history]
 
     def done(self,result):
+        if self.stack.currentIndex()==1 and QMessageBox.question(self,self.t("Unapplied edits","ویرایش اعمال‌نشده"),self.t("Discard staged edits?","ویرایش‌های اعمال‌نشده حذف شوند؟"),QMessageBox.StandardButton.Discard|QMessageBox.StandardButton.Cancel,QMessageBox.StandardButton.Cancel)!=QMessageBox.StandardButton.Discard:
+            return
         if self.confirm_discard():
             super().done(result)
 
