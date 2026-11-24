@@ -1,6 +1,9 @@
 name: Windows development installer
 on:
   workflow_dispatch:
+  push:
+    branches: [feature/desktop-workspace]
+    paths: ['docs/BUILD_CANDIDATE.md']
 permissions:
   contents: read
 concurrency:
@@ -22,6 +25,33 @@ jobs:
         run: python -m pip install -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
       - name: Run regression and Qt tests
         run: python -m pytest -q
+      - name: Build portable development application
+        shell: pwsh
+        run: ./installer/build.ps1 -PortableOnly
+      - name: Smoke test frozen portable application
+        shell: pwsh
+        run: |
+          $report = Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt'
+          $app = Join-Path $PWD 'dist\ManoStudio\ManoStudio.exe'
+          $p = Start-Process -FilePath $app -ArgumentList "--smoke-test `"$report`"" -PassThru
+          if (-not $p.WaitForExit(120000)) { $p.Kill(); throw 'Portable smoke timed out.' }
+          if ($p.ExitCode -ne 0 -or (Get-Content $report -Raw).Trim() -ne 'PASS') { throw 'Portable smoke failed.' }
+      - name: Archive portable candidate and build evidence
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force portable-output | Out-Null
+          $version = (python -c "from update_service import VERSION; print(VERSION)").Trim()
+          $zip = "portable-output/ManoStudio-v$version-Windows-x64.zip"
+          Compress-Archive -Path dist/ManoStudio -DestinationPath $zip -Force
+          python -m pip freeze | Set-Content -Encoding utf8 portable-output/build-dependencies.txt
+          "SHA=$env:GITHUB_SHA" | Set-Content -Encoding ascii portable-output/commit.txt
+          (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower() | Set-Content -Encoding ascii "$zip.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ManoStudio-Windows-x64-portable-development
+          path: portable-output/
+          if-no-files-found: error
+          retention-days: 14
       - name: Ensure Inno Setup is installed
         shell: pwsh
         run: |
@@ -31,7 +61,7 @@ jobs:
           }
       - name: Build development installer
         shell: pwsh
-        run: ./installer/build.ps1
+        run: ./installer/build.ps1 -ReuseFrozen
       - name: Install, run offline smoke test, uninstall
         shell: pwsh
         run: ./installer/smoke.ps1
@@ -56,5 +86,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: installed-smoke-report
-          path: ${{ runner.temp }}/mano-smoke.txt
+          path: |
+            ${{ runner.temp }}/mano-smoke.txt
+            ${{ runner.temp }}/mano-portable-smoke.txt
           if-no-files-found: ignore

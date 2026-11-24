@@ -5,12 +5,12 @@ An open-source bilingual desktop IDE for Morris Mano's Basic Computer. Planned: 
 
 **Status: Python translator supports all 25 named Mano instructions in the documented dialect; no downloadable desktop release yet.**
 
-## Desktop development preview (not yet runtime verified)
+## Desktop development preview
 ```sh
 python -m pip install -r requirements.txt -r requirements-dev.txt
 python main.py
 ```
-Three entry modes, three themes and bilingual settings are implemented in the preview. See [status](docs/STATUS.md) for remaining verification. No installer yet.
+Three entry modes, three themes, Computer and Logic Lab are implemented. See [development candidate](docs/BUILD_CANDIDATE.md), [live Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [status](docs/STATUS.md). No published release. Development artifacts are not stable releases.
 
 ## Academic assignment — فایل تکلیف استاد
 

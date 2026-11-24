@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 import re
 from rtl_translator import translate
+from update_service import VERSION
 from instruction_catalog import TEMPLATES, build_rtl
 from example_catalog import EXAMPLES, computer_source
 from ui.strings import FA, HELP, NAMES, EN_NAMES
@@ -698,7 +699,7 @@ class Workspace(QMainWindow):
         ProgramLab(self, assembly).exec()
 
     def about(self):
-        QMessageBox.about(self, "Mano Studio", "Mano Studio · 0.3.0-dev\n" + self.t("Academic project · Morris Mano Basic Computer") + "\nMIT · " + self.t("Open source") + "\nhttps://github.com/mohammadrezamie/mano-studio")
+        QMessageBox.about(self, "Mano Studio", f"Mano Studio · {VERSION}\n" + self.t("Academic project · Morris Mano Basic Computer") + "\nMIT · " + self.t("Open source") + "\nhttps://github.com/mohammadrezamie/mano-studio")
 
     def closeEvent(self, event):
         if not self.confirm_discard():

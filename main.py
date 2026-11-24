@@ -6,6 +6,7 @@ from PySide6.QtWidgets import QApplication, QSplashScreen
 from ui.theme import PALETTES, apply_theme
 from ui.strings import FA
 from ui.glass import paint_backdrop
+from ui.icons import icon
 
 from update_service import VERSION
 
@@ -36,6 +37,29 @@ def smoke_test(report_path):
             base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
             assert (base / "rtl_translator.py").is_file()
             assert (base / "examples" / "add.rtl").is_file()
+            from example_catalog import EXAMPLES, computer_source
+            from ui.program_lab import ProgramLab
+            from ui.logic_lab import LogicLab
+            window.editor.document().setModified(False)
+            window.load_example(EXAMPLES[0])
+            assert window.result.ok
+            computer = ProgramLab(window, computer_source(EXAMPLES[0], window.result.assembly))
+            for _ in range(4):
+                computer.step()
+            assert computer.cpu.halted and computer.cpu.memory[0x102] == 8
+            computer.close()
+            lab = LogicLab(window)
+            lab.selector.setCurrentIndex(lab.selector.findData("full_adder"))
+            lab.choose_row(7,0)
+            assert lab.summary.text() == "S = 1   |   Cout = 1"
+            lab.write_schematic(Path(directory) / "circuit.svg")
+            lab.write_truth_table(Path(directory) / "truth.csv")
+            assert (Path(directory) / "circuit.svg").stat().st_size > 0
+            lab.mode_tabs.setCurrentIndex(1)
+            lab.sequential.buttons["D"].setChecked(True)
+            lab.sequential.pulse()
+            assert lab.sequential.model.value == 1
+            lab.close()
             window.editor.document().setModified(False)
             window.close()
         report.write_text("PASS\n", encoding="utf-8")
@@ -49,6 +73,7 @@ def main():
     app = QApplication(sys.argv)
     app.setOrganizationName("ManoStudio")
     app.setApplicationName("ManoStudio")
+    app.setWindowIcon(icon("brand", "#8bcff2", 32))
     settings = QSettings()
     language = settings.value("language", "en")
     theme = settings.value("theme", "dark")

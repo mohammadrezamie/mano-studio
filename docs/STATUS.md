@@ -71,3 +71,6 @@ Confirmed run 45397436379: 192 passed each Windows/Ubuntu. Intermediate canvas i
 
 ## Owner request — first development build
 Owner requests a first working development build in GitHub Actions and authorizes read-only inspection of TakinTech skills. No write to TakinTech or any other repo. No public tag/release or stable version. Plan: use prior verified core/canvas, integrate sequential educational view, strengthen frozen smoke, trigger one exact-head Windows development build and regression CI. Reuse general UX/QA principles from inspected skills only; no TNA code/assets or credentials. Keep rtl_translator.py untouched. Record actual build/test status, not a promise of background work.
+
+## First development candidate — build requested
+Prior exact-head run 45398375394: 201 passed each Windows/Ubuntu. TakinTech skills inspected read-only (REFERENCES.md), no writes or copied code. Added integrated sequential tab, six clocked models and real sampled waveforms, regression tests; source capture extended. Version 0.3.0-dev.1, expanded frozen smoke, one candidate-marker-triggered Windows portable and installer workflow, no public release/tag. Candidate commit contains BUILD_CANDIDATE.md. Actual build, latest test and screenshot review pending. Keep academic translator unchanged, manual acceptance by owner. Inspect Actions for exact-head outcomes.

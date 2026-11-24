@@ -50,6 +50,14 @@ def main():
                 target=output/f"{language}-{theme}-logic-edit.png"
                 if not lab.grab().save(str(target)):
                     raise RuntimeError(f"Could not save {target}")
+                lab.canvas_edit.setChecked(False)
+                lab.mode_tabs.setCurrentIndex(1)
+                lab.sequential.buttons["D"].setChecked(True)
+                lab.sequential.pulse()
+                app.processEvents()
+                target=output/f"{language}-{theme}-sequential.png"
+                if not lab.grab().save(str(target)):
+                    raise RuntimeError(f"Could not save {target}")
                 lab.close()
                 computer=ProgramLab(window)
                 computer.resize(1360,900)

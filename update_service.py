@@ -5,7 +5,7 @@ from urllib.request import Request, urlopen
 
 RELEASES_URL = "https://api.github.com/repos/mohammadrezamie/mano-studio/releases"
 RELEASES_PAGE = "https://github.com/mohammadrezamie/mano-studio/releases"
-VERSION = "0.3.0-dev"
+VERSION = "0.3.0-dev.1"
 
 
 def version_key(tag):

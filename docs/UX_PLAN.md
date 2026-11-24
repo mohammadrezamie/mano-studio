@@ -38,3 +38,6 @@ Step 3 previous revision verified 184 tests on Windows and Ubuntu (45396606423);
 
 ### Step 4 — graphical editing checkpoint
 Previous pin-editor revision verified 192 tests on each platform (45397436379). Added canvas source/receiving pin selection, drag placement, undo, backward-compatible coordinate persistence, obstacle-aware routing and SVG/CSV export in the same Logic Lab; table editor remains advanced component creation surface. Screenshot coverage extended to Logic and Computer. Latest tests and visual signoff pending. Next: verify new CI and address graphical issues before adding sequential clock/waveform views.
+
+### First development candidate
+Sequential models and waveform view integrated within Logic Lab. First build candidate explicitly authorized for GitHub Actions artifact only; see BUILD_CANDIDATE.md. No stable/public release, preserve academic core. Exact-head CI and visual acceptance required before signoff.
