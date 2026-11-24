@@ -13,6 +13,7 @@ from rtl_translator import translate
 from instruction_catalog import TEMPLATES, build_rtl
 from ui.strings import FA, HELP, NAMES, EN_NAMES
 from ui.theme import PALETTES, stylesheet
+from ui.code_editor import CodeEditor
 
 LTR = Qt.LayoutDirection.LeftToRight
 
@@ -29,7 +30,7 @@ class CodeHighlighter(QSyntaxHighlighter):
 
 
 def code_editor(readonly=False):
-    editor = QPlainTextEdit()
+    editor = CodeEditor()
     editor.setReadOnly(readonly)
     editor.setLayoutDirection(LTR)
     option = editor.document().defaultTextOption()
@@ -37,6 +38,7 @@ def code_editor(readonly=False):
     editor.document().setDefaultTextOption(option)
     editor.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
     editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+    editor.resize_gutter()
     editor.highlighter = CodeHighlighter(editor.document())
     return editor
 
@@ -46,7 +48,12 @@ class Workspace(QMainWindow):
         super().__init__()
         self.settings = settings
         self.language = settings.value("language", "en")
+        if self.language not in ("en", "fa"):
+            self.language = "en"
         self.theme = settings.value("theme", "dark")
+        if self.theme not in PALETTES:
+            self.theme = "dark"
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.path = None
         self.result = None
         self.translated_source = None
@@ -172,7 +179,10 @@ class Workspace(QMainWindow):
     def move_cursor(self, direction):
         cursor = self.editor.textCursor()
         if direction == "delete":
-            cursor.deletePreviousChar()
+            if cursor.hasSelection():
+                cursor.removeSelectedText()
+            else:
+                cursor.deletePreviousChar()
         else:
             cursor.movePosition(QTextCursor.MoveOperation.Left if direction == "left" else QTextCursor.MoveOperation.Right)
         self.editor.setTextCursor(cursor)
@@ -280,6 +290,7 @@ class Workspace(QMainWindow):
         self.translated_source = None
         self.output.clear()
         self.table.setRowCount(0)
+        self.editor.mark_errors(())
         self.statusBar().showMessage(self.t("Input changed — translate again"))
 
     def run_translation(self):
@@ -293,6 +304,7 @@ class Workspace(QMainWindow):
     def render_errors(self):
         errors = self.result.diagnostics if self.result else ()
         self.table.setRowCount(len(errors))
+        self.editor.mark_errors(errors)
         for row, error in enumerate(errors):
             help_text = HELP.get(error.code, (error.message, error.message))[self.language == "fa"]
             for column, value in enumerate((error.line, error.column, error.code, help_text)):
@@ -332,7 +344,7 @@ class Workspace(QMainWindow):
     def change_language(self):
         self.language = self.languages.currentData()
         self.settings.setValue("language", self.language)
-        QApplication.instance().setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.relabel()
         self.statusBar().showMessage(self.t("Ready"))
 
