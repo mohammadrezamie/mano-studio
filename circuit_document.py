@@ -1,5 +1,6 @@
 """Editable circuit documents; compile to the existing logic engine."""
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+import math
 import json
 import re
 from logic_engine import Circuit, Gate, valid_arity
@@ -21,6 +22,7 @@ class CircuitDocument:
     inputs: tuple
     gates: tuple
     outputs: tuple
+    positions: tuple = ()
 
     @classmethod
     def from_circuit(cls, circuit):
@@ -46,6 +48,12 @@ class CircuitDocument:
             if name in output_names or signal not in names:
                 raise ValueError("Duplicate or unconnected output: " + name)
             output_names.add(name)
+        allowed = names | {"@"+name for name in output_names}
+        seen = set()
+        for name,x,y in self.positions:
+            if name not in allowed or name in seen or any(type(v) not in (int,float) or not math.isfinite(v) or abs(v)>30000 for v in (x,y)):
+                raise ValueError("Invalid component position: " + str(name))
+            seen.add(name)
         known = set(self.inputs)
         pending = list(self.gates)
         ordered = []
@@ -61,11 +69,32 @@ class CircuitDocument:
                        ("Custom circuit","مدار دلخواه"),
                        ("Editable combinational circuit.","مدار ترکیبی قابل ویرایش."))
 
+    def reconnect(self, source, target, pin=0):
+        """Return a validated copy with exactly one receiving pin rewired."""
+        if target.startswith("@"):
+            name = target[1:]
+            if pin != 0 or name not in dict(self.outputs):
+                raise ValueError("Unknown output pin.")
+            result=replace(self,outputs=tuple((n,source if n==name else s) for n,s in self.outputs))
+        else:
+            gate=next((g for g in self.gates if g.output==target),None)
+            if gate is None or not 0<=pin<len(gate.inputs):
+                raise ValueError("Unknown gate pin.")
+            updated=replace(gate,inputs=tuple(source if i==pin else v for i,v in enumerate(gate.inputs)))
+            result=replace(self,gates=tuple(updated if g.output==target else g for g in self.gates))
+        result.compile()
+        return result
+
+    def with_positions(self, positions):
+        result=replace(self,positions=tuple(sorted((name,x,y) for name,(x,y) in positions.items())))
+        result.compile()
+        return result
+
     def dumps(self):
         self.compile()
-        return json.dumps({"format":"mano-logic","version":1,"inputs":list(self.inputs),
+        return json.dumps({"format":"mano-logic","version":2,"inputs":list(self.inputs),
             "gates":[{"output":g.output,"op":g.op,"inputs":list(g.inputs)} for g in self.gates],
-            "outputs":[list(o) for o in self.outputs]}, ensure_ascii=False, indent=2)+"\n"
+            "outputs":[list(o) for o in self.outputs], "positions":[list(p) for p in self.positions]}, ensure_ascii=False, indent=2)+"\n"
 
     @classmethod
     def loads(cls, text):
@@ -73,7 +102,7 @@ class CircuitDocument:
             raise ValueError("Circuit file too large.")
         try:
             obj = json.loads(text)
-            if obj["format"] != "mano-logic" or obj["version"] != 1:
+            if obj["format"] != "mano-logic" or obj["version"] not in (1,2):
                 raise ValueError("Unsupported circuit file format.")
             inputs, gates, outputs = obj["inputs"], obj["gates"], obj["outputs"]
             if not all(isinstance(v,list) for v in (inputs,gates,outputs)):
@@ -85,10 +114,14 @@ class CircuitDocument:
             for g in gates:
                 if not isinstance(g,dict) or not isinstance(g["inputs"],list):
                     raise ValueError("Expected gate input array.")
+            positions = obj.get("positions",[]) if obj["version"]==2 else []
+            if not isinstance(positions,list) or len(positions)>MAX_INPUTS+MAX_GATES+MAX_OUTPUTS or any(not isinstance(p,list) or len(p)!=3 or not isinstance(p[0],str) for p in positions):
+                raise ValueError("Invalid positions array.")
             doc = cls(tuple(checked_name(n) for n in inputs),
                 tuple(Gate(checked_name(g["output"]),checked_name(g["op"]),
                            tuple(checked_name(n) for n in g["inputs"])) for g in gates),
-                tuple((checked_name(n),checked_name(s)) for n,s in outputs))
+                tuple((checked_name(n),checked_name(s)) for n,s in outputs),
+                tuple(tuple(p) for p in positions))
             doc.compile()
             return doc
         except (KeyError, TypeError, AttributeError, ValueError, RecursionError) as exc:
