@@ -13,3 +13,6 @@ Development quality first. Installer/release and manual acceptance are deferred 
 
 ## Logic Lab expansion
 See LOGIC_LAB.md for chapters 1–4 and future topics. Maintain optional labs separate from the required RTL translator. Develop custom circuit design, sequential logic, waveforms, ALU, data representation and chapter-aligned learning in incremental modules.
+
+## Full-book coverage
+Track all 13 original third-edition chapter families in CURRICULUM_COVERAGE.md and issue #13. Build original mathematically verified functional models incrementally. The classroom Windows candidate does not require full-book completion; prioritize quality and correctness over number of modules.

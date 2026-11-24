@@ -137,3 +137,6 @@ Added net-aware wire notation and cached junction/ambiguity geometry, actual sch
 
 ### Schematic convention selection
 Added bilingual persistent ANSI-style/IEC-style gate notation setting; no change to simulation or pin anchors. Correctly distinguish two-input XOR from multi-input parity in rectangular qualifiers. Added GUI regression. Prior wire-notation run 45406594226 in progress at inspection, current exact-head CI pending. Academic translator blob verified unchanged. No new package, no release.
+
+## Curriculum scope checkpoint
+Owner requests full-book mathematical and visual coverage with continuously updated docs/issues. Opened issue #13, added provisional 13-chapter coverage ledger CURRICULUM_COVERAGE.md; instructor edition unconfirmed. Prior schematic notation CI 45406811712 verified: test (windows-latest): 2026-11-24T13:47:05.3229179Z 281 passed, 1 warning in 34.13s; test (ubuntu-latest): 2026-11-24T13:46:48.3872406Z 281 passed, 1 warning in 31.69s. Start expanded combinational presets and generated per-gate equations in existing Logic Lab; keep Windows priority and isolated translator.
