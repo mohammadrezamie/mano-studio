@@ -23,7 +23,7 @@ FA = {
     "Inspired by the course project assigned by instructor Siavash Eshaghi.": "با الهام از پروژه درسی استاد ارجمند سیاوش اسحقی و با سپاس از ایشان.",
     "Initializing…": "در حال راه‌اندازی…", "Instruction": "دستور",
     "Invalid address": "آدرس نامعتبر", "Choose 000–FFF.": "آدرس بین ۰۰۰ تا FFF انتخاب کنید.",
-    "Preview": "پیش‌نمایش", "Open source": "متن‌باز", "Copy": "کپی",
+    "Preview": "پیش‌نمایش", "Open source": "متن‌باز", "Copy": "کپی", "Clear": "پاک کردن",
     "No instructions": "دستوری وجود ندارد",
 }
 HELP = {
