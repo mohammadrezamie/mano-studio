@@ -58,3 +58,29 @@ def test_settings(workspace):
     assert restored.theme == "night"
     assert restored.tabs.currentIndex() == 2
     restored.close()
+
+
+def test_error_marker_and_cursor_navigation(workspace):
+    workspace.editor.setPlainText("AC=0\nAC=M[1000]\nS=0")
+    workspace.run_translation()
+    assert len(workspace.editor.extraSelections()) == 1
+    workspace.jump_error(0, 0)
+    assert workspace.editor.textCursor().blockNumber() == 1
+    workspace.editor.setPlainText("AC=0")
+    assert not workspace.editor.extraSelections()
+
+
+def test_gutter_expands(workspace):
+    workspace.editor.setPlainText("AC=0")
+    before = workspace.editor.gutter_width()
+    workspace.editor.setPlainText("\n".join(["AC=0"] * 100))
+    assert workspace.editor.gutter_width() > before
+
+
+def test_pad_replaces_selection(workspace):
+    workspace.editor.setPlainText("AC=0")
+    cursor = workspace.editor.textCursor()
+    cursor.select(cursor.SelectionType.Document)
+    workspace.editor.setTextCursor(cursor)
+    workspace.insert("E ← 0")
+    assert workspace.editor.toPlainText() == "E ← 0"
