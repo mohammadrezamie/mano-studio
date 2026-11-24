@@ -5,7 +5,7 @@ from pathlib import Path
 import tempfile
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QApplication
-from ui.theme import stylesheet
+from ui.theme import apply_theme
 from ui.workspace import Workspace
 
 
@@ -17,7 +17,7 @@ def main():
     with tempfile.TemporaryDirectory() as directory:
         settings = QSettings(str(Path(directory) / "settings.ini"), QSettings.Format.IniFormat)
         window = Workspace(settings)
-        app.setStyleSheet(stylesheet(window.theme))
+        window.apply_appearance()
         window.resize(1360, 900)
         window.editor.setPlainText("AC ← M[100]\nAC ← AC + M[101]\nM[102] ← AC\nS ← 0")
         window.run_translation()
