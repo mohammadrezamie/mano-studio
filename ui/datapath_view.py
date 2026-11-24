@@ -11,7 +11,7 @@ class DatapathView(QWidget):
         self.theme=theme
         self.reduced_motion=reduced_motion
         self.cpu=None
-        self.event=None
+        self.last_step=None
         self.progress=1.0
         self.setMinimumHeight(230)
         self.animation=QVariantAnimation(self)
@@ -31,7 +31,7 @@ class DatapathView(QWidget):
 
     def set_state(self,cpu,event=None):
         self.stop()
-        self.cpu,self.event=cpu,event
+        self.cpu,self.last_step=cpu,event
         if event and event.mnemonic in ("LDA","ADD","AND","STA","BSA","ISZ","INT") and not self.reduced_motion and self.isVisible():
             self.progress=0.0
             self.animation.start()
@@ -50,7 +50,7 @@ class DatapathView(QWidget):
         p.translate((self.width()-760*scale)/2,(self.height()-260*scale)/2)
         p.scale(scale,scale)
         cpu=self.cpu
-        ev=self.event
+        ev=self.last_step
         def card(x,y,w,h,title,lines,active=False):
             p.setPen(QPen(QColor(accent if active else border),1.3))
             p.setBrush(QColor(panel))
