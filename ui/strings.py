@@ -1,5 +1,6 @@
 """Centralized UI text; code tokens always remain untranslated."""
 FA = {
+    "Program Lab": "آزمایشگاه برنامه",
     "Settings": "تنظیمات",
     "Live Lab": "آزمایشگاه زنده",
     "Build. Translate. Learn.": "بسازید. ترجمه کنید. یاد بگیرید.",
