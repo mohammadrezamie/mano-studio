@@ -23,6 +23,7 @@ from ui.floating_pipeline_view import FloatPipelineView
 from ui.io_organization_view import IOOrganizationView
 from ui.multiprocessor_view import MultiprocessorView
 from ui.crossbar_view import CrossbarView
+from ui.synchronization_view import SynchronizationView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
@@ -156,6 +157,8 @@ class ProgramLab(QDialog):
         self.multiprocessor_tabs=MotionTabs()
         self.multiprocessor_tabs.addTab(self.multiprocessor,self.t("Shared bus","گذرگاه مشترک"))
         self.multiprocessor_tabs.addTab(self.crossbar,self.t("Crossbar","اتصال متقاطع"))
+        self.synchronization=SynchronizationView(parent.theme,self.fa)
+        self.multiprocessor_tabs.addTab(self.synchronization,self.t("Synchronization","همگام‌سازی"))
         self.inspector.addTab(self.multiprocessor_tabs,self.t("Multiprocessors","چندپردازنده‌ها"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
@@ -205,9 +208,9 @@ class ProgramLab(QDialog):
             if route=="pipeline":self.pipeline_tabs.setCurrentWidget(self.pipeline)
             if route=="microprogram":self.microprogram.detail_tabs.setCurrentIndex(0)
             if route=="alu":self.arithmetic.op.setCurrentIndex(0)
-        elif route=="crossbar":
+        elif route in ("crossbar","synchronization"):
             self.inspector.setCurrentWidget(self.multiprocessor_tabs)
-            self.multiprocessor_tabs.setCurrentWidget(self.crossbar)
+            self.multiprocessor_tabs.setCurrentWidget(self.crossbar if route=="crossbar" else self.synchronization)
         elif route=="microbuilder":
             self.inspector.setCurrentWidget(self.microprogram)
             self.microprogram.detail_tabs.setCurrentWidget(self.microprogram.builder)

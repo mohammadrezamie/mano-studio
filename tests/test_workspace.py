@@ -1291,3 +1291,21 @@ def test_crossbar_routes_bilingual(workspace):
         assert not v.canvas.grab().isNull()
         lab.select_tool("multiprocessor");assert lab.multiprocessor_tabs.currentWidget() is lab.multiprocessor
         lab.close()
+
+
+def test_synchronization_bilingual_route(workspace):
+    from ui.program_lab import ProgramLab
+    from PySide6.QtCore import Qt
+    for lang in ("en","fa"):
+        workspace.languages.setCurrentIndex(workspace.languages.findData(lang))
+        lab=ProgramLab(workspace);lab.select_tool("synchronization")
+        v=lab.synchronization
+        assert lab.multiprocessor_tabs.currentWidget() is v
+        assert v.layoutDirection()==(Qt.LayoutDirection.RightToLeft if lang=="fa" else Qt.LayoutDirection.LeftToRight)
+        assert v.trace.layoutDirection()==Qt.LayoutDirection.LeftToRight
+        v.run();assert v.model.shared==2 and v.model.done
+        v.mode.setCurrentIndex(1);v.run()
+        assert v.model.shared==1 and v.trace.rowCount()==6
+        assert ("به‌روزرسانی ازدست‌رفته" if lang=="fa" else "Lost update") in v.status.text()
+        assert not v.canvas.grab().isNull()
+        lab.close()
