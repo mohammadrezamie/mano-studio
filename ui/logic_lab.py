@@ -28,6 +28,7 @@ class LogicDiagram(QGraphicsView):
     def __init__(self, theme, fa=False):
         super().__init__()
         self.theme = theme
+        self.fa = fa
         self.graph = QGraphicsScene(self)
         self.setScene(self.graph)
         self.setRenderHint(QPainter.RenderHint.Antialiasing)

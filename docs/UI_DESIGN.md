@@ -38,3 +38,6 @@ Shared native Qt QPalette and QSS tokens now control all three themes (including
 
 ## Actual capture review and bidirectional controls
 Actual run 45402415040 (Linux artifact 14923922173, Windows 14922733877) retrieved and inspected: main editor and full-adder Linux captures readable, but editor tools area wastes vertical space and code is small; Windows offscreen screenshots show missing glyphs, so no native Windows visual signoff. Current changes compact editor tool area, add direction selector and Choose file to shared workspace, direction-specific labels/exports, direct number conversion using existing ALU view; capture script adds reverse and bases screenshots. Windows font capture still needs a verified fix; do not confuse offscreen capture issue with actual installed application behavior.
+
+## Bilingual usability and credits checkpoint
+Owner explicitly rejected previous screenshots as insufficient. Current incremental improvements: more readable code, subdued backdrop, shared localizable error messages, translated inspector headers/diagram captions, About and splash use shared credits and LICENSE copyright. Full native dialog localization, legibility and visual review remain open; this is not a visual acceptance checkpoint. Preserve technical mnemonics and literal code.

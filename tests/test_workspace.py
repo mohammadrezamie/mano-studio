@@ -415,3 +415,23 @@ def test_reverse_builder_and_mapping(workspace):
     workspace.output.setTextCursor(QTextCursor(workspace.output.document().firstBlock()))
     assert workspace.editor.textCursor().blockNumber()==1
     workspace.editor.document().setModified(False)
+
+
+def test_persian_credits_and_optional_labs(workspace,monkeypatch):
+    from PySide6.QtWidgets import QMessageBox
+    from ui.program_lab import ProgramLab
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(1)
+    messages=[]
+    monkeypatch.setattr(QMessageBox,"about",lambda *args:messages.append(args[-1]))
+    workspace.about()
+    assert "سیاوش اسحقی" in messages[0] and "Copyright (c) 2026" in messages[0]
+    lab=ProgramLab(workspace,"UNKNOWN")
+    assert "ناشناخته" in lab.machine.toPlainText()
+    assert lab.arithmetic.representation.horizontalHeaderItem(0).text()=="کلمه"
+    lab.close()
+    logic=LogicLab(workspace)
+    assert "منطق" in logic.windowTitle()
+    logic.canvas_edit.setChecked(True)
+    assert logic.diagram.fa
+    logic.close()

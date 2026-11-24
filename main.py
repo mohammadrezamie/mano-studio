@@ -1,6 +1,6 @@
 """Launch Mano Studio with persisted settings and a startup splash."""
 import sys
-from PySide6.QtCore import Qt, QSettings
+from PySide6.QtCore import Qt, QSettings, QRect
 from PySide6.QtGui import QPixmap, QPainter, QColor, QFont
 from PySide6.QtWidgets import QApplication, QSplashScreen
 from ui.theme import PALETTES, apply_theme
@@ -109,7 +109,7 @@ def main():
     painter.drawText(35, 165, VERSION)
     painter.drawText(35, 200, FA["Academic project · Morris Mano Basic Computer"] if language == "fa" else "Academic project · Morris Mano Basic Computer")
     painter.setFont(QFont("Segoe UI",10))
-    painter.drawText(35,222,570,48,Qt.TextFlag.TextWordWrap | Qt.AlignmentFlag.AlignVCenter | (Qt.AlignmentFlag.AlignRight if language=="fa" else Qt.AlignmentFlag.AlignLeft),THANKS[language=="fa"])
+    painter.drawText(QRect(35,222,570,48),int(Qt.TextFlag.TextWordWrap) | int(Qt.AlignmentFlag.AlignVCenter) | int(Qt.AlignmentFlag.AlignRight if language=="fa" else Qt.AlignmentFlag.AlignLeft),THANKS[language=="fa"])
     painter.drawText(35,285,COPYRIGHT)
     painter.end()
     splash = QSplashScreen(pix)
