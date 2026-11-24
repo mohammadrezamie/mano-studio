@@ -704,3 +704,19 @@ def test_selected_common_bus_view(workspace):
     lab.back()
     assert lab.cycles.bus.control is None
     lab.close()
+
+
+def test_microprogram_inspector(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.microprogram
+    for _ in range(6):view.step()
+    assert view.model.ac==5 and view.model.car==64
+    assert "ADD" in view.fields.text()
+    view.control.setPlainText("80:00000")
+    assert view.model is None and not view.step_button.isEnabled()
+    view.load()
+    assert view.model is None
+    view.example()
+    assert view.model.car==64 and view.model.ac==0
+    lab.close()

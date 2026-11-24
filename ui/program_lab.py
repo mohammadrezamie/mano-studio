@@ -12,6 +12,7 @@ from execution_history import ExecutionHistory
 from ui.arithmetic_view import ArithmeticView
 from ui.data_codes_view import DataCodesView
 from ui.cycle_view import CycleView
+from ui.microprogram_view import MicroprogramView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
@@ -121,6 +122,8 @@ class ProgramLab(QDialog):
         self.inspector.addTab(self.codes,self.t("Data codes","کدهای داده"))
         self.cycles=CycleView(self.fa,self.microstep,self.microback)
         self.inspector.addTab(self.cycles,self.t("Instruction cycle","چرخه دستور"))
+        self.microprogram=MicroprogramView(self.fa)
+        self.inspector.addTab(self.microprogram,self.t("Microprogram","ریزبرنامه"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
         self.input = QLineEdit()
