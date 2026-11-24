@@ -84,3 +84,19 @@ def test_pad_replaces_selection(workspace):
     workspace.editor.setTextCursor(cursor)
     workspace.insert("E ← 0")
     assert workspace.editor.toPlainText() == "E ← 0"
+
+
+def test_calm_preferences(workspace):
+    from ui.preferences import Preferences
+    from ui.live_lab import LabDialog
+    prefs = Preferences(workspace)
+    prefs.change("glass_enabled", False)
+    prefs.change("reduced_motion", True)
+    assert not workspace.centralWidget().enabled
+    assert workspace.settings.value("reduced_motion", type=bool)
+    lab = LabDialog(workspace, "en", "dark", workspace.settings)
+    lab.step()
+    assert not lab.frames.isActive()
+    assert lab.cpu.ac == 5
+    lab.close()
+    prefs.close()
