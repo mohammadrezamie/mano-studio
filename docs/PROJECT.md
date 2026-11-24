@@ -11,3 +11,6 @@ VS Code-inspired original design: explorer left, RTL and ASM editors center, dia
 Proposed Persian: مانو استودیو با الهام از پروژه آموزشی تعریف‌شده توسط استاد ارجمند سیاوش اسحقی، استاد درس معماری کامپیوتر و میکروکنترلر دانشگاه آزاد اسلامی واحد علوم و تحقیقات، شکل گرفته است. از ایشان برای ایجاد انگیزه در پیوند دانش نظری و یادگیری عملی صمیمانه سپاسگزاریم.
 English: Mano Studio originated from an academic project assigned by instructor Siavash Eshaghi (provisional spelling), Islamic Azad University, Science and Research Branch. We sincerely appreciate his encouragement of practical learning in computer architecture.
 Confirm spelling, affiliation, title and permission before public attribution; do not imply endorsement or formal advisor role. No verified personal profile yet.
+
+## Expanded product decisions
+All 25 named Basic Computer instructions in the documented provisional dialect, both direct and indirect memory addressing. Three synchronized input modes: expert text, on-screen symbol/hex keypad, guided operation builder. Light, Dark, Night (warm low glare), persistent language and theme, splash with acknowledgment pending verification, bilingual diagnostic help. See [UI design](UI_DESIGN.md) and [maintenance](MAINTAINABILITY.md).
