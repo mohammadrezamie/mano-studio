@@ -8,3 +8,10 @@ Previously discussed comparison leads (not independently reverified in this hand
 Use as inspiration only; no copying without license review.
 Technical docs: https://doc.qt.io/qtforpython-6/ ; https://pyinstaller.org/ ; https://jrsoftware.org/isinfo.php ; https://docs.github.com/en/rest/releases ; https://docs.github.com/en/actions
 Academic profile leads: https://srb.iau.ir/ ; https://scholar.google.com/scholar?q=Siavash+Eshaghi . Not verified personal profiles. Product name is provisional branding, not trademark-cleared.
+
+## UX research — 2026-11-24
+- https://code.visualstudio.com/docs/editing/editingevolved — contextual Peek/navigation; adapt to source/output mapping without leaving the editor. https://code.visualstudio.com/docs/editing/getting-started/userinterface — progressive disclosure and editor-first layout.
+- https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QComboBox.html and https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QCompleter.html — standard Qt selector/search APIs. Use existing Qt, no new dependencies.
+- https://github.com/TomerAberbach/mano-simulator — verified README describes JavaFX assembler and simulator for Mano ch. 5, MIT license. Candidate for later independent behavior comparison; no source imported in this checkpoint.
+- https://github.com/logisim-evolution/logisim-evolution — verified GPLv3, digital circuit editor/simulator. Workflow inspiration only; do not copy GPL code into MIT-only Mano Studio without a separate license decision.
+Research decisions: consolidate builder and reference in one searchable panel, preserve three input modes and keyboard-free construction, link source and output using existing translator line metadata. Original implementation, no borrowed code/assets or new runtime dependency. Research is selective, not exhaustive.
