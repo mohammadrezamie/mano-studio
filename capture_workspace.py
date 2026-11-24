@@ -17,6 +17,7 @@ def main():
     with tempfile.TemporaryDirectory() as directory:
         settings = QSettings(str(Path(directory) / "settings.ini"), QSettings.Format.IniFormat)
         window = Workspace(settings)
+        app.setStyleSheet(stylesheet(window.theme))
         window.resize(1360, 900)
         window.editor.setPlainText("AC ← M[100]\nAC ← AC + M[101]\nM[102] ← AC\nS ← 0")
         window.run_translation()
