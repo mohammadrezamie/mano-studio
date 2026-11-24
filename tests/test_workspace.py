@@ -269,3 +269,42 @@ def test_integrated_circuit_edit(workspace):
     assert lab.summary.text()=="Y = 0"
     lab.dirty=False
     lab.close()
+
+
+def test_canvas_rewire_and_export(workspace,tmp_path):
+    from PySide6.QtCore import QPointF,Qt
+    from PySide6.QtTest import QTest
+    from PySide6.QtWidgets import QApplication
+    from ui.logic_lab import LogicLab
+    lab=LogicLab(workspace)
+    lab.selector.setCurrentIndex(lab.selector.findData("and"))
+    lab.show()
+    lab.canvas_edit.setChecked(True)
+    QApplication.processEvents()
+    lab.diagram.fit()
+    lab.change("A",True)
+    def click_pin(name,pin):
+        pos=next(p for n,i,p in lab.diagram.ports if n==name and i==pin)
+        QTest.mouseClick(lab.diagram.viewport(),Qt.MouseButton.LeftButton,
+                         pos=lab.diagram.mapFromScene(QPointF(*pos)))
+    click_pin("A",-1)
+    click_pin("q",1)
+    assert lab.document.gates[0].inputs==("A","A")
+    assert lab.summary.text()=="Y = 1"
+    assert lab.document.positions
+    before=lab.document
+    lab.rewire_pin("q","q",0)
+    assert lab.document==before
+    x,y=lab.diagram.positions["q"]
+    lab.move_component("q",x,y+200)
+    assert dict((n,(x,y)) for n,x,y in lab.document.positions)["q"]==(x,y+200)
+    lab.undo_edit()
+    assert lab.document==before
+    csv=tmp_path/"truth.csv"
+    svg=tmp_path/"circuit.svg"
+    lab.write_truth_table(csv)
+    lab.write_schematic(svg)
+    assert csv.read_text(encoding="utf-8-sig").splitlines()[0]=="A,B,Y"
+    assert "<svg" in svg.read_text(encoding="utf-8")
+    lab.dirty=False
+    lab.close()
