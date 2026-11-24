@@ -13,3 +13,6 @@ Run 45388500498 completed successfully before this new work (desktop tests and s
 
 ## Owner decision: beta-only and calm UI
 See docs/RELEASE_POLICY.md. Target classroom review next week (2026-11-30 to 2026-12-06), not stable release. Add persisted reduced-motion, glass effects off and offline mode toggles. Core remains offline; optional network access must be explicitly enabled and gated. Current implementation of these new global controls is pending. Continue PR #9; verify latest CI, review UI and prioritize Windows setup. No stable release until owner explicitly approves after class.
+
+## Offline-only clarification and preferences
+Owner requires fully offline core, with explicit manual update check the sole network exception (no global online mode). Implemented update_service.py with semantic prerelease comparison and explicit gate, ui/preferences.py with worker-thread manual check, persisted glass/reduced-motion controls applied to startup/workspace/live lab, plus tests. No Remotion/streamed assets needed; procedural Qt animation follows actual model state. New CI/visual verification pending. Next: confirm current PR tests and screenshots, reconcile branch/main docs, then build a Windows beta installer; no stable release.
