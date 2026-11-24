@@ -163,6 +163,9 @@ class Workspace(QMainWindow):
         split.setSizes([560, 80 if self.tabs.currentIndex() == 0 else 260, 0])
         layout.addWidget(split, 1)
         self.editor.textChanged.connect(self.invalidate)
+        self.mapping_active = False
+        self.editor.cursorPositionChanged.connect(self.follow_source)
+        self.output.cursorPositionChanged.connect(self.follow_output)
         self.shortcut = QShortcut(QKeySequence("F5"), self)
         self.shortcut.activated.connect(self.run_translation)
         self.reference_shortcut = QShortcut(QKeySequence("Ctrl+Space"), self)
@@ -390,10 +393,45 @@ class Workspace(QMainWindow):
         source = self.editor.toPlainText()
         self.result = translate(source)
         self.translated_source = source
-        self.output.setPlainText(self.result.assembly if self.result.ok else "")
+        self.mapping_active = True
+        try:
+            self.output.setPlainText(self.result.assembly if self.result.ok else "")
+        finally:
+            self.mapping_active = False
+        self.follow_source()
         self.export_button.setEnabled(self.result.ok)
         self.render_errors()
         self.statusBar().showMessage(self.t("Translation successful" if self.result.ok else "Translation failed"))
+
+    def mapped_cursor(self, editor, line):
+        block = editor.document().findBlockByNumber(line)
+        if block.isValid():
+            editor.setTextCursor(QTextCursor(block))
+            editor.ensureCursorVisible()
+
+    def follow_source(self):
+        if self.mapping_active or not self.result or not self.result.ok:
+            return
+        line = self.editor.textCursor().blockNumber() + 1
+        for index, instruction in enumerate(self.result.instructions):
+            if instruction.line == line:
+                self.mapping_active = True
+                try:
+                    self.mapped_cursor(self.output, index)
+                finally:
+                    self.mapping_active = False
+                break
+
+    def follow_output(self):
+        if self.mapping_active or not self.result or not self.result.ok:
+            return
+        index = self.output.textCursor().blockNumber()
+        if 0 <= index < len(self.result.instructions):
+            self.mapping_active = True
+            try:
+                self.mapped_cursor(self.editor, self.result.instructions[index].line - 1)
+            finally:
+                self.mapping_active = False
 
     def render_errors(self):
         errors = self.result.diagnostics if self.result else ()
