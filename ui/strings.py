@@ -1,5 +1,7 @@
 """Centralized UI text; code tokens always remain untranslated."""
 FA = {
+    "Search instructions": "جست‌وجوی دستور یا عبارت RTL",
+    "No matching instruction": "دستور مطابقی یافت نشد",
     "File": "فایل",
     "Help": "راهنما",
     "Computer": "کامپیوتر",
