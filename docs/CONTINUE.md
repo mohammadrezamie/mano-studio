@@ -5,14 +5,16 @@ When the owner says "continue" in a fresh chat, resume this repository, not a ne
 ## Last work and evidence
 - Prior confirmed exact-head green: adbe5843353b6e68d036447500fb975352d43ff2, runs 45470016045 and 45470000518 (Learning Center).
 - Later motion f02f517, navigation 66d1a14 and canvas dac6bea workflow results were still in progress when inspected. Refresh live Actions before claiming success; investigate failures instead of continuing blindly.
-- This increment: procedural brand, shared icon/splash/header, result feedback, docs and tests. Find exact current commit in live PR and Actions; this file intentionally does not self-reference a commit hash.
+- This increment: non-letter Phase Aperture replaces rejected M mark, first Chapter 13 shared bus arbitration and live grant canvas; 34 routes spanning all 13 indexed chapters. Find exact current commit in live PR and Actions; this file intentionally does not self-reference a commit hash.
 - No verified current Windows executable or installer; no public release or tag. Existing source preview runs with python main.py. Academic rtl_translator.py unchanged.
 
 ## Next work (in order)
 1. Verify latest exact-head CI on Windows/Ubuntu and fix regressions; gather actual automated visual evidence where available. Do not present conceptual images as screenshots.
 2. Improve digital logic canvas and waveform interaction using real model data; reuse existing graphics components.
-3. Cover chapter 13 with at least one correct, tested interactive model, then serial framing, cache, associative/virtual memory and remaining chapter gaps. Register routes in learning_catalog.py.
+3. Verify first chapter 13 model; extend interconnection, synchronization and coherence, then serial framing, cache, associative/virtual memory and remaining chapter gaps. Register routes in learning_catalog.py.
 4. Beta preview convergence per BETA_PREVIEW.md; no publication or build dispatch without explicit owner approval.
 5. Update this checkpoint, STATUS, relevant docs, issue #13 (coverage), #10/#12 (design/UX), and PR #9 after each coherent commit. Record exact SHA and actual CI evidence in issue comments. Do not claim full textbook coverage or stable readiness.
 
 Source of truth is the live repository and tests, not old chat summaries.
+
+Latest verified evidence: motion f02f517 runs 45478369514 and 45478353916 success; navigation 66d1a14 run 45479351841 success. Later canvas, brand and multiprocessor exact-head CI pending. Owner forbids generic letter-M branding; maintain non-letter symbol or improve it, not a monogram.

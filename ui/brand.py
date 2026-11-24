@@ -11,7 +11,9 @@ from PySide6.QtWidgets import QWidget
 from ui.theme import PALETTES,STATUS
 from ui.motion import motion_allowed
 
-MARK_POINTS=((15,45),(15,19),(32,35),(49,19),(49,45))
+MARK_POINTS=((12,30),(12,23),(32,11),(52,23),(52,29))
+LOWER_POINTS=tuple((64-x,64-y) for x,y in MARK_POINTS)
+LOWER_PATH="M"+" L".join(f"{x} {y}" for x,y in LOWER_POINTS)
 MARK_PATH="M"+" L".join(f"{x} {y}" for x,y in MARK_POINTS)
 
 
@@ -37,10 +39,12 @@ def brand_svg(theme="dark",glass=True,progress=None,state="neutral",compact=Fals
     parts.append(f'<rect x="3" y="3" width="58" height="58" rx="15" fill="{fill}" stroke="{border}" stroke-width="1.5"/>')
     if not compact:
         parts.append(f'<path d="M8 23 V18 Q8 8 18 8 H37" fill="none" stroke="{fg}" stroke-opacity=".18" stroke-width="1.5" stroke-linecap="round"/>')
-    parts.append(f'<path d="{MARK_PATH}" stroke="{stroke}" stroke-width="6" fill="none" stroke-linejoin="round" stroke-linecap="round"/>')
+    for path in (MARK_PATH,LOWER_PATH):
+        parts.append(f'<path d="{path}" stroke="{stroke}" stroke-width="5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>')
+    parts.append(f'<path d="M32 24 L40 32 L32 40 L24 32 Z" fill="{accent}" stroke="{panel}" stroke-width="1.5"/>')
     if not compact:
-        for x,y in (MARK_POINTS[0],MARK_POINTS[2],MARK_POINTS[4]):
-            parts.append(f'<circle cx="{x}" cy="{y}" r="2.5" fill="{panel}" stroke="{accent}" stroke-width="1"/>')
+        for x,y in (MARK_POINTS[0],LOWER_POINTS[0]):
+            parts.append(f'<circle cx="{x}" cy="{y}" r="2.1" fill="{fg}"/>')
     if progress is not None:
         x,y=pulse_point(progress)
         parts.append(f'<circle cx="{x:.3f}" cy="{y:.3f}" r="4" fill="{signal}" stroke="{panel}" stroke-width="1.2"/>')

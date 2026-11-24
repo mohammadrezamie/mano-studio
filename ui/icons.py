@@ -25,6 +25,7 @@ PATHS = {
     "organization": "M9 3h6v5H9zM3 16h6v5H3zM15 16h6v5h-6zM12 8v4M6 16v-4h12v4",
     "pipeline": "M3 4h5v5H3zM10 10h5v5h-5zM17 16h4v5h-4zM8 7h4v3m3 3h4v3",
     "io": "M3 7h17m-4-4 4 4-4 4M21 17H4m4-4-4 4 4 4",
+    "network": "M9 3h6v6H9zM3 15h6v6H3zM15 15h6v6h-6zM12 9v3M6 15v-3h12v3",
     "logic": "M3 7h5m-5 10h5M8 4v16h3a8 8 0 0 0 0-16zM19 12h3",
 }
 

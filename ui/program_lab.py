@@ -21,6 +21,7 @@ from ui.vector_pipeline_view import VectorPipelineView
 from ui.interleaving_view import InterleavingView
 from ui.floating_pipeline_view import FloatPipelineView
 from ui.io_organization_view import IOOrganizationView
+from ui.multiprocessor_view import MultiprocessorView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
@@ -149,6 +150,8 @@ class ProgramLab(QDialog):
         self.inspector.addTab(pipeline_tabs,self.t("Pipeline","خط لوله"))
         self.io_organization=IOOrganizationView(self.fa)
         self.inspector.addTab(self.io_organization,self.t("I/O organization","سازمان ورودی/خروجی"))
+        self.multiprocessor=MultiprocessorView(parent.theme,self.fa)
+        self.inspector.addTab(self.multiprocessor,self.t("Multiprocessors","چندپردازنده‌ها"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
         self.input = QLineEdit()
@@ -169,9 +172,9 @@ class ProgramLab(QDialog):
         self.tool_pages={"live":self.datapath,"register-memory":lower,"debugger":trace_page,
                          "alu":alu_page,"codes":self.codes,"cycles":self.cycles,
                          "microprogram":self.microprogram,"organization":self.organization,
-                         "pipeline":pipeline_tabs,"io":self.io_organization}
+                         "pipeline":pipeline_tabs,"io":self.io_organization,"multiprocessor":self.multiprocessor}
         self.navigation=NavigationRail(self.inspector,parent.settings,'computer',self.t('COMPUTER','کامپیوتر'),
-            ('cpu','registers','debug','alu','codes','clock','microcode','organization','pipeline','io'),self.fa)
+            ('cpu','registers','debug','alu','codes','clock','microcode','organization','pipeline','io','network'),self.fa)
         shell.insertWidget(0,self.navigation)
         self.datapath.focus.toggled.connect(self.update_cpu_context)
         self.inspector.currentChanged.connect(self.update_cpu_context)

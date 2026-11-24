@@ -988,6 +988,7 @@ def test_learning_center_search_progress_and_routes(workspace):
     assert center.list.count()==0 and not center.open_button.isEnabled()
     center.search.clear()
     assert "coherence" in center.gap.text()
+    assert center.current_id()=="multiprocessor" and center.open_button.isEnabled()
     computer=ProgramLab(workspace)
     logic=LogicLab(workspace)
     for tool in TOOLS:
@@ -1079,7 +1080,7 @@ def test_shared_navigation_rail(workspace,app):
     lab=ProgramLab(workspace)
     lab.show();app.processEvents()
     nav=lab.navigation
-    assert nav.list.count()==lab.inspector.count()==10
+    assert nav.list.count()==lab.inspector.count()==11
     assert not nav.compact and lab.inspector.tabBar().isHidden()
     cpu=lab.cpu
     nav.list.setCurrentRow(9)
@@ -1173,3 +1174,19 @@ def test_procedural_brand_feedback(workspace,app):
     prefs.change("reduced_motion",True)
     assert mark.progress is None and mark.animation.state()==QAbstractAnimation.State.Stopped
     prefs.close()
+
+
+def test_multiprocessor_route_and_live_grant(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    lab.select_tool("multiprocessor")
+    v=lab.multiprocessor
+    assert lab.inspector.currentWidget() is v
+    v.step()
+    assert v.last.grant==0 and v.model.memory[0]==0x100
+    v.run()
+    assert v.model.served==[2]*4 and v.trace.rowCount()==8
+    v.policy.setCurrentIndex(1);v.example();v.run()
+    assert v.model.waited==[0,2,4,6]
+    assert not v.canvas.grab().isNull()
+    lab.close()

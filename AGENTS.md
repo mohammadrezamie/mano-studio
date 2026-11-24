@@ -39,3 +39,5 @@ Owner quality-first override: application size is not a constraint; investigate 
 Owner rejects legacy industrial visuals; prioritize original, modern, high-quality interactive architecture and circuit canvases. Use actual execution traces, standard schematic notation, accessible controls and purposeful motion. Never present an unverified visual preview as a real screenshot.
 
 Owner explicitly authorizes all useful tooling/skills and generated assets; prefer live/procedural, theme-aware code-drawn visuals. Static graphics only for justified illustration, with provenance and local bundling. Preserve responsive and reduced-motion behavior. Use docs/CONTINUE.md as the canonical fresh-chat handoff and update it after each coherent checkpoint; read docs/BRAND_SYSTEM.md and docs/BETA_PREVIEW.md. No unverified release or completion claims.
+
+Owner rejects M monogram as generic. Brand must be distinctive, non-letter, code-driven where useful; image generation remains authorized when it adds genuine quality. Chapter 13 first shared-bus model added; full textbook remains open. See CONTINUE.md.
