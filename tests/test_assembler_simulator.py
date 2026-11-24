@@ -75,7 +75,7 @@ def test_skip_conditions(op,ac,e,skip):
 
 
 def test_io_and_interrupt():
-    cpu = CPU({0:FIXED["INP"],1:FIXED["OUT"],2:FIXED["ION"]})
+    cpu = CPU({0:FIXED["INP"],1:FIXED["OUT"],2:FIXED["ION"],3:FIXED["CLA"]})
     cpu.ac=0xAA00
     cpu.input_byte(0x42)
     cpu.step()
@@ -83,7 +83,8 @@ def test_io_and_interrupt():
     cpu.step()
     assert cpu.output_byte()==0x42 and cpu.fgo==1
     cpu.step()
-    assert cpu.step().mnemonic=="INT" and cpu.memory[0]==3 and cpu.pc==1 and cpu.ien==0
+    assert cpu.step().mnemonic=="CLA" and cpu.r==1
+    assert cpu.step().mnemonic=="INT" and cpu.memory[0]==4 and cpu.pc==1 and cpu.ien==0 and cpu.r==0
 
 
 def test_unsupported_word_does_not_mutate():

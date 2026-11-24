@@ -68,4 +68,4 @@ class ExecutionHistory:
     def should_break(self):
         # Interrupt service may replace the next instruction; do not claim a
         # hardware microcycle breakpoint. PC address is the pre-step boundary.
-        return not self.cpu.in_progress and self.cpu.pc in self.breakpoints and not self.cpu.halted
+        return not self.cpu.in_progress and not self.cpu.r and self.cpu.pc in self.breakpoints and not self.cpu.halted

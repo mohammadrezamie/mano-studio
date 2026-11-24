@@ -670,3 +670,21 @@ def test_binary16_inspector(workspace):
     view.op.setCurrentIndex(1)
     assert view.width.isEnabled() and view.result.word==0x7400
     lab.close()
+
+
+def test_control_registers_in_cycle_view(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace,"ION\nCLA\nHLT")
+    lab.step()
+    assert lab.cpu.ien==1 and lab.cpu.r==0
+    lab.step()
+    assert lab.cpu.r==1 and lab.cpu.sc==0
+    lab.cycles.select(3)
+    detail={lab.cycles.detail.item(i,0).text():lab.cycles.detail.item(i,2).text()
+            for i in range(lab.cycles.detail.rowCount())}
+    assert detail["R"]=="1" and detail["SC"]=="0" and detail["I"]=="0"
+    lab.step()
+    assert lab.cycles.groups.item(0,0).text()=="RT0" and lab.cpu.r==0
+    lab.back()
+    assert lab.cpu.r==1
+    lab.close()

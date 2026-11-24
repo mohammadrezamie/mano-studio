@@ -17,6 +17,8 @@ def test_actual_group_chain(op,word):
     assert e.microevents[1].reads==((0,word),)
     assert all(a.after==b.before for a,b in zip(e.microevents,e.microevents[1:]))
     assert [g.timing for g in e.microevents]==list(range(len(e.microevents)))
+    assert all(g.before['SC']==g.timing and g.after['SC']==(0 if g.final else g.timing+1) for g in e.microevents)
+    assert e.microevents[2].after['I']==word>>15
     end=6 if op=="ISZ" else 5 if op in ("AND","ADD","LDA","BSA") else 4 if op in MEMORY else 3
     assert e.microevents[-1].timing==end
     h.back()
@@ -41,7 +43,7 @@ def test_bsa_wrap():
 
 def test_interrupt_groups():
     c=CPU(entry=0x100)
-    c.ien=1
+    c.ien=c.r=1
     e=c.step()
     assert e.mnemonic=="INT"
     assert e.microevents[0].after["TR"]==0x100
@@ -93,7 +95,7 @@ def test_finish_partial_and_io_guard():
     assert not c.in_progress and c.pc==0 and h.steps==0
 
 def test_interrupt_live_reversal():
-    c=CPU(entry=0x100);c.ien=1
+    c=CPU(entry=0x100);c.ien=c.r=1
     h=ExecutionHistory(c)
     for _ in range(3):h.microstep()
     assert c.memory[0]==0x100 and h.steps==1
@@ -102,4 +104,51 @@ def test_interrupt_live_reversal():
     h.microback()
     assert c.memory[0]==0
     h.microback()
-    assert c.pc==0x100 and c.ien==1 and not c.in_progress
+    assert c.pc==0x100 and c.ien==1 and c.r==1 and c.sc==0 and not c.in_progress
+
+
+def test_ion_samples_pre_edge_and_interrupt_latches_at_t3():
+    c=CPU({0:0xF080,1:0x7800,2:0x7001})
+    h=ExecutionHistory(c)
+    assert h.step().mnemonic=="ION"
+    assert c.ien==1 and c.r==0
+    for t in range(3):
+        g=h.microstep()
+        assert g.timing==t and c.r==0 and c.sc==t+1
+    g=h.microstep()
+    assert g.final and c.r==1 and c.sc==0 and c.pc==2
+    assert "R ← 1" in g.rtl
+    assert h.step().mnemonic=="INT"
+    assert c.memory[0]==2 and c.pc==1 and (c.r,c.ien,c.sc)==(0,0,0)
+    h.back()
+    assert c.r==1 and c.ien==1 and c.pc==2
+
+
+def test_iof_and_inp_sample_old_flags():
+    for word in (0xF040,0xF800):
+        c=CPU({0:word})
+        c.ien=1;c.fgo=0;c.input_byte(7)
+        e=c.step()
+        assert e.microevents[2].after["R"]==0
+        assert c.r==1
+        if word==0xF040: assert c.ien==0
+        else: assert c.fgi==0
+        assert c.step().mnemonic=="INT"
+
+
+def test_no_request_when_both_flags_clear():
+    c=CPU({0:0x7800})
+    c.ien=1;c.fgo=0
+    c.step()
+    assert c.r==0 and c.sc==0
+
+
+def test_pending_request_survives_until_interrupt():
+    c=CPU({0:0x2100,0x100:1})
+    c.ien=1
+    for t in range(4): c.microstep()
+    assert c.r==1 and c.sc==4
+    c.rewind_group()
+    assert c.r==0 and c.sc==3
+    assert c.step().mnemonic=="LDA" and c.r==1
+    assert c.step().mnemonic=="INT"

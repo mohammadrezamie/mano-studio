@@ -1,7 +1,8 @@
 """Instruction-level Mano CPU with actual timing-group snapshots; no GUI or network.
 
 Only named instructions are accepted, not combined register-reference bits.
-Interrupts are modeled at instruction boundaries, not clock-cycle timing.
+SC, I and interrupt latch R follow synchronous timing groups; external I/O is
+accepted only at instruction boundaries. No electrical timing is modeled.
 """
 from dataclasses import dataclass
 from mano_isa import FIXED_BY_CODE, MEMORY_BY_CODE
@@ -45,6 +46,7 @@ class CPU:
         self.ac = self.e = self.ir = self.ar = self.dr = self.tr = 0
         self.inpr = self.outr = self.fgi = self.ien = 0
         self.fgo = 1
+        self.sc = self.r = self.i = 0
         self.halted = False
         self._cycle = None
         self._groups = []
@@ -53,7 +55,7 @@ class CPU:
 
     def registers(self):
         return {name.upper(): getattr(self, name) for name in
-                ("pc","ac","e","ir","ar","dr","tr","inpr","outr","fgi","fgo","ien","halted")}
+                ("pc","ac","e","ir","ar","dr","tr","inpr","outr","fgi","fgo","ien","sc","r","i","halted")}
 
     def input_byte(self, value):
         if self.in_progress:
@@ -97,6 +99,16 @@ class CPU:
 
         def mark(timing,phase,rtl):
             nonlocal prior,wi,ri
+            # Sample control inputs from the state BEFORE this clock edge.
+            # Thus ION does not set R on the same edge, but IOF can latch
+            # a request that was already enabled on entry to T3.
+            final = timing == last_timing
+            if timing >= 3 and phase != "interrupt" and prior["IEN"] and (prior["FGI"] or prior["FGO"]):
+                self.r = 1
+                if not prior["R"]:
+                    rtl += "; R ← 1"
+            self.sc = 0 if final else (timing+1)&15
+            rtl = rtl.strip("; ") + ("; " if rtl.strip("; ") else "") + ("SC ← 0" if final else "SC ← SC + 1")
             after=self.registers()
             event=MicroEvent(timing,phase,rtl,prior,after,tuple(reads[ri:]),tuple(writes[wi:]),timing==last_timing)
             groups.append(event)
@@ -107,7 +119,7 @@ class CPU:
         def finish(word,op,effective):
             return StepEvent(address,word,op,effective,before,self.registers(),tuple(writes),tuple(groups))
 
-        if self.ien and (self.fgi or self.fgo):
+        if self.r:
             last_timing=2
             self._context=(address,0,"INT")
             self.tr=self.pc
@@ -116,8 +128,8 @@ class CPU:
             store(0,self.tr)
             self.pc=0
             yield mark(1,"interrupt","M[AR] ← TR, PC ← 0")
-            self.pc,self.ien=1,0
-            yield mark(2,"interrupt","PC ← PC + 1, IEN ← 0")
+            self.pc,self.ien,self.r=1,0,0
+            yield mark(2,"interrupt","PC ← PC + 1, IEN ← 0, R ← 0")
             return finish(0,"INT",0)
 
         # Preflight instruction validity without recording an architectural read.
@@ -134,14 +146,15 @@ class CPU:
         self.pc=(self.pc+1)&0xFFF
         yield mark(1,"fetch","IR ← M[AR], PC ← PC + 1")
         self.ar=self.ir&0xFFF
-        yield mark(2,"decode","AR ← IR(0–11), decode opcode and I")
+        self.i=(self.ir>>15)&1
+        yield mark(2,"decode","AR ← IR(0–11), I ← IR(15), decode opcode")
         effective=None
         if opcode<7:
             if word&0x8000:
                 self.ar=read(self.ar)&0xFFF
                 yield mark(3,"indirect","AR ← M[AR](0–11)")
             else:
-                yield mark(3,"direct","Direct address — no register transfer")
+                yield mark(3,"direct","")
             effective=a=self.ar
             if op in ("AND","ADD","LDA","ISZ"):
                 self.dr=read(a)

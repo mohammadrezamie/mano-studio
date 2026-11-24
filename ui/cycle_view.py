@@ -8,7 +8,7 @@ class CycleView(QWidget):
         self.fa=fa
         self.current_trace=None
         layout=QVBoxLayout(self)
-        self.note=QLabel(self.t("Execute one timing group at a time or inspect recorded state. SC, interrupt latch R and electrical delays are not modeled.","هر گروه زمانی را جداگانه اجرا کنید یا وضعیت ثبت‌شده را بررسی کنید. SC، ثبات وقفه R و تأخیر الکتریکی مدل نشده‌اند."))
+        self.note=QLabel(self.t("Execute one timing group or inspect recorded SC, I and interrupt latch R. External I/O is boundary-only; electrical delays are not modeled.","هر گروه زمانی را اجرا کنید یا SC، I و فلیپ‌فلاپ وقفه R را بررسی کنید. ورودی و خروجی فقط در مرز دستور ممکن است؛ تأخیر الکتریکی مدل نشده است."))
         self.note.setWordWrap(True);layout.addWidget(self.note)
         controls=QHBoxLayout()
         self.back_button=QPushButton(self.t("Previous timing","زمان قبلی"))
@@ -45,8 +45,8 @@ class CycleView(QWidget):
         names={"fetch":self.t("Fetch","واکشی"),"decode":self.t("Decode","رمزگشایی"),"direct":self.t("Direct","مستقیم"),"indirect":self.t("Indirect","غیرمستقیم"),"execute":self.t("Execute","اجرا"),"register":self.t("Register","ثبات"),"io":self.t("I/O","ورودی/خروجی"),"interrupt":self.t("Interrupt","وقفه")}
         self.groups.setRowCount(len(event.microevents))
         for i,g in enumerate(event.microevents):
-            rtl=self.t("No transfer","بدون انتقال") if g.phase=="direct" else g.rtl
-            for j,v in enumerate((f"T{g.timing}",names[g.phase],rtl)):
+            rtl=g.rtl
+            for j,v in enumerate((f"{'RT' if g.phase=='interrupt' else 'T'}{g.timing}",names[g.phase],rtl)):
                 item=QTableWidgetItem(v);item.setToolTip(v);self.groups.setItem(i,j,item)
         if event.microevents:
             row=len(event.microevents)-1 if partial else 0

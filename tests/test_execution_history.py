@@ -40,11 +40,12 @@ def test_breakpoint_at_next_pc():
     assert not h.should_break()
 
 def test_interrupt_reverse():
-    cpu=CPU({0:0xF080,1:0x7001})
+    cpu=CPU({0:0xF080,1:0x7800})
     h=ExecutionHistory(cpu)
+    h.step()
     h.step()
     before=cpu.registers()
     h.step()
-    assert cpu.memory[0]==1
+    assert cpu.memory[0]==2
     h.back()
     assert cpu.memory[0]==0xF080 and cpu.registers()==before
