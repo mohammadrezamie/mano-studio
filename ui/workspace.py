@@ -124,6 +124,7 @@ class Workspace(QMainWindow):
         row = QHBoxLayout(page)
         row.addWidget(self.button("Undo", self.editor.undo))
         row.addWidget(self.button("Redo", self.editor.redo))
+        row.addWidget(self.button("Instruction reference", self.open_instruction_reference))
         row.addStretch()
         row.addWidget(self.button("Translate", self.run_translation, True))
         self.tabs.addTab(page, self.t("Editor"))
@@ -147,6 +148,8 @@ class Workspace(QMainWindow):
         self.editor.textChanged.connect(self.invalidate)
         self.shortcut = QShortcut(QKeySequence("F5"), self)
         self.shortcut.activated.connect(self.run_translation)
+        self.reference_shortcut = QShortcut(QKeySequence("Ctrl+Space"), self)
+        self.reference_shortcut.activated.connect(self.open_instruction_reference)
         self.relabel()
         self.statusBar().showMessage(self.t("Ready"))
         geometry = settings.value("geometry")
@@ -468,6 +471,18 @@ class Workspace(QMainWindow):
         copy.clicked.connect(lambda: QApplication.clipboard().setText(source))
         layout.addWidget(copy)
         dialog.exec()
+
+    def open_instruction_reference(self):
+        from ui.instruction_reference import InstructionReference
+        dialog = InstructionReference(self)
+        if dialog.exec() and dialog.chosen:
+            cursor = self.editor.textCursor()
+            cursor.clearSelection()
+            cursor.movePosition(QTextCursor.MoveOperation.EndOfBlock)
+            prefix = "\n" if cursor.block().text().strip() else ""
+            cursor.insertText(prefix + dialog.chosen + "\n")
+            self.editor.setTextCursor(cursor)
+            self.editor.setFocus()
 
     def open_logic_lab(self):
         from ui.logic_lab import LogicLab
