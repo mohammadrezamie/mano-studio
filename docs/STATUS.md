@@ -1,0 +1,2 @@
+# Development status — 2026-11-24
+Phase zero: documentation baseline. No application code, tests, executable, installer or release has been built. Repository created public with README, Python gitignore and MIT license per owner. Next: implement and test standalone rtl_translator.py against docs/RTL.md; ask for instructor sample if available. Open questions: exact RTL grammar, address conventions, instructor name/affiliation confirmation, Windows clean-machine test access, release signing. Record actual test results and commit/PR references here as development progresses.
