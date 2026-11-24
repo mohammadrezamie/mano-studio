@@ -10,3 +10,6 @@ Classroom target: week of 2026-11-30 to 2026-12-06. Prioritize a tested Windows 
 
 ## Current priority override
 Development quality first. Installer/release and manual acceptance are deferred until owner explicitly requests them. Expand core assembler, instruction-level simulator, program lab, calm graphics and educational usability. Classroom review does not require a release. See RELEASE_POLICY.md.
+
+## Logic Lab expansion
+See LOGIC_LAB.md for chapters 1–4 and future topics. Maintain optional labs separate from the required RTL translator. Develop custom circuit design, sequential logic, waveforms, ALU, data representation and chapter-aligned learning in incremental modules.
