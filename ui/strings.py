@@ -1,5 +1,8 @@
 """Centralized UI text; code tokens always remain untranslated."""
 FA = {
+    "Offline": "آفلاین",
+    "Awaiting translation": "در انتظار ترجمه",
+    "instructions": "دستور",
     "Examples": "مثال‌ها",
     "Untitled": "بدون عنوان",
     "Save RTL as": "ذخیره RTL با نام جدید",
