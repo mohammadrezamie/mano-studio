@@ -100,3 +100,40 @@ def test_calm_preferences(workspace):
     assert lab.cpu.ac == 5
     lab.close()
     prefs.close()
+
+
+def test_file_roundtrip_and_stale_export(workspace, tmp_path, monkeypatch):
+    from PySide6.QtWidgets import QFileDialog, QMessageBox
+    source = tmp_path / "program.rtl"
+    output = tmp_path / "program.asm"
+    source.write_text("AC ← M[100]\nS ← 0\n", encoding="utf-8-sig")
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", lambda *args: (str(source), ""))
+    workspace.open_file()
+    workspace.run_translation()
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *args: (str(output), ""))
+    workspace.export_file()
+    assert output.read_text(encoding="utf-8") == "LDA 100\nHLT\n"
+    workspace.editor.setPlainText("AR ← PC")
+    workspace.run_translation()
+    warnings = []
+    monkeypatch.setattr(QMessageBox, "warning", lambda *args: warnings.append(args))
+    workspace.export_file()
+    assert warnings and output.read_text(encoding="utf-8") == "LDA 100\nHLT\n"
+
+
+def test_core_does_not_request_network(workspace, monkeypatch):
+    import socket
+    from ui.live_lab import LabDialog
+    from ui.preferences import Preferences
+    def blocked(*args, **kwargs):
+        pytest.fail("Unexpected Python network request")
+    monkeypatch.setattr(socket, "create_connection", blocked)
+    workspace.editor.setPlainText("AC ← M[100]")
+    workspace.run_translation()
+    assert workspace.output.toPlainText() == "LDA 100"
+    prefs = Preferences(workspace)
+    lab = LabDialog(workspace, "en", "dark", workspace.settings)
+    lab.step()
+    assert lab.cpu.ac == 5
+    lab.close()
+    prefs.close()
