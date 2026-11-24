@@ -15,3 +15,8 @@ VS Code split editor, command palette, themes and accessibility: https://code.vi
 Mano-Vision trace and assembler: https://github.com/MohsenSafari83/Mano-Vision
 Mano Computer Studio instruction register: https://ca.mnakhae.ir/modules/ir
 Qt APIs: https://doc.qt.io/qtforpython-6/ ; https://doc.qt.io/qtforpython-6/PySide6/QtCore/QSettings.html ; https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QSplashScreen.html ; https://doc.qt.io/qtforpython-6/PySide6/QtGui/QSyntaxHighlighter.html
+
+## Mano Glass (user-approved direction)
+Liquid Glass-inspired original portable Qt design: layered colored radial glows, translucent gradient controls, luminous rims, floating bars and opaque high-contrast code surfaces. All three themes inherit the glass style. Current implementation uses QPainter + QSS, not native Apple Liquid Glass, actual optical refraction, or OS desktop blur. Future work: restrained hover/transition animation, optional native Windows backdrop with graceful fallback, reduced-motion preference, visual review in all six language/theme combinations.
+## Mano Live Lab
+Initial interactive addition demonstration (LDA, ADD, STA, HLT), computed values from a separate pure Python demo CPU, animated conceptual bus direction, Play/Pause/Step/Reset, saved animation preference. It does not execute arbitrary editor programs or model microoperation timing. Future full simulator should emit structured events for fetch/decode/execute, register and memory changes, ALU operations and I/O; visualize real event data rather than fake animation. Add speed control, breakpoints, step back with snapshots, accessible nonanimated mode and plain-language Persian/English descriptions. Keep translator and simulator independent. No artificial loading delays.
