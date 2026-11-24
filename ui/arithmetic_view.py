@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,
     QCheckBox,QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView)
 from word_arithmetic import WIDTHS,OPERATIONS,alu,parse_word,representations
 from decimal_arithmetic import decimal_alu, packed_decimal
+from floating_arithmetic import decode_half, float_alu
 from arithmetic_algorithms import booth, restoring_division, nonrestoring_division, signed_division
 
 class ArithmeticView(QWidget):
@@ -33,6 +34,9 @@ class ArithmeticView(QWidget):
         self.op.addItem(self.t("Restoring signed divide","تقسیم علامت‌دار بازگرداننده"),"signeddivide")
         self.op.addItem(self.t("Packed BCD add","جمع BCD فشرده"),"bcdadd")
         self.op.addItem(self.t("Packed BCD subtract","تفریق BCD فشرده"),"bcdsub")
+        self.op.addItem(self.t("IEEE binary16 decode","رمزگشایی ممیز شناور binary16"),"fpdecode")
+        for operation in ("ADD","SUB","MUL","DIV"):
+            self.op.addItem("binary16 "+operation,"fp"+operation)
         self.op.setCurrentIndex(1)
         row.addWidget(self.op,1)
         self.cin=QCheckBox("Cin / E")
@@ -119,6 +123,13 @@ class ArithmeticView(QWidget):
         base=self.base.currentData()
         mode=self.op.currentData()
         op="CONVERT" if mode=="convert" else self.op.currentText()
+        self.width.setEnabled(not (isinstance(mode,str) and mode.startswith("fp")))
+        if isinstance(mode,str) and mode.startswith("fp"):
+            if width!=16:
+                self.width.setCurrentIndex(self.width.findData(16))
+                return
+            self.refresh_float(mode,base)
+            return
         if mode in ("bcdadd","bcdsub"):
             self.refresh_decimal(mode,width,base)
             return
@@ -293,3 +304,74 @@ class ArithmeticView(QWidget):
                 item=QTableWidgetItem(str(value))
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.stages.setItem(row,col,item)
+
+    def refresh_float(self,mode,base):
+        """Inspect IEEE half fields and exact arithmetic rounding in one view."""
+        self.result=None
+        decode_only=mode=="fpdecode"
+        self.b.setEnabled(not decode_only)
+        self.cin.setEnabled(False)
+        self.note.show()
+        self.stages.show()
+        self.note.setText(self.t(
+            "IEEE binary16: 1 sign bit, 5 exponent bits (bias 15), 10 fraction bits. Raw 16-bit input, not decimal real input. Exact rational arithmetic then round to nearest, ties to even. Educational model; not a Mano instruction or full IEEE exception environment.",
+            "ممیز شناور binary16: یک بیت علامت، پنج بیت نما با بایاس ۱۵ و ده بیت کسر. ورودی کلمهٔ خام ۱۶ بیتی است، نه عدد حقیقی ده‌دهی. محاسبهٔ کسری دقیق و سپس گرد کردن به نزدیک‌ترین با اولویت زوج. مدل آموزشی است، نه دستور مانو یا محیط کامل استثناهای IEEE."))
+        self.representation.setRowCount(1 if decode_only else 3)
+        self.representation.setHorizontalHeaderLabels([self.t("Word","کلمه"),"HEX","S","E","F",self.t("Value","مقدار")])
+        self.representation.clearContents()
+        self.stages.setRowCount(0)
+        self.stages.setColumnCount(2)
+        self.stages.setHorizontalHeaderLabels([self.t("Stage","مرحله"),self.t("Value","مقدار")])
+        self.flags.clear()
+        kinds={"normal":self.t("normal","نرمال"),"subnormal":self.t("subnormal","زیرنرمال"),
+               "zero":self.t("zero","صفر"),"infinity":self.t("infinity","بی‌نهایت"),"nan":"NaN"}
+        def value_text(h):
+            if h.kind=="zero": return "-0" if h.sign else "+0"
+            if h.value is not None: return str(h.value)
+            if h.kind=="infinity": return "−∞" if h.sign else "+∞"
+            return "NaN"
+        def raw(edit):
+            if base==10 and int(edit.text())<0:
+                raise ValueError("Negative raw word")
+            return parse_word(edit.text(),base,16)
+        try:
+            a=decode_half(raw(self.a))
+            if decode_only:
+                words=[("A",a)]
+                stages=[(self.t("Class","نوع"),kinds[a.kind]),
+                        (self.t("Unbiased exponent","نمای بدون بایاس"),a.exponent-15 if a.kind=="normal" else -14 if a.kind=="subnormal" else "—"),
+                        (self.t("Exact value","مقدار دقیق"),value_text(a))]
+                self.flags.setText(value_text(a))
+                self.result=a
+            else:
+                b=decode_half(raw(self.b))
+                result=float_alu(mode[2:],a.word,b.word)
+                h=decode_half(result.word)
+                words=[("A",a),("B",b),(self.t("Result","نتیجه"),h)]
+                statuses={"exact":self.t("Exact","دقیق"),"rounded":self.t("Rounded","گرد شده"),
+                          "overflow":self.t("Overflow","سرریز"),"invalid":self.t("Invalid operation","عمل نامعتبر"),
+                          "divide by zero":self.t("Division by zero","تقسیم بر صفر"),"infinity":kinds["infinity"],"nan":"NaN"}
+                stages=[(self.t("Exact intermediate","مقدار میانی دقیق"),result.exact if result.exact is not None else "—")]
+                if result.rounding:
+                    r=result.rounding
+                    stages.extend([(self.t("Scaling exponent","نمای مقیاس"),r.exponent),
+                                   (self.t("Quantum","فاصلهٔ نمایش"),r.quantum),
+                                   (self.t("Truncated significand","مانتیس قطع‌شده"),r.truncated),
+                                   (self.t("Discarded fraction","کسر حذف‌شده"),r.remainder),
+                                   (self.t("Rounded significand","مانتیس گرد شده"),r.rounded)])
+                stages.append((self.t("Status","وضعیت"),statuses[result.status]))
+                self.flags.setText(f"{value_text(h)} | {statuses[result.status]}")
+                self.result=result
+        except ValueError:
+            self.status.setText(self.t("Invalid raw 16-bit word.","کلمهٔ خام ۱۶ بیتی نامعتبر است."))
+            return
+        self.status.clear()
+        for row,(label,h) in enumerate(words):
+            for col,value in enumerate((label,f"{h.word:04X}",h.sign,f"{h.exponent:05b}",f"{h.fraction:010b}",value_text(h))):
+                item=QTableWidgetItem(str(value))
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.representation.setItem(row,col,item)
+        self.stages.setRowCount(len(stages))
+        for row,values in enumerate(stages):
+            for col,value in enumerate(values):
+                self.stages.setItem(row,col,QTableWidgetItem(str(value)))

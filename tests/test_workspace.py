@@ -649,3 +649,24 @@ def test_packed_bcd_modes(workspace):
     assert view.result.word==0xAC
     assert view.representation.item(0,5).text()=="-85"
     lab.close()
+
+
+def test_binary16_inspector(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.arithmetic
+    view.width.setCurrentIndex(view.width.findData(8))
+    view.a.setText("3C00")
+    view.b.setText("3800")
+    view.op.setCurrentIndex(view.op.findData("fpADD"))
+    assert view.width.currentData()==16 and not view.width.isEnabled()
+    assert view.result.word==0x3E00
+    assert view.representation.item(2,5).text()=="3/2"
+    view.op.setCurrentIndex(view.op.findData("fpdecode"))
+    assert view.result.value==1 and view.representation.rowCount()==1
+    view.a.setText("10000")
+    assert view.result is None and view.stages.rowCount()==0
+    view.a.setText("3C00")
+    view.op.setCurrentIndex(1)
+    assert view.width.isEnabled() and view.result.word==0x7400
+    lab.close()
