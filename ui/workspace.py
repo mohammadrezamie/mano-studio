@@ -1,6 +1,6 @@
 """Workspace UI. All translation is delegated to rtl_translator.py."""
 from pathlib import Path
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, QSize
 from PySide6.QtGui import QFontDatabase, QTextCursor, QTextCharFormat, QSyntaxHighlighter, QColor, QShortcut, QKeySequence
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QComboBox,
@@ -13,7 +13,8 @@ from rtl_translator import translate
 from instruction_catalog import TEMPLATES, build_rtl
 from example_catalog import EXAMPLES, computer_source
 from ui.strings import FA, HELP, NAMES, EN_NAMES
-from ui.theme import PALETTES, stylesheet
+from ui.theme import PALETTES, SYNTAX, apply_theme
+from ui.icons import icon
 from ui.code_editor import CodeEditor
 from ui.glass import GlassRoot
 
@@ -21,10 +22,12 @@ LTR = Qt.LayoutDirection.LeftToRight
 
 
 class CodeHighlighter(QSyntaxHighlighter):
+    theme = "dark"
+
     def highlightBlock(self, text):
-        for pattern, color in [(r"\b(?:AC|PC|AR|DR|IR|TR|E|INPR|OUTR|IEN|FGI|FGO|S|M|IF|THEN|AND|ADD|LDA|STA|BUN|BSA|ISZ|CLA|CLE|CMA|CME|CIR|CIL|INC|SPA|SNA|SZA|SZE|HLT|INP|OUT|SKI|SKO|ION|IOF)\b", "#488ed1"),
-                               (r"←|<-|=|∧|¬|\+", "#a875ce"),
-                               (r"[#;].*$", "#8996a5")]:
+        for pattern, color in [(r"\b(?:AC|PC|AR|DR|IR|TR|E|INPR|OUTR|IEN|FGI|FGO|S|M|IF|THEN|AND|ADD|LDA|STA|BUN|BSA|ISZ|CLA|CLE|CMA|CME|CIR|CIL|INC|SPA|SNA|SZA|SZE|HLT|INP|OUT|SKI|SKO|ION|IOF)\b", SYNTAX[self.theme][0]),
+                               (r"←|<-|=|∧|¬|\+", SYNTAX[self.theme][1]),
+                               (r"[#;].*$", SYNTAX[self.theme][2])]:
             fmt = QTextCharFormat()
             fmt.setForeground(QColor(color))
             for match in re.finditer(pattern, text, re.I):
@@ -61,6 +64,7 @@ class Workspace(QMainWindow):
         self.result = None
         self.translated_source = None
         self.labels = []
+        self.icon_buttons = []
         self.setWindowTitle("Mano Studio")
         self.resize(1240, 790)
         root = GlassRoot(self.theme, settings.value("glass_enabled", True, type=bool))
@@ -73,6 +77,8 @@ class Workspace(QMainWindow):
         header = QHBoxLayout(header_frame)
         brand = QLabel("MANO STUDIO")
         brand.setObjectName("brand")
+        self.brand_mark = QLabel()
+        header.addWidget(self.brand_mark)
         header.addWidget(brand)
         header.addWidget(self.label("Build. Translate. Learn.", "subtitle"))
         header.addStretch()
@@ -116,6 +122,7 @@ class Workspace(QMainWindow):
             self.example_actions.append((action, example))
         examples_button.setMenu(examples_menu)
         toolbar.addWidget(examples_button)
+        self.icon_buttons.append((examples_button, "examples"))
         labs = QPushButton(self.t("Labs"))
         self.labels.append((labs, "Labs"))
         self.lab_menu = QMenu(labs)
@@ -126,6 +133,7 @@ class Workspace(QMainWindow):
             self.lab_actions.append((action, key))
         labs.setMenu(self.lab_menu)
         toolbar.addWidget(labs)
+        self.icon_buttons.append((labs, "labs"))
         toolbar.addStretch()
         toolbar.addWidget(self.button("Translate", self.run_translation, True))
         self.export_button = self.button("Export ASM", self.export_file)
@@ -137,9 +145,21 @@ class Workspace(QMainWindow):
         editors = QSplitter(Qt.Orientation.Horizontal)
         self.editor, self.output = code_editor(), code_editor(True)
         for title, editor in [("RTL input", self.editor), ("Assembly output", self.output)]:
-            pane = QWidget()
+            pane = QFrame()
+            pane.setObjectName("editorPanel")
             box = QVBoxLayout(pane)
-            box.addWidget(self.label(title, "section"))
+            box.setContentsMargins(10, 8, 10, 10)
+            heading = QHBoxLayout()
+            heading.addWidget(self.label(title, "section"))
+            heading.addStretch()
+            if editor is self.output:
+                self.output_state = QLabel()
+                heading.addWidget(self.output_state)
+            else:
+                heading.addWidget(self.label("UTF-8", "muted"))
+            box.addLayout(heading)
+            editor.setObjectName("workspaceCode")
+            editor.setAccessibleName(self.t(title))
             box.addWidget(editor)
             editors.addWidget(pane)
         editors.setSizes([600, 600])
@@ -189,6 +209,10 @@ class Workspace(QMainWindow):
             shortcut.activated.connect(handler)
             self.file_shortcuts.append(shortcut)
         self.relabel()
+        self.offline_label = self.label("Offline", "muted")
+        self.statusBar().addPermanentWidget(self.offline_label)
+        self.update_output_state()
+        self.apply_appearance()
         self.statusBar().showMessage(self.t("Ready"))
         self.update_document_title()
         geometry = settings.value("geometry")
@@ -217,6 +241,10 @@ class Workspace(QMainWindow):
             widget.setObjectName("primary")
         widget.clicked.connect(lambda checked=False: action())
         self.labels.append((widget, key))
+        names = {"Open RTL":"open","Translate":"translate","Export ASM":"export",
+                 "Settings":"settings","Undo":"undo","Redo":"redo","Instruction reference":"search"}
+        if key in names:
+            self.icon_buttons.append((widget,names[key]))
         return widget
 
     def pad(self):
@@ -399,6 +427,7 @@ class Workspace(QMainWindow):
         self.translated_source = None
         self.output.clear()
         self.export_button.setEnabled(False)
+        self.update_output_state()
         self.table.setRowCount(0)
         self.editor.mark_errors(())
         self.diagnostics_panel.hide()
@@ -415,8 +444,21 @@ class Workspace(QMainWindow):
             self.mapping_active = False
         self.follow_source()
         self.export_button.setEnabled(self.result.ok)
+        self.update_output_state()
         self.render_errors()
         self.statusBar().showMessage(self.t("Translation successful" if self.result.ok else "Translation failed"))
+
+    def update_output_state(self):
+        if self.result is None:
+            state, label = "neutral", self.t("Awaiting translation")
+        elif not self.result.ok:
+            state, label = "error", self.t("Translation failed")
+        else:
+            state, label = "success", f"{len(self.result.instructions)} " + self.t("instructions")
+        self.output_state.setText(label)
+        self.output_state.setProperty("state", state)
+        self.output_state.style().unpolish(self.output_state)
+        self.output_state.style().polish(self.output_state)
 
     def mapped_cursor(self, editor, line):
         block = editor.document().findBlockByNumber(line)
@@ -493,6 +535,9 @@ class Workspace(QMainWindow):
         self.table.setHorizontalHeaderLabels([self.t(k) for k in ("Line", "Column", "Code", "Help")])
         self.render_errors()
         self.update_preview()
+        self.update_output_state()
+        self.editor.setAccessibleName(self.t("RTL input"))
+        self.output.setAccessibleName(self.t("Assembly output"))
 
     def change_language(self):
         self.language = self.languages.currentData()
@@ -509,7 +554,17 @@ class Workspace(QMainWindow):
 
     def apply_appearance(self):
         enabled = self.settings.value("glass_enabled", True, type=bool)
-        QApplication.instance().setStyleSheet(stylesheet(self.theme, enabled))
+        apply_theme(QApplication.instance(), self.theme, enabled)
+        bg, panel, raised, fg, muted, accent, border = PALETTES[self.theme]
+        self.brand_mark.setPixmap(icon("brand",accent,28).pixmap(QSize(28,28)))
+        for button,name in self.icon_buttons:
+            color = ("#ffffff" if self.theme=="light" else bg) if button.objectName()=="primary" else fg
+            button.setIcon(icon(name,color))
+            button.setIconSize(QSize(18,18))
+        for editor in (self.editor,self.output):
+            editor.highlighter.theme=self.theme
+            editor.highlighter.rehighlight()
+            editor.gutter.update()
         self.centralWidget().theme = self.theme
         self.centralWidget().enabled = enabled
         self.centralWidget().update()
