@@ -66,3 +66,23 @@ def test_catalog_complete():
     assert len(CIRCUITS)==15
     for circuit in CIRCUITS.values():
         assert len(list(circuit.truth_table()))==2**len(circuit.inputs)
+
+
+@pytest.mark.parametrize("count",[2,3,4])
+@pytest.mark.parametrize("op",["AND","OR","NAND","NOR","XOR","XNOR"])
+def test_variable_input_gates(op,count):
+    from logic_engine import basic
+    circuit=basic(op,count)
+    assert len(circuit.inputs)==count and len(circuit.outputs)==1
+    for bits,(actual,) in circuit.truth_table():
+        expected={"AND":int(all(bits)),"OR":int(any(bits)),
+                  "NAND":1-int(all(bits)),"NOR":1-int(any(bits)),
+                  "XOR":sum(bits)%2,"XNOR":1-sum(bits)%2}
+        assert actual==expected[op]
+
+
+@pytest.mark.parametrize("op,count",[("NOT",2),("AND",1),("OR",5),("XOR",0)])
+def test_gate_arity_rejected(op,count):
+    from logic_engine import basic
+    with pytest.raises(ValueError):
+        basic(op,count)
