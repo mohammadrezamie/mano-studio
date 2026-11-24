@@ -20,3 +20,6 @@ Before adding a new feature, identify existing capability to reuse, user task, w
 
 ## Research and documentation-first workflow
 For each new owner instruction, commit its interpretation and planned scope to documentation before code edits. Record research links, relevant design patterns, license and reuse decisions. Reuse open-source code only after checking exact license, notices and compatibility; ideas may inspire original implementations. Update status after each meaningful code checkpoint. Research is purposeful, not a mandate to add features. Current step 2: consolidate instruction builder/reference and source mapping, keep one RTL document.
+
+### Step 2 progress
+Shared builder/reference panel implemented, separate reference dialog removed. RTL and ASM cursor positions linked via original translation line mapping; invalid/stale results do not navigate. Tests authored, runtime/visual verification pending. Next: examples and consistent file workflow, then step 3 visual system. Sources and reuse decisions logged in REFERENCES.md.
