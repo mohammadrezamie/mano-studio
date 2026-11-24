@@ -29,3 +29,6 @@ Start with [AGENTS.md](AGENTS.md), [current status](docs/STATUS.md), [project sp
 
 ## License
 MIT — see LICENSE.
+
+## Current UX plan
+[Integrated UX development plan](docs/UX_PLAN.md): keep the primary RTL-to-ASM workflow simple; combine CPU tools into one Computer workspace and share the digital logic canvas. No installer or release activity until the owner asks.
