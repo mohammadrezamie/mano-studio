@@ -1015,3 +1015,19 @@ def test_learning_center_persian_and_launch(workspace):
     assert center.current_id()=="interrupt"
     center.launch()
     assert center.selected.id=="interrupt"
+
+
+def test_focused_learning_tool_pauses_without_reset(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    assert lab.cpu is not None
+    cpu=lab.cpu
+    lab.step()
+    before=lab.steps
+    lab.timer.start(1000)
+    lab.select_tool("fifo")
+    assert not lab.timer.isActive()
+    assert lab.cpu is cpu and lab.steps==before
+    lab.select_tool("live")
+    assert lab.cpu is cpu and lab.steps==before
+    lab.close()

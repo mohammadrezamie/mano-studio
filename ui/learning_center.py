@@ -42,15 +42,16 @@ class LearningCenter(QDialog):
         self.task=QLabel();self.task.setWordWrap(True);box.addWidget(self.task)
         self.gap=QLabel();self.gap.setWordWrap(True);box.addWidget(self.gap)
         box.addStretch()
-        self.mark=QPushButton();self.mark.clicked.connect(self.toggle_practiced);box.addWidget(self.mark)
+        self.mark=QPushButton();self.mark.setAutoDefault(False);self.mark.clicked.connect(self.toggle_practiced);box.addWidget(self.mark)
         self.open_button=QPushButton(self.t("Open tool","باز کردن ابزار"));self.open_button.setObjectName("primary")
-        self.open_button.clicked.connect(self.launch);box.addWidget(self.open_button)
+        self.open_button.setDefault(True);self.open_button.clicked.connect(self.launch);box.addWidget(self.open_button)
         split.addWidget(detail);split.setSizes([450,400]);layout.addWidget(split,1)
         self.search.textChanged.connect(self.refresh)
         self.chapter.currentIndexChanged.connect(self.refresh)
         self.remaining.toggled.connect(self.refresh)
         self.list.currentItemChanged.connect(self.show_detail)
-        self.list.itemDoubleClicked.connect(lambda _:self.launch())
+        self.list.itemActivated.connect(lambda _:self.launch())
+        self.search.returnPressed.connect(self.launch)
         self.refresh();self.search.setFocus()
 
     def t(self,en,fa):return fa if self.fa else en
@@ -94,7 +95,9 @@ class LearningCenter(QDialog):
             self.task.setText(self.t("No matching interactive tool. Change the search or chapter filter.","ابزار تعاملی مطابق یافت نشد. جست‌وجو یا فیلتر فصل را تغییر دهید."))
             self.mark.setText(self.t("Mark as practiced","علامت‌گذاری به‌عنوان تمرین‌شده"))
         if chapter:
-            self.detail_chapter.setText(self.t("Chapter ","فصل ")+str(chapter.number)+" · "+chapter.title[self.fa])
+            chapter_tools=[t for t in TOOLS if t.chapter==chapter.number]
+            count=sum(t.id in self.practiced for t in chapter_tools)
+            self.detail_chapter.setText(self.t("Chapter ","فصل ")+str(chapter.number)+" · "+chapter.title[self.fa]+f" | {count}/{len(chapter_tools)} "+self.t("practiced","تمرین‌شده"))
             self.gap.setText(self.t("Remaining coverage: ","پوشش باقی‌مانده: ")+chapter.gap[self.fa])
         else:self.detail_chapter.clear();self.gap.clear()
 

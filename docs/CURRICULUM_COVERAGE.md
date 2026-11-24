@@ -6,19 +6,21 @@ For each component/algorithm record: mathematical model, valid inputs and domain
 
 | Chapter | Implemented or partial | Remaining major families |
 |---|---|---|
-| 1 Digital logic | Gates, adders, subtractor, ideal flip-flops | Boolean expression/minimization, K-map, sequential state synthesis |
-| 2 Digital components | Decoder, encoder, MUX, DEMUX, register and counter | Expanded/selectable/active-low variants, shift/load registers, memory chips, physical device distinctions |
-| 3 Data representation | Four bases, signed/unsigned words, two's complement | Other complements, BCD, Gray, ASCII, error-detecting codes, fixed/floating-point |
-| 4 Register transfer and microoperations | Canonical RTL, arithmetic/logic/shifts, shared ALU | Controlled transfers, bus selection, tri-state behavior, memory transfer, combined arithmetic-logic-shift circuit |
-| 5 Basic computer design | Instruction-level CPU, register/memory state, interrupts | Timing signals, microcycle control and common bus, exact control logic |
-| 6 Programming | Two-pass assembler, debugger, examples | Broader worked-program exercises, subroutines, I/O, arithmetic routines |
-| 7 Microprogrammed control | Not implemented | Control memory, microinstruction formats, sequencer |
-| 8 CPU | Basic Computer only | General register organization, stack, addressing modes, instruction formats, RISC/CISC |
-| 9 Pipeline and vector | Not implemented | Pipeline timing/hazards, vector and matrix processing |
-| 10 Computer arithmetic | Fixed-width addition/subtraction/shift | Booth, multiplication/division, floating-point, decimal arithmetic |
-| 11 I/O organization | Basic Computer flags/interrupt | Handshaking, priority, DMA, FIFO, serial transfer |
-| 12 Memory organization | Basic Computer 4096-word memory | RAM/ROM mapping, cache, associative and virtual memory |
-| 13 Multiprocessors | Not implemented | Interconnect, arbitration, synchronization, coherence |
+| 1 Digital logic | Combinational circuits, editable netlists, truth tables, Boolean equations, ideal clocked flip-flops | Minimization, K-map, sequential state synthesis |
+| 2 Digital components | Decoder, encoder, MUX, DEMUX, adders, comparators, shift registers and counters | More device variants, physical IC pinouts |
+| 3 Data representation | Four bases, signed/unsigned words, BCD, Gray, ASCII, Hamming(7,4), binary16 extension | Historical floating formats, other complements and error-detection exercises |
+| 4 Register transfer and microoperations | Canonical RTL, shared ALU, tri-state register bus, memory transfer | Electrical timing and full arithmetic-logic-shift hardware |
+| 5 Basic computer design | Instruction and T-state CPU, control trace, common bus, interrupt latch, reversible execution | Combined control bits, gate-level implementation |
+| 6 Programming | Two-pass assembler, reversible debugger, integrated examples | Additional worked programs, subroutines and I/O exercises |
+| 7 Microprogrammed control | Separate control store, symbolic microassembler, microsequencer and builder, reverse trace | More opcode mapping and control-store examples |
+| 8 CPU | General registers, register and memory stacks, addressing, address-count instruction formats and postfix | Full RISC/CISC comparison, instruction encodings |
+| 9 Pipeline and vector | Five-stage instruction pipeline, RAW/structural/branch handling, prediction, integer and binary16 arithmetic pipeline, vector/matrix | Variable latency, other array processor models |
+| 10 Computer arithmetic | Fixed-width ALU, Booth, restoring/non-restoring division, BCD arithmetic, binary16 | Historical floating formats, other arithmetic algorithms |
+| 11 I/O organization | Basic Computer I/O, asynchronous handshake, priority/nesting, DMA, FIFO | Serial framing, further I/O integration |
+| 12 Memory organization | RAM/ROM chips, width/depth expansion, bank interleaving | Cache, associative and virtual memory |
+| 13 Multiprocessors | No interactive implementation yet | Interconnection, arbitration, synchronization, coherence |
+
+This table describes current partial implementations, not complete textbook coverage. Exact-head 1bb6f07 passed Windows and Ubuntu automated tests in run 45452014765. The Learning Center index and navigation are being tested separately. Native visual review remains pending.
 
 ## Delivery boundary
 Full-book coverage is a long-term product goal, not a prerequisite for the next classroom Windows candidate. Prioritize a working offline translator and coherent Windows UX. New models must use existing lab surfaces and shared engines. No new public release or platform packages.
