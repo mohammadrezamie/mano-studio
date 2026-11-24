@@ -137,3 +137,30 @@ def test_core_does_not_request_network(workspace, monkeypatch):
     assert lab.cpu.ac == 5
     lab.close()
     prefs.close()
+
+
+def test_reference_lookup(workspace):
+    from ui.instruction_reference import InstructionReference
+    dialog=InstructionReference(workspace)
+    assert len(dialog.rows)==25
+    dialog.search.setText("LDA")
+    dialog.address.setText("ABC")
+    dialog.indirect.setChecked(True)
+    assert dialog.rows[0][2:]==("AC ← M[M[ABC]]","LDA ABC I")
+    dialog.select()
+    assert dialog.chosen=="AC ← M[M[ABC]]"
+
+
+def test_logic_pin_count_and_truth_table(workspace):
+    from ui.logic_lab import LogicLab
+    from ui.gate_symbols import pin_offsets
+    dialog=LogicLab(workspace)
+    dialog.selector.setCurrentIndex(dialog.selector.findData("xor"))
+    dialog.pin_count.setValue(4)
+    assert len(dialog.buttons)==4 and dialog.table.rowCount()==16
+    assert len(pin_offsets(4))==4
+    dialog.choose_row(7,0)
+    assert dialog.summary.text()=="Y = 1"
+    dialog.selector.setCurrentIndex(dialog.selector.findData("not"))
+    assert len(dialog.buttons)==1 and not dialog.pin_count.isEnabled()
+    dialog.close()
