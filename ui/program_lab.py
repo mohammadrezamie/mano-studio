@@ -15,6 +15,7 @@ from ui.cycle_view import CycleView
 from ui.microprogram_view import MicroprogramView
 from ui.cpu_organization_view import OrganizationView
 from ui.pipeline_view import PipelineView
+from ui.vector_pipeline_view import VectorPipelineView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
@@ -129,7 +130,11 @@ class ProgramLab(QDialog):
         self.organization=OrganizationView(self.fa)
         self.inspector.addTab(self.organization,self.t("CPU organization","سازمان CPU"))
         self.pipeline=PipelineView(self.fa)
-        self.inspector.addTab(self.pipeline,self.t("Pipeline","خط لوله"))
+        self.vector_pipeline=VectorPipelineView(self.fa)
+        pipeline_tabs=QTabWidget()
+        pipeline_tabs.addTab(self.pipeline,self.t("Instruction pipeline","خط لوله دستورات"))
+        pipeline_tabs.addTab(self.vector_pipeline,self.t("Vector / matrix","بردار / ماتریس"))
+        self.inspector.addTab(pipeline_tabs,self.t("Pipeline","خط لوله"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
         self.input = QLineEdit()

@@ -878,3 +878,21 @@ def test_pipeline_predictor_controls(workspace):
     assert view.model.branches==1 and view.model.mispredictions==0
     assert view.model.shared_port
     lab.close()
+
+
+def test_vector_pipeline_view(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.vector_pipeline
+    view.step()
+    assert view.trace.rowCount()==1
+    view.run()
+    assert view.model.output()==((6,13,22,33),) and view.model.cycles==6
+    view.mode.setCurrentIndex(view.mode.findData("matrix"))
+    assert view.model is None
+    view.example();view.run()
+    assert view.model.output()==((58,64),(139,154)) and view.trace.rowCount()==14
+    view.inputs[0].setPlainText("1 x")
+    view.load()
+    assert view.model is None and view.trace.rowCount()==0
+    lab.close()
