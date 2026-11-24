@@ -813,3 +813,24 @@ def test_cpu_organization_view(workspace):
     view.pop()
     assert view.stack.empty and view.stack_status.text()
     lab.close()
+
+
+def test_memory_stack_and_addressing_view(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.organization
+    view.stack_mode.setCurrentIndex(view.stack_mode.findData("memory"))
+    assert view.stack.sp==0x440
+    view.stack_input.setValue(0x1234);view.push()
+    assert view.stack.sp==0x43F and view.stack.words[0x43F]==0x1234
+    view.pop();assert view.stack.empty and view.stack_input.value()==0x1234
+    view.address_field.setValue(0x100)
+    view.address_mode.setCurrentIndex(view.address_mode.findData("indirect"))
+    view.evaluate_address()
+    assert view.last_address.operand==0xABCD and view.address_reads.rowCount()==2
+    view.address_mode.setCurrentIndex(view.address_mode.findData("auto_increment"))
+    view.address_register.setValue(65535);view.evaluate_address()
+    assert view.address_register.value()==0 and view.last_address.effective_address==65535
+    view.address_memory.setPlainText("FFFF:10000");view.evaluate_address()
+    assert view.last_address is None and view.address_reads.rowCount()==0
+    lab.close()
