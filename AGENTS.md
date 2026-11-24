@@ -5,3 +5,5 @@ Keep rtl_translator.py standalone, pure Python standard library, readable and co
 Also read docs/UI_DESIGN.md and docs/MAINTAINABILITY.md. Implement all three interchangeable input modes (expert editor, symbol pad, guided builder) with instruction_catalog.build_rtl and the same translate() engine. Preserve language, theme (Light/Dark/Night), input mode and geometry. Do not claim GUI or Windows testing without actual execution.
 
 Mandatory owner release/comfort decisions: read docs/RELEASE_POLICY.md before any work or release. Beta/pre-release only; no v1.0.0 or stable publication without explicit approval after class review. Preserve fully offline core, manual update-check-only network access, and reduced-motion/glass-off controls.
+
+Latest owner priority overrides earlier packaging milestones: development only, no installer/release work or publication until owner asks. Keep ordinary regression tests but defer manual acceptance testing to owner. Read docs/SIMULATOR.md; preserve separate RTL translator and event-driven CPU. Continue PR #9 branch.
