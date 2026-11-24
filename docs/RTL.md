@@ -46,3 +46,6 @@ Example: memory[0x100]=5, memory[0x101]=3; LDA 100, ADD 101, STA 102, HLT yields
 | IOF | `IEN ← 0` |
 
 For all seven memory instructions, use `M[100]` in place of effective address `100` for indirect mode, e.g. `AC ← M[M[100]]` -> `LDA 100 I`. BSA/ISZ repeated address tokens must match apart from case/spacing. Effective address is latched before execution; ISZ condition is evaluated after 16-bit increment. PC denotes post-fetch PC; PC arithmetic is 12-bit, AC/memory arithmetic 16-bit. SPA includes zero. CIR/CIL rotate combined 17-bit E:AC. These are provisional instruction-level templates, not verbatim book microoperations. Unsupported syntax is rejected.
+
+## Optional reverse import (not the assignment)
+File > Import ASM as RTL reconstructs canonical RTL for named instructions and direct/indirect literal hex operands using instruction_catalog; verifies each generated line with the standalone forward translator. Labels, ORG/END/DEC/HEX, arbitrary combined bits and empty input are rejected rather than silently losing address/data information. Comments/formatting are not reconstructed. A successful import opens a new unsaved RTL document; original ASM is not modified. No change to rtl_translator.py. Errors preserve existing document; message details currently English. Tests authored, CI pending.

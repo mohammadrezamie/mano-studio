@@ -1,5 +1,9 @@
 """Centralized UI text; code tokens always remain untranslated."""
 FA = {
+    "Import ASM as RTL": "ورود اسمبلی به صورت RTL",
+    "Cannot reconstruct RTL": "بازسازی RTL امکان‌پذیر نیست",
+    "Assembly file too large": "فایل اسمبلی بیش از حد بزرگ است",
+    "Canonical RTL reconstructed; save as a new RTL file.": "RTL استاندارد بازسازی شد؛ آن را در فایل جدید ذخیره کنید.",
     "Offline": "آفلاین",
     "Awaiting translation": "در انتظار ترجمه",
     "instructions": "دستور",

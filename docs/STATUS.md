@@ -92,3 +92,6 @@ Added fixed-width 4/8/12/16-bit representation and ripple ALU, shared with CPU A
 
 ### Computer integration checkpoint
 Integrated debugger trace, breakpoint/continue/back, source mapping, CSV export, external-I/O barrier and shared Data & ALU view in existing Computer inspector. No separate lab; independent Computer access with invalid RTL now opens example instead of blocking. New UI regression authored; pending CI.
+
+### Reverse import checkpoint
+Added optional asm_to_rtl.py and File > Import ASM as RTL (canonical named instructions only; no data/directives/labels, no partial conversion). Forward verification through actual independent translate(), source file untouched, new unsaved document. All 25 instructions and invalid cases have regression coverage authored. Exact-head CI unavailable so far; no claim of runtime success.

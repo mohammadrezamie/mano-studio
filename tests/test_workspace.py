@@ -350,3 +350,14 @@ def test_computer_debugger_and_alu(workspace,tmp_path):
     lab.write_trace(path)
     assert len(path.read_text(encoding="utf-8-sig").splitlines())==3
     lab.close()
+
+
+def test_optional_reverse_import(workspace,tmp_path,monkeypatch):
+    from PySide6.QtWidgets import QFileDialog
+    path=tmp_path/"input.asm"
+    path.write_text("LDA 100 I\nHLT",encoding="utf-8")
+    monkeypatch.setattr(QFileDialog,"getOpenFileName",lambda *a:(str(path),""))
+    workspace.import_assembly()
+    assert workspace.path is None and workspace.editor.document().isModified()
+    assert workspace.output.toPlainText()=="LDA 100 I\nHLT"
+    assert path.read_text(encoding="utf-8")=="LDA 100 I\nHLT"

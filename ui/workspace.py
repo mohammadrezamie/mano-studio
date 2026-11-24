@@ -103,7 +103,7 @@ class Workspace(QMainWindow):
         toolbar_frame.setObjectName("glassBar")
         toolbar = QHBoxLayout(toolbar_frame)
         self.menu_actions = []
-        for name, entries in [("File", [("New", self.new_file), ("Open RTL", self.open_file), ("Save RTL", self.save_file), ("Save RTL as", self.save_as)]),
+        for name, entries in [("File", [("New", self.new_file), ("Open RTL", self.open_file), ("Import ASM as RTL", self.import_assembly), ("Save RTL", self.save_file), ("Save RTL as", self.save_as)]),
                               ("Help", [("Instruction reference", self.open_instruction_reference), ("About", self.about)])]:
             button = QPushButton(self.t(name))
             self.labels.append((button, name))
@@ -629,6 +629,30 @@ class Workspace(QMainWindow):
             return
         self.settings.setValue("last_directory", str(path.parent))
         self.replace_document(value, path=path)
+
+    def import_assembly(self):
+        from asm_to_rtl import reverse_translate
+        if not self.confirm_discard():
+            return
+        name,_=QFileDialog.getOpenFileName(self,self.t("Import ASM as RTL"),self.last_directory(),"Assembly (*.asm *.txt);;All files (*)")
+        if not name:return
+        try:
+            source=Path(name)
+            if source.stat().st_size>2_000_000:
+                raise ValueError(self.t("Assembly file too large"))
+            result=reverse_translate(source.read_text(encoding="utf-8-sig"))
+        except (OSError,UnicodeError,ValueError) as exc:
+            QMessageBox.warning(self,self.t("File error"),str(exc))
+            return
+        if not result.ok:
+            details="\n".join(f"{e.line}: {e.message}" for e in result.errors[:15])
+            QMessageBox.warning(self,self.t("Cannot reconstruct RTL"),details)
+            return
+        self.settings.setValue("last_directory",str(source.parent))
+        self.replace_document(result.rtl)
+        self.editor.document().setModified(True)
+        self.run_translation()
+        self.statusBar().showMessage(self.t("Canonical RTL reconstructed; save as a new RTL file."))
 
     def save_file(self):
         if self.path is None:
