@@ -5,7 +5,8 @@ from pathlib import Path
 import tempfile
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QApplication
-from ui.theme import apply_theme
+from ui.logic_lab import LogicLab
+from ui.program_lab import ProgramLab
 from ui.workspace import Workspace
 
 
@@ -32,6 +33,35 @@ def main():
                     target = output / f"{language}-{theme}-{mode}.png"
                     if not window.grab().save(str(target)):
                         raise RuntimeError(f"Could not save {target}")
+                # Capture actual optional labs too, without opening modal exec loops.
+                lab=LogicLab(window)
+                lab.resize(1360,900)
+                lab.selector.setCurrentIndex(lab.selector.findData("full_adder"))
+                lab.show()
+                app.processEvents()
+                lab.diagram.fit()
+                lab.choose_row(5,0)
+                app.processEvents()
+                target=output/f"{language}-{theme}-logic.png"
+                if not lab.grab().save(str(target)):
+                    raise RuntimeError(f"Could not save {target}")
+                lab.canvas_edit.setChecked(True)
+                app.processEvents()
+                target=output/f"{language}-{theme}-logic-edit.png"
+                if not lab.grab().save(str(target)):
+                    raise RuntimeError(f"Could not save {target}")
+                lab.close()
+                computer=ProgramLab(window)
+                computer.resize(1360,900)
+                computer.show()
+                computer.step()
+                computer.step()
+                computer.pause()
+                app.processEvents()
+                target=output/f"{language}-{theme}-computer.png"
+                if not computer.grab().save(str(target)):
+                    raise RuntimeError(f"Could not save {target}")
+                computer.close()
         window.editor.document().setModified(False)
         window.close()
 
