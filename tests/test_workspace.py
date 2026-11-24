@@ -232,3 +232,22 @@ def test_example_cancel_preserves_document(workspace, monkeypatch):
     workspace.load_example(EXAMPLES[0])
     assert workspace.editor.toPlainText()=="S ← 0"
     assert workspace.active_example is None
+
+
+def test_visual_status_and_theme(workspace):
+    from PySide6.QtGui import QPalette, QColor
+    from ui.theme import PALETTES
+    assert workspace.output_state.property("state")=="neutral"
+    assert not workspace.export_button.icon().isNull()
+    workspace.editor.setPlainText("AC ← M[100]")
+    workspace.run_translation()
+    assert workspace.output_state.property("state")=="success"
+    assert workspace.output_state.text()=="1 instructions"
+    workspace.editor.setPlainText("AR ← PC")
+    workspace.run_translation()
+    assert workspace.output_state.property("state")=="error"
+    for theme in ("light","night","dark"):
+        workspace.themes.setCurrentIndex(workspace.themes.findData(theme))
+        assert workspace.editor.highlighter.theme==theme
+        assert workspace.output.highlighter.theme==theme
+        assert QApplication.instance().palette().color(QPalette.ColorRole.Base)==QColor(PALETTES[theme][1])
