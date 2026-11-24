@@ -30,3 +30,6 @@ Existing Logic Lab now has Combinational and Sequential tabs. sequential_logic.p
 
 ## Net-aware notation
 See SCHEMATIC_STANDARD.md. Original distinctive shapes and exact pin counts retained. Routed net identity drives filled junction dots; different-net crossings do not connect, ambiguous contact/overlap receives an outlined warning and routing guidance. Explicit multi-input parity labels and complementary flip-flop output notation. This is functional teaching notation, not device-specific IC pinout or formal certification. Latest CI pending.
+
+## Expanded combinational components
+Eight new presets (see CURRICULUM_COVERAGE.md), all actual elementary gate netlists. Added Boolean equations tab beside truth table: generated equations from each gate plus output mapping, not a separate solver or a claim of minimized Boolean expressions. Bilingual titles/explanations; technical formulas unchanged. Prior ANSI/IEC notation exact-head run 45406811712: 281 passed on each OS. New regression cases pending CI.

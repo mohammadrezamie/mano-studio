@@ -456,3 +456,15 @@ def test_schematic_notation_preference(workspace):
     assert lab.summary.text()=="Y = 1"
     assert len([p for p in lab.diagram.ports if p[0]=="q" and p[1]>=0])==3
     lab.close()
+
+
+def test_expanded_circuit_equations(workspace):
+    from ui.logic_lab import LogicLab
+    lab=LogicLab(workspace)
+    lab.selector.setCurrentIndex(lab.selector.findData("full_subtractor"))
+    assert lab.table.rowCount()==8
+    assert "diff = p ⊕ Bin" in lab.equations.toPlainText()
+    lab.selector.setCurrentIndex(lab.selector.findData("compare4"))
+    assert lab.table.rowCount()==256
+    assert "LT = less3" in lab.equations.toPlainText()
+    lab.close()

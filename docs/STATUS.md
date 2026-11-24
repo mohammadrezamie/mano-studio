@@ -140,3 +140,6 @@ Added bilingual persistent ANSI-style/IEC-style gate notation setting; no change
 
 ## Curriculum scope checkpoint
 Owner requests full-book mathematical and visual coverage with continuously updated docs/issues. Opened issue #13, added provisional 13-chapter coverage ledger CURRICULUM_COVERAGE.md; instructor edition unconfirmed. Prior schematic notation CI 45406811712 verified: test (windows-latest): 2026-11-24T13:47:05.3229179Z 281 passed, 1 warning in 34.13s; test (ubuntu-latest): 2026-11-24T13:46:48.3872406Z 281 passed, 1 warning in 31.69s. Start expanded combinational presets and generated per-gate equations in existing Logic Lab; keep Windows priority and isolated translator.
+
+### Combinational expansion
+23 presets total; added eight gate-level components (enabled decoders, mux4, priority encoder, comparators, full subtractor, parity). Added netlist-derived equations beside truth table in same Logic Lab. Independent exhaustive truth-table tests and GUI test authored. Prior notation verified 281 each OS; new CI pending. Issue #13 curriculum / #11 logic. Academic core unchanged; no public release.

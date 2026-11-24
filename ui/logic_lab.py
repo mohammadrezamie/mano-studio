@@ -6,10 +6,10 @@ from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton,
     QComboBox, QWidget, QGraphicsScene, QGraphicsView, QTableWidget,
-    QTableWidgetItem, QHeaderView, QAbstractItemView, QSplitter, QSpinBox, QStackedWidget, QFileDialog, QMessageBox, QMenu, QTabWidget,
+    QTableWidgetItem, QHeaderView, QAbstractItemView, QSplitter, QSpinBox, QStackedWidget, QFileDialog, QMessageBox, QMenu, QTabWidget, QPlainTextEdit,
 )
 from PySide6.QtSvg import QSvgGenerator
-from logic_engine import CIRCUITS, ARITY, basic
+from logic_engine import CIRCUITS, ARITY, basic, circuit_equations
 from circuit_document import CircuitDocument
 from schematic_routing import wire_route
 from wire_notation import analyze_wires
@@ -399,7 +399,14 @@ class LogicLab(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.table.cellClicked.connect(self.choose_row)
-        split.addWidget(self.table)
+        results=QTabWidget()
+        results.addTab(self.table,self.t("Truth table","جدول درستی"))
+        self.equations=QPlainTextEdit()
+        self.equations.setReadOnly(True)
+        self.equations.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.equations.setAccessibleName(self.t("Boolean equations","معادلات بولی"))
+        results.addTab(self.equations,self.t("Boolean equations","معادلات بولی"))
+        split.addWidget(results)
         split.setSizes([400,220])
         self.stack=QStackedWidget()
         self.stack.addWidget(split)
@@ -452,6 +459,7 @@ class LogicLab(QDialog):
             button.toggled.connect(lambda checked,n=name:self.change(n,checked))
             self.buttons[name]=button
             self.input_grid.addWidget(button,i//6,i%6)
+        self.equations.setPlainText("\n".join(circuit_equations(self.circuit)))
         self.rows=list(self.circuit.truth_table())
         headers=list(self.circuit.inputs)+[name for name,_ in self.circuit.outputs]
         self.table.setColumnCount(len(headers))

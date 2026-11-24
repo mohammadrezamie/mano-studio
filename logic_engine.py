@@ -138,3 +138,97 @@ def ripple_adder(width=4):
 
 
 CIRCUITS["ripple4"] = ripple_adder()
+
+
+def expanded_decoder(width=3, active_low=False):
+    """Active-high enable, binary select; inactive outputs are the opposite level."""
+    if width not in (2,3):
+        raise ValueError("Decoder width must be 2 or 3")
+    inputs=tuple(f"A{i}" for i in reversed(range(width)))
+    gates=[g(f"n{i}","NOT",f"A{i}") for i in range(width)]
+    for value in range(1<<width):
+        literals=tuple(f"A{i}" if value&(1<<i) else f"n{i}" for i in reversed(range(width)))
+        gates.append(g(f"y{value}","NAND" if active_low else "AND",*literals,"EN"))
+    polarity="active-low" if active_low else "active-high"
+    return Circuit(inputs+("EN",),tuple(gates),tuple((f"Y{i}",f"y{i}") for i in range(1<<width)),
+        (f"{width}-to-{1<<width} decoder ({polarity})",f"دیکودر {width} به {1<<width} (فعال با {'صفر' if active_low else 'یک'})"),
+        ("EN=1 selects exactly one output; EN=0 leaves all outputs inactive.",
+         "با EN=1 فقط خروجی متناظر با آدرس فعال است؛ با EN=0 همه خروجی‌ها غیرفعال‌اند."))
+
+
+def multiplexer4():
+    gates=[g("ns0","NOT","S0"),g("ns1","NOT","S1")]
+    for i in range(4):
+        gates.append(g(f"p{i}","AND",f"D{i}","S1" if i&2 else "ns1","S0" if i&1 else "ns0"))
+    gates.append(g("y","OR","p0","p1","p2","p3"))
+    return Circuit(("D0","D1","D2","D3","S1","S0"),tuple(gates),(("Y","y"),),
+        ("4-to-1 multiplexer","مالتی‌پلکسر ۴ به ۱"),
+        ("Y = D[2×S1 + S0].","آدرس دودویی S1 و S0 یکی از چهار ورودی را انتخاب می‌کند."))
+
+
+def priority_encoder4():
+    gates=(g("n3","NOT","D3"),g("n2","NOT","D2"),
+           g("p1","AND","D1","n2","n3"),g("hi","OR","D3","D2"),
+           g("lo","OR","D3","p1"),g("valid","OR","D0","D1","D2","D3"))
+    return Circuit(("D0","D1","D2","D3"),gates,(("Y1","hi"),("Y0","lo"),("Valid","valid")),
+        ("4-to-2 priority encoder","انکودر اولویت‌دار ۴ به ۲"),
+        ("D3 has highest priority. Valid=0 means no active input.",
+         "D3 بیشترین اولویت را دارد. Valid=0 یعنی هیچ ورودی فعالی وجود ندارد."))
+
+
+def comparator(width=2):
+    if width not in (2,4):
+        raise ValueError("Comparator width must be 2 or 4")
+    gates=[]
+    for i in range(width):
+        gates.extend((g(f"eq{i}","XNOR",f"A{i}",f"B{i}"),
+                      g(f"na{i}","NOT",f"A{i}"),g(f"nb{i}","NOT",f"B{i}"),
+                      g(f"lt{i}","AND",f"na{i}",f"B{i}"),g(f"gt{i}","AND",f"A{i}",f"nb{i}")))
+    eq="eq0";lt="lt0";gt="gt0"
+    for i in range(1,width):
+        gates.extend((g(f"lpass{i}","AND",f"eq{i}",lt),g(f"gpass{i}","AND",f"eq{i}",gt),
+                      g(f"less{i}","OR",f"lt{i}",f"lpass{i}"),g(f"greater{i}","OR",f"gt{i}",f"gpass{i}"),
+                      g(f"equal{i}","AND",f"eq{i}",eq)))
+        eq,lt,gt=f"equal{i}",f"less{i}",f"greater{i}"
+    return Circuit(tuple(f"A{i}" for i in range(width))+tuple(f"B{i}" for i in range(width)),tuple(gates),
+        (("LT",lt),("EQ",eq),("GT",gt)),(f"{width}-bit magnitude comparator",f"مقایسه‌گر {width} بیتی"),
+        ("Unsigned comparison; the highest unequal bit decides the result.",
+         "مقایسه بدون علامت؛ پرارزش‌ترین بیت متفاوت نتیجه را تعیین می‌کند."))
+
+
+CIRCUITS.update({
+    "decoder3":expanded_decoder(3),
+    "decoder_nand":expanded_decoder(2,True),
+    "mux4":multiplexer4(),
+    "priority4":priority_encoder4(),
+    "compare2":comparator(2),
+    "compare4":comparator(4),
+    "full_subtractor":Circuit(("A","B","Bin"),
+        (g("p","XOR","A","B"),g("diff","XOR","p","Bin"),g("na","NOT","A"),
+         g("np","NOT","p"),g("b0","AND","na","B"),g("b1","AND","np","Bin"),g("borrow","OR","b0","b1")),
+        (("D","diff"),("Bout","borrow")),("Full subtractor","تمام‌تفریق‌کننده"),
+        ("A − B − Bin = D − 2×Bout.","تفریق دو بیت با قرض ورودی؛ D نتیجه و Bout قرض خروجی است.")),
+    "parity4":Circuit(("A","B","C","D"),(g("odd","XOR","A","B","C","D"),g("even","NOT","odd")),
+        (("Odd","odd"),("Even","even")),("4-bit parity detector","تشخیص زوجیت ۴ بیتی"),
+        ("Odd=1 for an odd number of ones; Even is its complement.",
+         "Odd برای تعداد فرد بیت‌های یک فعال است؛ Even مکمل آن است.")),
+})
+
+
+def gate_equation(gate):
+    """Canonical local Boolean expression derived from actual gate inputs."""
+    terms=gate.inputs
+    op=gate.op
+    if op=="NOT":
+        rhs="¬"+terms[0]
+    else:
+        family={"NAND":"AND","NOR":"OR","XNOR":"XOR"}.get(op,op)
+        symbol={"AND":" ∧ ","OR":" ∨ ","XOR":" ⊕ "}[family]
+        rhs=symbol.join(terms)
+        if op in ("NAND","NOR","XNOR"):
+            rhs="¬("+rhs+")"
+    return gate.output+" = "+rhs
+
+
+def circuit_equations(circuit):
+    return tuple(gate_equation(gate) for gate in circuit.gates)+tuple(f"{name} = {signal}" for name,signal in circuit.outputs)

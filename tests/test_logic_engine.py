@@ -63,7 +63,7 @@ def test_invalid_netlist_and_input():
 
 
 def test_catalog_complete():
-    assert len(CIRCUITS)==15
+    assert len(CIRCUITS)==23
     for circuit in CIRCUITS.values():
         assert len(list(circuit.truth_table()))==2**len(circuit.inputs)
 
@@ -86,3 +86,38 @@ def test_gate_arity_rejected(op,count):
     from logic_engine import basic
     with pytest.raises(ValueError):
         basic(op,count)
+
+
+@pytest.mark.parametrize("key,width,low",[("decoder3",3,False),("decoder_nand",2,True)])
+def test_enabled_decoder(key,width,low):
+    for bits,out in CIRCUITS[key].truth_table():
+        select=int("".join(str(x) for x in bits[:width]),2)
+        assert out==tuple(int(bool(bits[-1] and i==select)^low) for i in range(1<<width))
+
+def test_mux4():
+    for bits,out in CIRCUITS["mux4"].truth_table():
+        assert out==(bits[2*bits[4]+bits[5]],)
+
+def test_priority_encoder():
+    for bits,(hi,lo,valid) in CIRCUITS["priority4"].truth_table():
+        active=[i for i,v in enumerate(bits) if v]
+        assert valid==int(bool(active))
+        assert 2*hi+lo==max(active,default=0)
+
+@pytest.mark.parametrize("width",[2,4])
+def test_magnitude_comparator(width):
+    for bits,out in CIRCUITS[f"compare{width}"].truth_table():
+        a=sum(v<<i for i,v in enumerate(bits[:width]))
+        b=sum(v<<i for i,v in enumerate(bits[width:]))
+        assert out==(int(a<b),int(a==b),int(a>b))
+
+def test_full_subtractor():
+    for (a,b,borrow),(d,bout) in CIRCUITS["full_subtractor"].truth_table():
+        assert d-2*bout==a-b-borrow
+
+def test_parity_and_generated_equations():
+    from logic_engine import circuit_equations
+    for bits,(odd,even) in CIRCUITS["parity4"].truth_table():
+        assert odd==sum(bits)%2 and even==1-odd
+    assert circuit_equations(CIRCUITS["parity4"])==("odd = A ⊕ B ⊕ C ⊕ D","even = ¬odd","Odd = odd","Even = even")
+    assert "¬(" in circuit_equations(CIRCUITS["decoder_nand"])[2]

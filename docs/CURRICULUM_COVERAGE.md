@@ -22,3 +22,6 @@ For each component/algorithm record: mathematical model, valid inputs and domain
 
 ## Delivery boundary
 Full-book coverage is a long-term product goal, not a prerequisite for the next classroom Windows candidate. Prioritize a working offline translator and coherent Windows UX. New models must use existing lab surfaces and shared engines. No new public release or platform packages.
+
+## Combinational increment
+23 presets total (previous 15 plus eight): enabled 3-to-8 active-high decoder, enabled 2-to-4 active-low NAND decoder, 4-to-1 mux, 4-to-2 priority encoder, 2/4-bit unsigned comparators, full subtractor, 4-bit parity detector. All implemented as actual gate netlists; shared truth table, circuit editor, rendering and export work without duplicate simulators. Generated local Boolean equations from netlist (not minimized expressions); same selected circuit, separate results tab. Independent expected-value tests enumerate each truth table. Visual and exact-head CI pending.
