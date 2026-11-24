@@ -322,7 +322,7 @@ class LogicLab(QDialog):
         self.sequential=SequentialView(parent.theme,self.fa)
         self.mode_tabs.addTab(self.sequential,self.t("Sequential","مدارهای ترتیبی"))
         self.memory_view=MemoryView(parent.theme,self.fa)
-        memory_tabs=QTabWidget()
+        self.memory_tabs=memory_tabs=QTabWidget()
         memory_tabs.addTab(self.memory_view,self.t("Memory chip","تراشه حافظه"))
         self.memory_array=MemoryArrayView(self.fa)
         memory_tabs.addTab(self.memory_array,self.t("Memory expansion","گسترش حافظه"))
@@ -429,6 +429,14 @@ class LogicLab(QDialog):
         self.selector.currentIndexChanged.connect(self.load)
         self.pin_count.valueChanged.connect(self.load)
         self.load()
+
+    def select_tool(self,route):
+        if route in ("gates","sequential"):
+            self.mode_tabs.setCurrentIndex(0 if route=="gates" else 1)
+        elif route in ("memory-chip","memory-array","bus"):
+            self.mode_tabs.setCurrentWidget(self.memory_tabs)
+            self.memory_tabs.setCurrentWidget({"memory-chip":self.memory_view,"memory-array":self.memory_array,"bus":self.bus_view}[route])
+        else:raise ValueError("Unknown logic route")
 
     def t(self,en,fa):
         return fa if self.fa else en

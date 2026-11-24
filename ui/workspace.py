@@ -137,15 +137,12 @@ class Workspace(QMainWindow):
         examples_button.setMenu(examples_menu)
         toolbar.addWidget(examples_button)
         self.icon_buttons.append((examples_button, "examples"))
-        labs = QPushButton(self.t("Labs"))
-        self.labels.append((labs, "Labs"))
-        self.lab_menu = QMenu(labs)
+        labs = QPushButton(self.t("Learning Center"))
+        self.labels.append((labs, "Learning Center"))
         self.lab_actions = []
-        for key, slot in [("Computer", self.open_program_lab), ("Number bases & ALU", self.open_number_lab), ("Logic Lab", self.open_logic_lab)]:
-            action = self.lab_menu.addAction(self.t(key))
-            action.triggered.connect(lambda checked=False, fn=slot: fn())
-            self.lab_actions.append((action, key))
-        labs.setMenu(self.lab_menu)
+        labs.clicked.connect(self.open_learning_center)
+        self.learning_shortcut=QShortcut(QKeySequence("Ctrl+K"),self)
+        self.learning_shortcut.activated.connect(self.open_learning_center)
         toolbar.addWidget(labs)
         self.icon_buttons.append((labs, "labs"))
         toolbar.addStretch()
@@ -283,8 +280,7 @@ class Workspace(QMainWindow):
     def open_number_lab(self):
         from ui.program_lab import ProgramLab
         lab=ProgramLab(self)
-        lab.inspector.setCurrentIndex(3)
-        lab.arithmetic.op.setCurrentIndex(0)
+        lab.select_tool('alu')
         lab.exec()
 
     def input_mode_changed(self, index):
@@ -762,23 +758,40 @@ class Workspace(QMainWindow):
         self.instruction_search.setFocus()
         self.instruction_search.selectAll()
 
-    def open_logic_lab(self):
-        from ui.logic_lab import LogicLab
-        LogicLab(self).exec()
+    def open_learning_center(self):
+        from ui.learning_center import LearningCenter
+        center=LearningCenter(self)
+        if center.exec() and center.selected:
+            self.launch_learning_tool(center.selected)
 
-    def open_program_lab(self):
+    def launch_learning_tool(self,tool):
+        if tool.lab=='workspace':
+            self.editor.setFocus()
+        elif tool.lab=='logic':
+            self.open_logic_lab(tool.route)
+        elif tool.lab=='computer':
+            self.open_program_lab(tool.route)
+
+    def open_logic_lab(self,route='gates'):
+        from ui.logic_lab import LogicLab
+        lab=LogicLab(self)
+        lab.select_tool(route)
+        lab.exec()
+
+    def open_program_lab(self,route='live'):
         from ui.program_lab import ProgramLab
-        if self.direction=="reverse":
-            ProgramLab(self,self.editor.toPlainText()).exec()
-            return
-        result = translate(self.editor.toPlainText())
-        if not result.ok:
-            ProgramLab(self).exec()
-            return
-        assembly = result.assembly
-        if self.active_example and self.editor.toPlainText() == self.active_example.rtl:
-            assembly = computer_source(self.active_example, assembly)
-        ProgramLab(self, assembly).exec()
+        assembly=''
+        if self.direction=='reverse':
+            assembly=self.editor.toPlainText()
+        else:
+            result=translate(self.editor.toPlainText())
+            if result.ok:
+                assembly=result.assembly
+                if self.active_example and self.editor.toPlainText()==self.active_example.rtl:
+                    assembly=computer_source(self.active_example,assembly)
+        lab=ProgramLab(self,assembly)
+        lab.select_tool(route)
+        lab.exec()
 
     def about(self):
         fa=self.language=="fa"

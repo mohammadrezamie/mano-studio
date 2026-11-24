@@ -17,7 +17,7 @@ class OrganizationView(QWidget):
         super().__init__()
         self.fa=fa
         layout=QVBoxLayout(self)
-        tabs=QTabWidget();layout.addWidget(tabs)
+        self.tabs=tabs=QTabWidget();layout.addWidget(tabs)
         self.registers=RegisterFile()
         self.stack=RegisterStack()
         page=QWidget();body=QVBoxLayout(page)

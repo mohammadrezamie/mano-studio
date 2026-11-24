@@ -78,7 +78,8 @@ class ProgramLab(QDialog):
         self.speed.setSuffix(" ms")
         self.speed.valueChanged.connect(self.timer.setInterval)
         controls.addWidget(self.speed)
-        layout.addLayout(controls)
+        cpu_controls=QWidget();cpu_controls.setLayout(controls)
+        layout.addWidget(cpu_controls)
         lower = QSplitter(Qt.Orientation.Horizontal)
         self.registers = QTableWidget(0, 2)
         self.registers.setHorizontalHeaderLabels([self.t("Register","ثبات"), self.t("Value (HEX)","مقدار هگز")])
@@ -134,7 +135,7 @@ class ProgramLab(QDialog):
         self.inspector.addTab(self.organization,self.t("CPU organization","سازمان CPU"))
         self.pipeline=PipelineView(self.fa)
         self.vector_pipeline=VectorPipelineView(self.fa)
-        pipeline_tabs=QTabWidget()
+        self.pipeline_tabs=pipeline_tabs=QTabWidget()
         pipeline_tabs.addTab(self.pipeline,self.t("Instruction pipeline","خط لوله دستورات"))
         pipeline_tabs.addTab(self.vector_pipeline,self.t("Vector / matrix","بردار / ماتریس"))
         self.interleaving=InterleavingView(self.fa)
@@ -155,12 +156,52 @@ class ProgramLab(QDialog):
             b=QPushButton(self.t(en,fa))
             b.clicked.connect(slot)
             io.addWidget(b)
-        layout.addLayout(io)
+        cpu_io=QWidget();cpu_io.setLayout(io)
+        layout.addWidget(cpu_io)
         self.status = QLabel()
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
+        self.cpu_widgets=(intro,panes,cpu_controls,cpu_io,self.status)
+        self.tool_pages={"live":self.datapath,"register-memory":lower,"debugger":trace_page,
+                         "alu":alu_page,"codes":self.codes,"cycles":self.cycles,
+                         "microprogram":self.microprogram,"organization":self.organization,
+                         "pipeline":pipeline_tabs,"io":self.io_organization}
+        self.inspector.currentChanged.connect(self.update_cpu_context)
         self.source.textChanged.connect(self.invalidate)
         self.load()
+        self.update_cpu_context()
+
+    def update_cpu_context(self,*_):
+        page=self.inspector.currentWidget()
+        visible=page in tuple(self.tool_pages[key] for key in ("live","register-memory","debugger","alu","cycles"))
+        if not visible:self.pause()
+        for widget in self.cpu_widgets:widget.setVisible(visible)
+
+    def select_tool(self,route):
+        """Stable learning route IDs, independent of displayed tab titles."""
+        if route in self.tool_pages:
+            self.inspector.setCurrentWidget(self.tool_pages[route])
+            if route=="pipeline":self.pipeline_tabs.setCurrentWidget(self.pipeline)
+            if route=="microprogram":self.microprogram.detail_tabs.setCurrentIndex(0)
+            if route=="alu":self.arithmetic.op.setCurrentIndex(0)
+        elif route=="microbuilder":
+            self.inspector.setCurrentWidget(self.microprogram)
+            self.microprogram.detail_tabs.setCurrentWidget(self.microprogram.builder)
+        elif route in ("general-registers","stacks","addressing","formats"):
+            self.inspector.setCurrentWidget(self.organization)
+            self.organization.tabs.setCurrentIndex(("general-registers","stacks","addressing","formats").index(route))
+        elif route in ("vector","interleaving","floating-pipeline"):
+            self.inspector.setCurrentWidget(self.pipeline_tabs)
+            self.pipeline_tabs.setCurrentWidget({"vector":self.vector_pipeline,"interleaving":self.interleaving,"floating-pipeline":self.float_pipeline}[route])
+        elif route in ("handshake","interrupt","dma","fifo"):
+            self.inspector.setCurrentWidget(self.io_organization)
+            self.io_organization.tabs.setCurrentIndex(("handshake","interrupt","dma","fifo").index(route))
+        elif route in ("booth","division","decimal","floating"):
+            self.inspector.setCurrentWidget(self.tool_pages["alu"])
+            data={"booth":"booth","division":"divide","decimal":"bcdadd","floating":"fpdecode"}[route]
+            self.arithmetic.op.setCurrentIndex(self.arithmetic.op.findData(data))
+        else:raise ValueError("Unknown computer route")
+        self.update_cpu_context()
 
     def t(self,en,fa):
         return fa if self.fa else en

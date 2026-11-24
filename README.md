@@ -1,7 +1,7 @@
 # Mano Studio
 **Build. Translate. Simulate. Learn.**
 
-An open-source bilingual desktop IDE for Morris Mano's Basic Computer. Planned: visual RTL builder, RTL-to-Assembly translator, assembler, CPU simulator and Windows installer.
+An open-source bilingual offline desktop IDE for Morris Mano's Computer System Architecture, centered on the Basic Computer and the academic RTL-to-assembly assignment. Optional labs cover selected topics across the textbook.
 
 **Status: Python translator supports all 25 named Mano instructions in the documented dialect; no downloadable desktop release yet.**
 
@@ -10,7 +10,7 @@ An open-source bilingual desktop IDE for Morris Mano's Basic Computer. Planned: 
 python -m pip install -r requirements.txt -r requirements-dev.txt
 python main.py
 ```
-Three entry modes, three themes, Computer (assembler, CPU, reversible debugger, Data & ALU), and Digital Logic (editable combinational schematic, clocked components and waveform) are implemented. Optional canonical ASM-to-RTL import is available in the same editor. See [development candidate](docs/BUILD_CANDIDATE.md), [live Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [status](docs/STATUS.md). No published release. Development artifacts are not stable releases.
+Three entry modes, three themes, Computer (assembler, CPU, reversible debugger, Data & ALU), and Digital Logic (editable combinational schematic, clocked components and waveform) are implemented. Optional canonical ASM-to-RTL import is available in the same editor. The **[Learning Center](docs/LEARNING_CENTER.md)** (Ctrl+K) connects 33 interactive learning entries across 12 of the 13 indexed chapters, with bilingual search, explicit coverage gaps and local personal practice progress. See [development candidate](docs/BUILD_CANDIDATE.md), [live Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [status](docs/STATUS.md). No published release. Development artifacts are not stable releases.
 
 ## Academic assignment — فایل تکلیف استاد
 

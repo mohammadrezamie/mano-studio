@@ -965,3 +965,53 @@ def test_dma_fifo_view(workspace):
     v.fifo.edge(True,False)
     assert v.fifo.model.empty
     lab.close()
+
+
+def test_learning_center_search_progress_and_routes(workspace):
+    from ui.learning_center import LearningCenter
+    from ui.program_lab import ProgramLab
+    from ui.logic_lab import LogicLab
+    from learning_catalog import TOOLS
+    workspace.editor.setPlainText("AC ← M[100]")
+    workspace.run_translation()
+    source=workspace.editor.toPlainText()
+    output=workspace.output.toPlainText()
+    center=LearningCenter(workspace)
+    assert center.list.count()==len(TOOLS)
+    center.search.setText("DMA")
+    assert center.list.count()==1 and center.current_id()=="dma"
+    center.toggle_practiced()
+    assert center.practiced=={"dma"}
+    restored=LearningCenter(workspace)
+    assert restored.practiced=={"dma"}
+    center.chapter.setCurrentIndex(center.chapter.findData(13))
+    assert center.list.count()==0 and not center.open_button.isEnabled()
+    center.search.clear()
+    assert "coherence" in center.gap.text()
+    computer=ProgramLab(workspace)
+    logic=LogicLab(workspace)
+    for tool in TOOLS:
+        if tool.lab=="computer":computer.select_tool(tool.route)
+        elif tool.lab=="logic":logic.select_tool(tool.route)
+    computer.select_tool("dma")
+    assert computer.inspector.currentWidget() is computer.io_organization
+    assert computer.io_organization.tabs.currentWidget() is computer.io_organization.dma
+    assert all(widget.isHidden() for widget in computer.cpu_widgets)
+    computer.select_tool("live")
+    assert all(not widget.isHidden() for widget in computer.cpu_widgets)
+    computer.select_tool("microbuilder")
+    assert computer.microprogram.detail_tabs.currentWidget() is computer.microprogram.builder
+    logic.select_tool("bus")
+    assert logic.memory_tabs.currentWidget() is logic.bus_view
+    assert workspace.editor.toPlainText()==source and workspace.output.toPlainText()==output
+    computer.close();logic.close();center.close();restored.close()
+
+
+def test_learning_center_persian_and_launch(workspace):
+    from ui.learning_center import LearningCenter
+    workspace.languages.setCurrentIndex(workspace.languages.findData("fa"))
+    center=LearningCenter(workspace)
+    center.search.setText("وقفه اولویت")
+    assert center.current_id()=="interrupt"
+    center.launch()
+    assert center.selected.id=="interrupt"

@@ -31,6 +31,7 @@ FA = {
     "Computer": "کامپیوتر",
     "Instruction reference": "راهنمای دستورات",
     "Labs": "آزمایشگاه‌ها",
+    "Learning Center": "مرکز یادگیری",
     "Logic Lab": "آزمایشگاه منطق",
     "Program Lab": "آزمایشگاه برنامه",
     "Settings": "تنظیمات",
