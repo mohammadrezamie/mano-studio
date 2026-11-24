@@ -10,6 +10,41 @@ from ui.glass import paint_backdrop
 from update_service import VERSION
 
 
+def smoke_test(report_path):
+    """Exercise the installed application without internet or personal settings."""
+    import tempfile
+    from pathlib import Path
+    import traceback
+    from ui.workspace import Workspace
+
+    report = Path(report_path)
+    try:
+        app = QApplication([sys.argv[0]])
+        app.setStyle("Fusion")
+        app.setStyleSheet(stylesheet("dark"))
+        with tempfile.TemporaryDirectory() as directory:
+            settings = QSettings(str(Path(directory) / "smoke.ini"), QSettings.Format.IniFormat)
+            window = Workspace(settings)
+            window.show()
+            app.processEvents()
+            window.editor.setPlainText("AC ← M[100]\nAC ← AC + M[101]\nM[102] ← AC\nS ← 0")
+            window.run_translation()
+            assert window.output.toPlainText() == "LDA 100\nADD 101\nSTA 102\nHLT"
+            window.editor.setPlainText("AR ← PC")
+            window.run_translation()
+            assert not window.result.ok and window.output.toPlainText() == ""
+            base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+            assert (base / "rtl_translator.py").is_file()
+            assert (base / "examples" / "add.rtl").is_file()
+            window.editor.document().setModified(False)
+            window.close()
+        report.write_text("PASS\n", encoding="utf-8")
+        return 0
+    except Exception:
+        report.write_text(traceback.format_exc(), encoding="utf-8")
+        return 1
+
+
 def main():
     app = QApplication(sys.argv)
     app.setOrganizationName("ManoStudio")
@@ -51,4 +86,6 @@ def main():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 3 and sys.argv[1] == "--smoke-test":
+        raise SystemExit(smoke_test(sys.argv[2]))
     raise SystemExit(main())
