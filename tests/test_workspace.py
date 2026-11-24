@@ -576,3 +576,27 @@ def test_live_timing_controls(workspace):
     lab.back()
     assert lab.cpu.pc==0 and not lab.cpu.in_progress
     lab.close()
+
+def test_arithmetic_algorithm_modes(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.arithmetic
+    view.width.setCurrentIndex(view.width.findData(4))
+    view.a.setText("8")
+    view.b.setText("F")
+    view.op.setCurrentIndex(view.op.findData("booth"))
+    assert view.stages.rowCount()==4 and view.stages.columnCount()==7
+    assert view.flags.text().endswith("00001000")
+    assert view.result[-1].multiplier==8
+    view.op.setCurrentIndex(view.op.findData("divide"))
+    view.a.setText("F")
+    view.b.setText("3")
+    assert view.stages.rowCount()==4 and view.stages.columnCount()==6
+    assert view.result[-1].quotient==5 and view.result[-1].remainder==0
+    view.b.setText("0")
+    assert view.result is None and view.stages.rowCount()==0 and view.status.text()
+    view.b.setText("1")
+    view.op.setCurrentIndex(1)
+    assert view.result.word==0 and view.result.carry==1
+    assert view.stages.horizontalHeaderItem(3).text()=="Cin"
+    lab.close()
