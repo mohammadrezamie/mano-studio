@@ -1,5 +1,6 @@
 """Centralized UI text; code tokens always remain untranslated."""
 FA = {
+    "Computer": "کامپیوتر",
     "Instruction reference": "راهنمای دستورات",
     "Labs": "آزمایشگاه‌ها",
     "Logic Lab": "آزمایشگاه منطق",
