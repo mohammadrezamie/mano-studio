@@ -12,6 +12,12 @@ python main.py
 ```
 Three entry modes, three themes and bilingual settings are implemented in the preview. See [status](docs/STATUS.md) for remaining verification. No installer yet.
 
+## Academic assignment — فایل تکلیف استاد
+
+**[rtl_translator.py](rtl_translator.py) — the only source file for the RTL-to-assembly assignment defense.**
+
+این فایل مستقل، فقط الگوریتم تبدیل RTL به اسمبلی، اعتبارسنجی و خواندن/نوشتن فایل را در خود دارد. برای دفاع همین فایل را باز کنید. سایر فایل‌ها مربوط به امکانات اختیاری Mano Studio هستند و جزو این تکلیف نیستند. [راهنمای مطالعه و دفاع](docs/TRANSLATOR.md).
+
 ## Try the translator
 Python 3.10+; no runtime dependencies.
 ```sh
