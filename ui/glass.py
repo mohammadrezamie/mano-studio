@@ -11,9 +11,11 @@ GLOWS = {
 }
 
 
-def paint_backdrop(painter, rect, theme):
+def paint_backdrop(painter, rect, theme, enabled=True):
     theme = theme if theme in PALETTES else "dark"
     painter.fillRect(rect, QColor(PALETTES[theme][0]))
+    if not enabled:
+        return
     w, h = rect.width(), rect.height()
     for (x, y, radius), tint in zip(((0.12, 0.05, 0.70), (0.94, 0.35, 0.65), (0.30, 1.0, 0.55)), GLOWS[theme]):
         glow = QRadialGradient(QPointF(rect.left() + x*w, rect.top() + y*h), max(1.0, radius*max(w,h)))
@@ -25,12 +27,13 @@ def paint_backdrop(painter, rect, theme):
 
 
 class GlassRoot(QWidget):
-    def __init__(self, theme):
+    def __init__(self, theme, enabled=True):
         super().__init__()
         self.theme = theme
+        self.enabled = enabled
         self.setObjectName("glassRoot")
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        paint_backdrop(painter, self.rect(), self.theme)
+        paint_backdrop(painter, self.rect(), self.theme, self.enabled)
         painter.end()
