@@ -10,3 +10,6 @@ First GitHub Actions run 45388211041 failed on Ubuntu before test collection: mi
 
 ## Mano Glass and Live Lab checkpoint
 Run 45388500498 completed successfully before this new work (desktop tests and screenshot workflow). New branch changes: glass-inspired palettes, QSS, floating headers, QPainter radial backdrop for workspace/splash; demo_cpu.py with computed four-instruction addition example and ui/live_lab.py interactive animated conceptual data flow; bilingual toolbar entry and motion preference. Added two demo CPU tests. Latest runtime/visual tests pending; no claim of native Apple material or full CPU emulator. Continue PR #9, reconcile main STATUS.md before merging. Visual review and packaging remain next, general-purpose simulator remains #3, reverse translation #8 deferred. Personal academic acknowledgment remains pending verification.
+
+## Owner decision: beta-only and calm UI
+See docs/RELEASE_POLICY.md. Target classroom review next week (2026-11-30 to 2026-12-06), not stable release. Add persisted reduced-motion, glass effects off and offline mode toggles. Core remains offline; optional network access must be explicitly enabled and gated. Current implementation of these new global controls is pending. Continue PR #9; verify latest CI, review UI and prioritize Windows setup. No stable release until owner explicitly approves after class.
