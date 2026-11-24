@@ -1309,3 +1309,54 @@ def test_synchronization_bilingual_route(workspace):
         assert ("به‌روزرسانی ازدست‌رفته" if lang=="fa" else "Lost update") in v.status.text()
         assert not v.canvas.grab().isNull()
         lab.close()
+
+
+@pytest.mark.parametrize("style",["ansi","iec"])
+def test_gate_symbol_functional_geometry(app,style):
+    from PySide6.QtWidgets import QGraphicsScene
+    from ui.gate_symbols import draw_gate,pin_offsets,WIDTH,CENTER
+    from ui.theme import PALETTES
+    from logic_engine import gate_value
+    for op in ("NOT","AND","OR","NAND","NOR","XOR","XNOR"):
+        for count in ((1,) if op=="NOT" else (2,3,4)):
+            bits=tuple(i%2 for i in range(count))
+            out=gate_value(op,*bits)
+            scene=QGraphicsScene()
+            draw_gate(scene,op,0,0,bits,out,PALETTES["dark"],style)
+            inputs=sorted((i for i in scene.items() if i.data(0)=="functional-input"),key=lambda i:i.data(1))
+            outputs=[i for i in scene.items() if i.data(0)=="functional-output"]
+            states={i.data(1):i.text() for i in scene.items() if i.data(0)=="pin-state"}
+            bubbles=[i for i in scene.items() if i.data(0)=="inversion-bubble"]
+            assert len(inputs)==count and len(outputs)==1
+            assert [i.rect().center().y() for i in inputs]==list(pin_offsets(count))
+            assert outputs[0].rect().center().x()==WIDTH
+            assert outputs[0].rect().center().y()==CENTER
+            assert states=={-1:str(out),**{i:str(b) for i,b in enumerate(bits)}}
+            assert len(bubbles)==int(op in ("NOT","NAND","NOR","XNOR"))
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_all_learning_routes_locale_and_document_integrity(workspace,language):
+    from PySide6.QtCore import Qt
+    from ui.learning_center import LearningCenter
+    from ui.logic_lab import LogicLab
+    from ui.program_lab import ProgramLab
+    from learning_catalog import TOOLS
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    workspace.editor.setPlainText("AC ← M[100]")
+    workspace.run_translation()
+    snapshot=(workspace.editor.toPlainText(),workspace.output.toPlainText())
+    direction=Qt.LayoutDirection.RightToLeft if language=="fa" else Qt.LayoutDirection.LeftToRight
+    center=LearningCenter(workspace);logic=LogicLab(workspace);computer=ProgramLab(workspace)
+    for dialog in (center,logic,computer):assert dialog.layoutDirection()==direction
+    assert logic.diagram.layoutDirection()==Qt.LayoutDirection.LeftToRight
+    assert computer.source.layoutDirection()==Qt.LayoutDirection.LeftToRight
+    assert center.list.count()==len(TOOLS)
+    for tool in TOOLS:
+        center.search.setText(tool.id)
+        # The catalog may match additional keywords; the requested entry must be present.
+        assert any(center.list.item(i).data(Qt.ItemDataRole.UserRole)==tool.id for i in range(center.list.count()))
+        if tool.lab=="logic":logic.select_tool(tool.route)
+        elif tool.lab=="computer":computer.select_tool(tool.route)
+    assert snapshot==(workspace.editor.toPlainText(),workspace.output.toPlainText())
+    for dialog in (center,logic,computer):dialog.close()

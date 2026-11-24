@@ -78,8 +78,17 @@ def draw_gate(scene, op, x, y, bits, output, palette, style="ansi"):
     # AND body's Bezier apex is x+75.25; OR is x+82; NOT x+75.
     tip=82 if style!="iec" and op in ("NOR","XNOR") else 75
     if invert:
-        scene.addEllipse(QRectF(x+tip,y+CENTER-4.5,9,9),QPen(QColor(fg),1.6),QBrush(QColor(bg)))
-    # Terminals are signal anchors, distinct from inversion bubbles.
-    for offset,bit in zip(pin_offsets(len(bits)),bits):
-        scene.addEllipse(QRectF(x-2,y+offset-2,4,4),QPen(color(bit),1),QBrush(color(bit)))
-    scene.addEllipse(QRectF(x+WIDTH-2,y+CENTER-2,4,4),QPen(color(output),1),QBrush(color(output)))
+        bubble=scene.addEllipse(QRectF(x+tip,y+CENTER-4.5,9,9),QPen(QColor(fg),1.6),QBrush(QColor(bg)))
+        bubble.setData(0,"inversion-bubble")
+    # Pin states must remain readable even when high/low colors are indistinguishable.
+    # Numbers are functional bit values, never physical package pin numbers.
+    font=QFont("Consolas");font.setPixelSize(10)
+    for index,(offset,bit) in enumerate(zip(pin_offsets(len(bits)),bits)):
+        terminal=scene.addEllipse(QRectF(x-2,y+offset-2,4,4),QPen(color(bit),1),QBrush(color(bit)))
+        terminal.setData(0,"functional-input");terminal.setData(1,index)
+        state=scene.addSimpleText(str(bit),font);state.setBrush(QBrush(QColor(fg)))
+        state.setPos(x+3,y+offset-13);state.setData(0,"pin-state");state.setData(1,index)
+    terminal=scene.addEllipse(QRectF(x+WIDTH-2,y+CENTER-2,4,4),QPen(color(output),1),QBrush(color(output)))
+    terminal.setData(0,"functional-output")
+    state=scene.addSimpleText(str(output),font);state.setBrush(QBrush(QColor(fg)))
+    state.setPos(x+WIDTH-10,y+CENTER-13);state.setData(0,"pin-state");state.setData(1,-1)

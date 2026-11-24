@@ -11,6 +11,7 @@ class LearningCenter(QDialog):
     def __init__(self,parent):
         super().__init__(parent)
         self.fa=parent.language=="fa"
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.fa else Qt.LayoutDirection.LeftToRight)
         self.settings=parent.settings
         self.selected=None
         self.practiced=set(self.read_progress())

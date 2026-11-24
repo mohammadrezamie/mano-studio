@@ -45,6 +45,7 @@ class ProgramLab(QDialog):
     def __init__(self, parent, assembly=""):
         super().__init__(parent)
         self.fa = parent.language == "fa"
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.fa else Qt.LayoutDirection.LeftToRight)
         self.setWindowTitle("Mano Studio — " + self.t("Computer", "کامپیوتر"))
         self.resize(1280, 800)
         self.cpu = None

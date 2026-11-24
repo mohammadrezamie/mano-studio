@@ -3,11 +3,61 @@ import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from pathlib import Path
 import tempfile
+import json
+import hashlib
+from learning_catalog import TOOLS
+from ui.learning_center import LearningCenter
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QApplication
 from ui.logic_lab import LogicLab
 from ui.program_lab import ProgramLab
 from ui.workspace import Workspace
+
+
+def capture_routes(app,window,output):
+    """Capture each distinct real route once per locale, with entry-to-image mapping."""
+    records=[]
+    window.themes.setCurrentIndex(window.themes.findData("dark"))
+    for language in ("en","fa"):
+        window.languages.setCurrentIndex(window.languages.findData(language))
+        window.tabs.setCurrentIndex(0)
+        app.processEvents()
+        center=LearningCenter(window)
+        center.resize(1100,750);center.show();app.processEvents()
+        target=output/f"{language}-dark-learning-center.png"
+        if not center.grab().save(str(target)):raise RuntimeError(f"Could not save {target}")
+        center.close();center.deleteLater()
+        logic=LogicLab(window);computer=ProgramLab(window)
+        logic.resize(1360,900);computer.resize(1360,900)
+        lab_by_name={"workspace":window,"logic":logic,"computer":computer}
+        seen={}
+        for tool in TOOLS:
+            key=(tool.lab,tool.route)
+            if key not in seen:
+                lab=lab_by_name[tool.lab]
+                # Keep only the active dialog visible, ensuring hidden timers stop.
+                for other in (logic,computer):
+                    if other is not lab:other.hide()
+                if tool.lab!="workspace":
+                    lab.select_tool(tool.route);lab.show()
+                else:window.show()
+                app.processEvents()
+                if tool.route=="gates":
+                    logic.diagram.fit();app.processEvents()
+                target=output/f"{language}-dark-route-{tool.lab}-{tool.route}.png"
+                image=lab.grab()
+                if image.isNull() or not image.save(str(target)):
+                    raise RuntimeError(f"Could not save {target}")
+                seen[key]={"image":target.name,"width":image.width(),"height":image.height(),
+                           "sha256":hashlib.sha256(target.read_bytes()).hexdigest()}
+            records.append({"entry":tool.id,"chapter":tool.chapter,"language":language,
+                            "theme":"dark","lab":tool.lab,"route":tool.route,**seen[key]})
+        for dialog in (logic,computer):
+            dialog.close();dialog.deleteLater()
+        app.processEvents()
+    (output/"route-manifest.json").write_text(json.dumps({
+        "kind":"actual Qt offscreen render; not manual visual acceptance",
+        "entries":records},ensure_ascii=False,indent=2),encoding="utf-8")
 
 
 def main():
@@ -94,6 +144,8 @@ def main():
                 if not computer.grab().save(str(target)):
                     raise RuntimeError(f"Could not save {target}")
                 computer.close()
+                computer.deleteLater();lab.deleteLater()
+        capture_routes(app,window,output)
         window.editor.document().setModified(False)
         window.close()
 

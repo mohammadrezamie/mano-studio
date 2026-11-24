@@ -44,6 +44,8 @@ class LogicDiagram(QGraphicsView):
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.setMinimumHeight(280)
+        self.setAccessibleName("شماتیک مدار منطقی" if fa else "Logic circuit schematic")
+        self.setAccessibleDescription("پایه‌ها، مقدار بیت و مسیرهای اتصال؛ حلقه هشدار به معنای اتصال نیست." if fa else "Functional pins, bit values and net routes; warning rings are not connections.")
         self.editing=False
         self.positions={}
         self.route_cache={}
@@ -312,6 +314,7 @@ class LogicLab(QDialog):
     def __init__(self,parent):
         super().__init__(parent)
         self.fa=parent.language=="fa"
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.fa else Qt.LayoutDirection.LeftToRight)
         self.history=[]
         self.dirty=False
         self.document=None
