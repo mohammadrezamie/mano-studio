@@ -3,12 +3,6 @@ on:
   workflow_dispatch:
   push:
     branches: [feature/desktop-workspace]
-    paths:
-      - 'installer/**'
-      - 'ui/**'
-      - 'main.py'
-      - 'requirements*.txt'
-      - '.github/workflows/windows-installer.yml'
 permissions:
   contents: read
 concurrency:
