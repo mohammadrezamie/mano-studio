@@ -17,3 +17,6 @@ Latest owner requests the first version built and testing in GitHub. Permit a si
 
 ## CI recovery override
 Keep the proven simple Tests matrix; the alternative automatic candidate orchestration was not observable in the connected Actions results. Build candidate only via manual Windows workflow dispatch until a verified automatic route exists. Source application smoke is included in regression tests. No public release/tag, no claim of an executable until its artifact and smoke are verified.
+
+## Owner question — in-app update installation
+Target UX: explicit Check for updates, display version/release notes/download size, user chooses Download and install. Preserve local settings and documents; prompt to save before shutdown. Only official GitHub release assets, HTTPS, expected platform/version, bounded download, cryptographic authenticity (trusted signing key or Windows Authenticode with pinned publisher), SHA-256 integrity, staging and verification before execution. Hash from same release alone is not publisher authentication. Reject missing or invalid signatures and never execute arbitrary downloaded files; keep installed version on failure. No unattended startup check, silent install, forced upgrade or public release. Existing check-only UI remains until trusted signing/build and clean install/upgrade rollback tests exist.

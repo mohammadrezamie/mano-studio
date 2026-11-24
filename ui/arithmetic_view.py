@@ -13,7 +13,7 @@ class ArithmeticView(QWidget):
         row=QHBoxLayout()
         row.addWidget(QLabel(self.t("Word width","طول کلمه")))
         self.width=QComboBox()
-        for n in WIDTHS:self.width.addItem(f"{n} bit",n)
+        for n in WIDTHS:self.width.addItem(f"{n} "+self.t("bit","بیت"),n)
         self.width.setCurrentIndex(self.width.findData(16))
         row.addWidget(self.width)
         row.addWidget(QLabel(self.t("Input base","مبنای ورودی")))
@@ -41,7 +41,7 @@ class ArithmeticView(QWidget):
             row.addWidget(edit,1)
         layout.addLayout(row)
         self.representation=QTableWidget(3,6)
-        self.representation.setHorizontalHeaderLabels(["Word","BIN","OCT","HEX","Unsigned","Signed"])
+        self.representation.setHorizontalHeaderLabels([self.t("Word","کلمه"),"BIN","OCT","HEX",self.t("Unsigned","بدون علامت"),self.t("Signed","علامت‌دار")])
         self.representation.verticalHeader().hide()
         self.representation.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.representation.horizontalHeader().setStretchLastSection(True)
@@ -58,7 +58,7 @@ class ArithmeticView(QWidget):
         self.note.setWordWrap(True)
         layout.addWidget(self.note)
         self.stages=QTableWidget(0,6)
-        self.stages.setHorizontalHeaderLabels(["Bit","A","B′ / B","Cin","Sum","Cout"])
+        self.stages.setHorizontalHeaderLabels([self.t("Bit","بیت"),"A","B′ / B","Cin",self.t("Sum","جمع"),"Cout"])
         self.stages.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.stages.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.stages.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
@@ -130,7 +130,7 @@ class ArithmeticView(QWidget):
             return
         self.status.clear()
         self.result=result
-        words=(("A",a),) if conversion else (("A",a),("B",b if binary else None),("Result",result.word))
+        words=(("A",a),) if conversion else (("A",a),("B",b if binary else None),(self.t("Result","نتیجه"),result.word))
         for row,(label,word) in enumerate(words):
             values=[label]+(list(representations(word,width).values()) if word is not None else ["—"]*5)
             for col,value in enumerate(values):

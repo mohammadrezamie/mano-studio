@@ -20,6 +20,7 @@ def paint_backdrop(painter, rect, theme, enabled=True):
     for (x, y, radius), tint in zip(((0.12, 0.05, 0.70), (0.94, 0.35, 0.65), (0.30, 1.0, 0.55)), GLOWS[theme]):
         glow = QRadialGradient(QPointF(rect.left() + x*w, rect.top() + y*h), max(1.0, radius*max(w,h)))
         color = QColor(tint)
+        color.setAlpha(48 if theme!="light" else 70)
         glow.setColorAt(0.0, color)
         color.setAlpha(0)
         glow.setColorAt(1.0, color)

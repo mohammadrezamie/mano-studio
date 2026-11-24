@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QLineEdit,
     QPushButton,QTableWidget,QTableWidgetItem,QComboBox,QSpinBox,QHeaderView)
 from circuit_document import CircuitDocument, MAX_GATES, MAX_OUTPUTS
 from logic_engine import ARITY, Gate
+from ui.localization import error_text
 
 
 class CircuitEditor(QWidget):
@@ -26,7 +27,7 @@ class CircuitEditor(QWidget):
         row.addWidget(self.inputs,1)
         layout.addLayout(row)
         self.gates=QTableWidget(0,7)
-        self.gates.setHorizontalHeaderLabels(["Signal","Gate","Pins","1","2","3","4"])
+        self.gates.setHorizontalHeaderLabels([self.t("Signal","سیگنال"),self.t("Gate","گیت"),self.t("Pins","پایه‌ها"),"1","2","3","4"])
         self.gates.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.gates.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         layout.addWidget(self.gates,3)
@@ -164,7 +165,7 @@ class CircuitEditor(QWidget):
             document=self.document()
             document.compile()
         except ValueError as exc:
-            self.error.setText(self.t("Cannot apply: ","امکان اعمال وجود ندارد: ")+str(exc))
+            self.error.setText(self.t("Cannot apply: ","امکان اعمال وجود ندارد: ")+error_text(exc,self.fa))
             return
         self.error.clear()
         self.applied.emit(document)

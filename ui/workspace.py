@@ -17,6 +17,8 @@ from example_catalog import EXAMPLES, computer_source
 from ui.strings import FA, HELP, NAMES, EN_NAMES
 from ui.theme import PALETTES, SYNTAX, apply_theme
 from ui.icons import icon
+from ui.credits import COPYRIGHT, REPOSITORY, THANKS, PURPOSE, LICENSE_NOTE
+from ui.localization import error_text
 from ui.code_editor import CodeEditor
 from ui.glass import GlassRoot
 
@@ -43,7 +45,9 @@ def code_editor(readonly=False, theme=None):
     option = editor.document().defaultTextOption()
     option.setTextDirection(LTR)
     editor.document().setDefaultTextOption(option)
-    editor.setFont(QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont))
+    font=QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
+    font.setPointSize(12)
+    editor.setFont(font)
     editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
     editor.resize_gutter()
     editor.highlighter = CodeHighlighter(editor.document())
@@ -696,7 +700,7 @@ class Workspace(QMainWindow):
                 raise ValueError(self.t("Input file too large"))
             value = path.read_text(encoding="utf-8-sig")
         except (OSError, UnicodeError, ValueError) as exc:
-            QMessageBox.warning(self, self.t("File error"), str(exc))
+            QMessageBox.warning(self, self.t("File error"), error_text(exc,self.language=="fa"))
             return
         self.settings.setValue("last_directory", str(path.parent))
         self.replace_document(value, path=path)
@@ -721,7 +725,7 @@ class Workspace(QMainWindow):
         try:
             path.write_text(self.editor.toPlainText(), encoding="utf-8")
         except (OSError, UnicodeError) as exc:
-            QMessageBox.warning(self, self.t("File error"), str(exc))
+            QMessageBox.warning(self, self.t("File error"), error_text(exc,self.language=="fa"))
             return False
         self.path = path
         self.settings.setValue("last_directory", str(path.parent))
@@ -749,7 +753,7 @@ class Workspace(QMainWindow):
             output=self.output.toPlainText()
             path.write_text(output + ("\n" if output else ""), encoding="utf-8")
         except (OSError, UnicodeError) as exc:
-            QMessageBox.warning(self, self.t("File error"), str(exc))
+            QMessageBox.warning(self, self.t("File error"), error_text(exc,self.language=="fa"))
             return
         self.statusBar().showMessage(self.t("Output exported"))
 
@@ -777,7 +781,8 @@ class Workspace(QMainWindow):
         ProgramLab(self, assembly).exec()
 
     def about(self):
-        QMessageBox.about(self, "Mano Studio", f"Mano Studio · {VERSION}\n" + self.t("Academic project · Morris Mano Basic Computer") + "\nMIT · " + self.t("Open source") + "\nhttps://github.com/mohammadrezamie/mano-studio")
+        fa=self.language=="fa"
+        QMessageBox.about(self, self.t("About")+" — Mano Studio", "\n\n".join((f"Mano Studio · {VERSION}",PURPOSE[fa],THANKS[fa],COPYRIGHT,LICENSE_NOTE[fa],REPOSITORY)))
 
     def closeEvent(self, event):
         if not self.confirm_discard():

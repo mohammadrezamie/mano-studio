@@ -6,9 +6,10 @@ from ui.theme import PALETTES
 
 
 class DatapathView(QWidget):
-    def __init__(self, theme, reduced_motion=False, parent=None):
+    def __init__(self, theme, reduced_motion=False, parent=None, fa=False):
         super().__init__(parent)
         self.theme=theme
+        self.fa=fa
         self.reduced_motion=reduced_motion
         self.cpu=None
         self.last_step=None
@@ -69,10 +70,10 @@ class DatapathView(QWidget):
         address=ev.effective_address if ev else None
         mem=[("4096 × 16 bit",False),("EA  —" if address is None else f"EA  {address:03X}",False),
              ("M   —" if address is None else f"M   {cpu.memory[address]:04X}",bool(ev and ev.writes))]
-        card(20,30,180,180,"MEMORY",mem,bool(ev and address is not None))
-        card(280,30,190,180,"CPU REGISTERS",[reg("PC",3),reg("IR",4),reg("AR",3),reg("DR",4),reg("AC",4)])
+        card(20,30,180,180,"حافظه" if self.fa else "MEMORY",mem,bool(ev and address is not None))
+        card(280,30,190,180,"ثبات‌های پردازنده" if self.fa else "CPU REGISTERS",[reg("PC",3),reg("IR",4),reg("AR",3),reg("DR",4),reg("AC",4)])
         op=ev.mnemonic if ev else "—"
-        card(550,30,190,180,"EXECUTION",[(f"OP  {op}",False),reg("E",1),reg("IEN",1),reg("FGI",1),reg("FGO",1)],bool(ev))
+        card(550,30,190,180,"اجرا" if self.fa else "EXECUTION",[(f"OP  {op}",False),reg("E",1),reg("IEN",1),reg("FGI",1),reg("FGO",1)],bool(ev))
         # Conceptual instruction-level activity, not hardware bus timing.
         transfer=bool(ev and ev.mnemonic in ("LDA","ADD","AND","STA","BSA","ISZ","INT"))
         p.setPen(QPen(QColor(accent if transfer else border),2.2))
@@ -86,5 +87,5 @@ class DatapathView(QWidget):
             p.drawEllipse(QPointF(200+80*fraction,120),4.5,4.5)
         p.setFont(QFont("Segoe UI",10))
         p.setPen(QColor(muted))
-        p.drawText(QRectF(20,225,720,20),Qt.AlignmentFlag.AlignCenter,"Instruction-level activity · not a clock-cycle bus trace")
+        p.drawText(QRectF(20,225,720,20),Qt.AlignmentFlag.AlignCenter,"نمایش سطح دستور، نه زمان‌بندی چرخه ساعت" if self.fa else "Instruction-level activity · not a clock-cycle bus trace")
         p.end()

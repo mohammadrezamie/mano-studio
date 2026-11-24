@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QTextCursor
 from execution_history import ExecutionHistory
 from ui.arithmetic_view import ArithmeticView
+from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
 from ui.workspace import code_editor
@@ -79,7 +80,7 @@ class ProgramLab(QDialog):
             table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
             lower.addWidget(table)
         self.inspector=QTabWidget()
-        self.datapath=DatapathView(parent.theme, parent.settings.value("reduced_motion", False, type=bool) or not parent.settings.value("lab_motion", True, type=bool))
+        self.datapath=DatapathView(parent.theme, parent.settings.value("reduced_motion", False, type=bool) or not parent.settings.value("lab_motion", True, type=bool), fa=self.fa)
         self.inspector.addTab(self.datapath,self.t("Live view","نمای زنده"))
         self.inspector.addTab(lower,self.t("Registers & memory","ثبات‌ها و حافظه"))
         trace_page=QWidget()
@@ -98,7 +99,7 @@ class ProgramLab(QDialog):
         self.break_label=QLabel()
         trace_layout.addWidget(self.break_label)
         self.trace=QTableWidget(0,7)
-        self.trace.setHorizontalHeaderLabels(["#","PC","Word","OP","EA","AC","Next PC"])
+        self.trace.setHorizontalHeaderLabels(["#","PC",self.t("Word","کلمه"),"OP","EA","AC",self.t("Next PC","PC بعدی")])
         self.trace.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.trace.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.trace.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -162,7 +163,7 @@ class ProgramLab(QDialog):
         self.refresh_trace()
         if not self.program.ok:
             self.datapath.set_state(None)
-            self.machine.setPlainText("\n".join(f"{e.line}: {e.message}" for e in self.program.errors))
+            self.machine.setPlainText("\n".join(f"{e.line}: {error_text(e.message,self.fa)}" for e in self.program.errors))
             self.status.setText(self.t("Assembly failed.","اسمبل ناموفق بود."))
             self.registers.setRowCount(0)
             self.memory.setRowCount(0)
@@ -210,7 +211,7 @@ class ProgramLab(QDialog):
             event = self.history.step()
         except ValueError as error:
             self.pause()
-            self.status.setText(str(error))
+            self.status.setText(error_text(error,self.fa))
             return
         if event is None:
             self.pause()
@@ -249,7 +250,7 @@ class ProgramLab(QDialog):
                 self.history.barrier()
                 self.refresh()
             except ValueError as error:
-                self.status.setText(str(error))
+                self.status.setText(error_text(error,self.fa))
 
     def read_output(self):
         if self.cpu:
@@ -330,7 +331,7 @@ class ProgramLab(QDialog):
         path,_=QFileDialog.getSaveFileName(self,self.t("Export trace","خروجی رد اجرا"),"trace.csv","CSV (*.csv)")
         if path:
             try:self.write_trace(Path(path) if Path(path).suffix else Path(path).with_suffix(".csv"))
-            except OSError as exc:QMessageBox.warning(self,self.t("Export failed","خروجی ناموفق"),str(exc))
+            except OSError as exc:QMessageBox.warning(self,self.t("Export failed","خروجی ناموفق"),error_text(exc,self.fa))
 
     def use_registers(self):
         if self.cpu:self.arithmetic.set_operands(self.cpu.ac,self.cpu.dr,self.cpu.e)

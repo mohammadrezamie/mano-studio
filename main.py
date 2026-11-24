@@ -7,6 +7,7 @@ from ui.theme import PALETTES, apply_theme
 from ui.strings import FA
 from ui.glass import paint_backdrop
 from ui.icons import icon
+from ui.credits import THANKS, COPYRIGHT
 
 from update_service import VERSION
 
@@ -107,6 +108,9 @@ def main():
     painter.setPen(QColor(muted))
     painter.drawText(35, 165, VERSION)
     painter.drawText(35, 200, FA["Academic project · Morris Mano Basic Computer"] if language == "fa" else "Academic project · Morris Mano Basic Computer")
+    painter.setFont(QFont("Segoe UI",10))
+    painter.drawText(35,222,570,48,Qt.TextFlag.TextWordWrap | Qt.AlignmentFlag.AlignVCenter | (Qt.AlignmentFlag.AlignRight if language=="fa" else Qt.AlignmentFlag.AlignLeft),THANKS[language=="fa"])
+    painter.drawText(35,285,COPYRIGHT)
     painter.end()
     splash = QSplashScreen(pix)
     splash.show()

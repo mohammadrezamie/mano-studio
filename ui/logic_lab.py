@@ -13,6 +13,7 @@ from logic_engine import CIRCUITS, ARITY, basic
 from circuit_document import CircuitDocument
 from schematic_routing import wire_route
 from ui.circuit_editor import CircuitEditor
+from ui.localization import error_text
 from ui.sequential_view import SequentialView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES
@@ -24,7 +25,7 @@ class LogicDiagram(QGraphicsView):
     moved = Signal(str, float, float)
     hint = Signal(str)
 
-    def __init__(self, theme):
+    def __init__(self, theme, fa=False):
         super().__init__()
         self.theme = theme
         self.graph = QGraphicsScene(self)
@@ -180,7 +181,7 @@ class LogicDiagram(QGraphicsView):
             for name,pin,(x,y) in self.ports:
                 dot=scene.addEllipse(QRectF(x-5,y-5,10,10),QPen(QColor(accent),1.5),QBrush(QColor(panel)))
                 dot.setZValue(3)
-                dot.setToolTip(f"{name}: " + ("source" if pin<0 else f"pin {pin+1}"))
+                dot.setToolTip(f"{name}: " + (("مبدأ" if self.fa else "source") if pin<0 else (f"پایه {pin+1}" if self.fa else f"pin {pin+1}")))
         scene.setSceneRect(scene.itemsBoundingRect().adjusted(-40,-40,40,40))
 
     def clear_gesture(self):
@@ -284,7 +285,7 @@ class LogicLab(QDialog):
         self.dirty=False
         self.document=None
         self.selected_key=None
-        self.setWindowTitle("Mano Studio — Logic Lab")
+        self.setWindowTitle("Mano Studio — "+self.t("Logic Lab","آزمایشگاه منطق"))
         self.resize(1100,740)
         outer=QVBoxLayout(self)
         self.mode_tabs=QTabWidget()
@@ -363,7 +364,7 @@ class LogicLab(QDialog):
         self.route_warning.hide()
         layout.addWidget(self.route_warning)
         split=QSplitter(Qt.Orientation.Vertical)
-        self.diagram=LogicDiagram(parent.theme)
+        self.diagram=LogicDiagram(parent.theme,self.fa)
         self.diagram.rewire.connect(self.rewire_pin)
         self.diagram.moved.connect(self.move_component)
         self.diagram.hint.connect(self.set_canvas_hint)
@@ -470,7 +471,7 @@ class LogicLab(QDialog):
             if document!=self.document:
                 document=document.with_positions(self.diagram.positions)
         except ValueError as exc:
-            self.set_canvas_hint(str(exc))
+            self.set_canvas_hint(error_text(exc,self.fa))
             return
         self.commit_canvas(document)
 
@@ -482,7 +483,7 @@ class LogicLab(QDialog):
         try:
             document=self.document.with_positions(positions)
         except ValueError as exc:
-            self.set_canvas_hint(str(exc))
+            self.set_canvas_hint(error_text(exc,self.fa))
             return
         self.commit_canvas(document)
 
@@ -557,7 +558,7 @@ class LogicLab(QDialog):
                 raise ValueError("Circuit file too large.")
             document=CircuitDocument.loads(path.read_text(encoding="utf-8"))
         except (OSError,UnicodeError,ValueError) as exc:
-            QMessageBox.warning(self,self.t("Invalid circuit","مدار نامعتبر"),str(exc))
+            QMessageBox.warning(self,self.t("Invalid circuit","مدار نامعتبر"),error_text(exc,self.fa))
             return
         self.history.clear()
         self.install_document(document,False)
@@ -576,7 +577,7 @@ class LogicLab(QDialog):
         try:
             path.write_text(self.document.dumps(),encoding="utf-8")
         except (OSError,ValueError) as exc:
-            QMessageBox.warning(self,self.t("Cannot save","ذخیره ناموفق"),str(exc))
+            QMessageBox.warning(self,self.t("Cannot save","ذخیره ناموفق"),error_text(exc,self.fa))
             return
         self.dirty=False
         # Undo after saving changes the document relative to the saved file.
@@ -594,7 +595,7 @@ class LogicLab(QDialog):
             try:
                 self.write_truth_table(Path(name) if Path(name).suffix else Path(name).with_suffix(".csv"))
             except OSError as exc:
-                QMessageBox.warning(self,self.t("Export failed","خروجی ناموفق"),str(exc))
+                QMessageBox.warning(self,self.t("Export failed","خروجی ناموفق"),error_text(exc,self.fa))
 
     def write_schematic(self,path):
         # Exclude temporary editing handles and previews from the exported diagram.
@@ -627,7 +628,7 @@ class LogicLab(QDialog):
             try:
                 self.write_schematic(Path(name) if Path(name).suffix else Path(name).with_suffix(".svg"))
             except (OSError,ValueError) as exc:
-                QMessageBox.warning(self,self.t("Export failed","خروجی ناموفق"),str(exc))
+                QMessageBox.warning(self,self.t("Export failed","خروجی ناموفق"),error_text(exc,self.fa))
 
     def done(self,result):
         if self.stack.currentIndex()==1 and QMessageBox.question(self,self.t("Unapplied edits","ویرایش اعمال‌نشده"),self.t("Discard staged edits?","ویرایش‌های اعمال‌نشده حذف شوند؟"),QMessageBox.StandardButton.Discard|QMessageBox.StandardButton.Cancel,QMessageBox.StandardButton.Cancel)!=QMessageBox.StandardButton.Discard:

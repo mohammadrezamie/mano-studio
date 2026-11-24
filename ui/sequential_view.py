@@ -69,12 +69,13 @@ class ClockedDiagram(QWidget):
 
 
 class WaveformView(QWidget):
-    def __init__(self, theme):
+    def __init__(self, theme, fa=False):
         super().__init__()
         self.theme=theme
         self.model=None
         self.setMinimumHeight(300)
-        self.setAccessibleName("Digital waveform history")
+        self.fa=fa
+        self.setAccessibleName("تاریخچه نمودار زمانی" if fa else "Digital waveform history")
 
     def paintEvent(self,event):
         p=QPainter(self)
@@ -110,7 +111,7 @@ class WaveformView(QWidget):
             p.setPen(QPen(QColor(accent if i==0 else fg),1.65))
             p.drawPath(path)
         p.setPen(QColor(muted))
-        p.drawText(QRectF(left,self.height()-20,right-left,18),Qt.AlignmentFlag.AlignRight,"Event samples  →")
+        p.drawText(QRectF(left,self.height()-20,right-left,18),Qt.AlignmentFlag.AlignRight,"ترتیب رویدادها" if self.fa else "Event samples  →")
         p.end()
 
 
@@ -148,7 +149,7 @@ class SequentialView(QWidget):
         self.summary=QLabel()
         self.summary.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         layout.addWidget(self.summary)
-        self.waveform=WaveformView(theme)
+        self.waveform=WaveformView(theme,self.fa)
         self.waveform.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         layout.addWidget(self.waveform,3)
         self.status=QLabel()
