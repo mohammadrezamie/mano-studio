@@ -1,5 +1,15 @@
 """Centralized UI text; code tokens always remain untranslated."""
 FA = {
+    "Choose file": "انتخاب فایل",
+    "Save input": "ذخیره ورودی",
+    "Save input as": "ذخیره ورودی با نام جدید",
+    "Input saved": "ورودی ذخیره شد",
+    "Output exported": "خروجی ذخیره شد",
+    "Input file too large": "فایل ورودی بیش از حد بزرگ است",
+    "Assembly input": "ورودی اسمبلی",
+    "RTL output": "خروجی RTL",
+    "Export RTL": "خروجی RTL",
+    "Number bases & ALU": "مبناهای عددی و ALU",
     "Import ASM as RTL": "ورود اسمبلی به صورت RTL",
     "Cannot reconstruct RTL": "بازسازی RTL امکان‌پذیر نیست",
     "Assembly file too large": "فایل اسمبلی بیش از حد بزرگ است",

@@ -24,6 +24,7 @@ class ArithmeticView(QWidget):
         row.addWidget(self.base)
         self.op=QComboBox()
         self.op.addItems(OPERATIONS)
+        self.op.insertItem(0,self.t("Convert bases","تبدیل مبنا"),"convert")
         row.addWidget(self.op,1)
         self.cin=QCheckBox("Cin / E")
         row.addWidget(self.cin)
@@ -107,7 +108,7 @@ class ArithmeticView(QWidget):
     def refresh(self,*_):
         width=self.width.currentData()
         base=self.base.currentData()
-        op=self.op.currentText()
+        op="CONVERT" if self.op.currentData()=="convert" else self.op.currentText()
         binary=op in ("ADD","ADC","SUB","AND","OR","XOR")
         self.b.setEnabled(binary)
         self.cin.setEnabled(op in ("ADC","CIR","CIL"))
@@ -118,18 +119,21 @@ class ArithmeticView(QWidget):
         try:
             a=parse_word(self.a.text(),base,width)
             b=parse_word(self.b.text(),base,width) if binary else 0
-            result=alu(op,a,b,width,int(self.cin.isChecked()))
+            result=None if op=="CONVERT" else alu(op,a,b,width,int(self.cin.isChecked()))
         except ValueError as exc:
             self.status.setText(self.t(str(exc),"عدد ورودی یا طول کلمه معتبر نیست."))
             return
         self.status.clear()
         self.result=result
-        for row,(label,word) in enumerate((("A",a),("B",b if binary else None),("Result",result.word))):
+        for row,(label,word) in enumerate((("A",a),("B",b if binary else None),("Result",result.word if result else None))):
             values=[label]+(list(representations(word,width).values()) if word is not None else ["—"]*5)
             for col,value in enumerate(values):
                 item=QTableWidgetItem(value)
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.representation.setItem(row,col,item)
+        if result is None:
+            self.flags.setText(self.t("Same word in all four bases","همان کلمه در چهار مبنا"))
+            return
         def flag(v):return "—" if v is None else str(int(v))
         self.flags.setText(f"C = {flag(result.carry)}    V = {flag(result.overflow)}    N = {flag(result.negative)}    Z = {flag(result.zero)}")
         self.stages.setRowCount(len(result.stages))

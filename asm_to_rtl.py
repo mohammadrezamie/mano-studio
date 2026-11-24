@@ -13,11 +13,18 @@ from rtl_translator import translate
 class ReverseError:
     line: int
     message: str
+    column: int = 1
+    code: str = "UNSUPPORTED_ASM"
 
 @dataclass(frozen=True)
 class ReverseResult:
     rtl: str
     errors: tuple
+    source_lines: tuple = ()
+
+    @property
+    def diagnostics(self):
+        return self.errors
 
     @property
     def ok(self):
@@ -25,6 +32,7 @@ class ReverseResult:
 
 def reverse_translate(text):
     lines=[]
+    source_lines=[]
     errors=[]
     for n,raw in enumerate(text.splitlines(),1):
         statement=re.split(r"[;#/]",raw,maxsplit=1)[0].strip()
@@ -50,8 +58,9 @@ def reverse_translate(text):
             if not result.ok or result.assembly!=expected:
                 raise ValueError("Canonical RTL failed forward verification.")
             lines.append(rtl)
+            source_lines.append(n)
         except ValueError as exc:
             errors.append(ReverseError(n,str(exc)))
     if not lines and not errors:
         errors.append(ReverseError(1,"No named instructions to import."))
-    return ReverseResult("\n".join(lines)+"\n" if not errors else "",tuple(errors))
+    return ReverseResult("\n".join(lines)+"\n" if not errors else "",tuple(errors),tuple(source_lines) if not errors else ())

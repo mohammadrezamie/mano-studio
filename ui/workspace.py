@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 import re
 from rtl_translator import translate
+from asm_to_rtl import reverse_translate
 from update_service import VERSION
 from instruction_catalog import TEMPLATES, build_rtl
 from example_catalog import EXAMPLES, computer_source
@@ -62,6 +63,7 @@ class Workspace(QMainWindow):
         if self.theme not in PALETTES:
             self.theme = "dark"
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
+        self.direction = "forward"
         self.path = None
         self.active_example = None
         self.result = None
@@ -103,7 +105,7 @@ class Workspace(QMainWindow):
         toolbar_frame.setObjectName("glassBar")
         toolbar = QHBoxLayout(toolbar_frame)
         self.menu_actions = []
-        for name, entries in [("File", [("New", self.new_file), ("Open RTL", self.open_file), ("Import ASM as RTL", self.import_assembly), ("Save RTL", self.save_file), ("Save RTL as", self.save_as)]),
+        for name, entries in [("File", [("New", self.new_file), ("Choose file", self.open_file), ("Save input", self.save_file), ("Save input as", self.save_as)]),
                               ("Help", [("Instruction reference", self.open_instruction_reference), ("About", self.about)])]:
             button = QPushButton(self.t(name))
             self.labels.append((button, name))
@@ -114,7 +116,12 @@ class Workspace(QMainWindow):
                 self.menu_actions.append((action, key))
             button.setMenu(menu)
             toolbar.addWidget(button)
-        toolbar.addWidget(self.button("Open RTL", self.open_file))
+        self.direction_box = QComboBox()
+        self.direction_box.addItem(self.t("RTL → ASM"),"forward")
+        self.direction_box.addItem(self.t("ASM → RTL"),"reverse")
+        self.direction_box.currentIndexChanged.connect(self.change_direction)
+        toolbar.addWidget(self.direction_box)
+        toolbar.addWidget(self.button("Choose file", self.open_file))
         examples_button = QPushButton(self.t("Examples"))
         self.labels.append((examples_button, "Examples"))
         examples_menu = QMenu(examples_button)
@@ -130,7 +137,7 @@ class Workspace(QMainWindow):
         self.labels.append((labs, "Labs"))
         self.lab_menu = QMenu(labs)
         self.lab_actions = []
-        for key, slot in [("Computer", self.open_program_lab), ("Logic Lab", self.open_logic_lab)]:
+        for key, slot in [("Computer", self.open_program_lab), ("Number bases & ALU", self.open_number_lab), ("Logic Lab", self.open_logic_lab)]:
             action = self.lab_menu.addAction(self.t(key))
             action.triggered.connect(lambda checked=False, fn=slot: fn())
             self.lab_actions.append((action, key))
@@ -153,7 +160,11 @@ class Workspace(QMainWindow):
             box = QVBoxLayout(pane)
             box.setContentsMargins(10, 8, 10, 10)
             heading = QHBoxLayout()
-            heading.addWidget(self.label(title, "section"))
+            title_label=QLabel(self.t(title))
+            title_label.setObjectName("section")
+            if editor is self.editor:self.input_title=title_label
+            else:self.output_title=title_label
+            heading.addWidget(title_label)
             heading.addStretch()
             if editor is self.output:
                 self.output_state = QLabel()
@@ -174,6 +185,7 @@ class Workspace(QMainWindow):
         row.addWidget(self.button("Redo", self.editor.redo))
         row.addWidget(self.button("Instruction reference", self.open_instruction_reference))
         row.addStretch()
+        row.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.tabs.addTab(page, self.t("Editor"))
         self.tabs.addTab(self.pad(), self.t("Symbol pad"))
         self.tabs.addTab(self.builder(), self.t("Builder"))
@@ -212,6 +224,7 @@ class Workspace(QMainWindow):
             shortcut.activated.connect(handler)
             self.file_shortcuts.append(shortcut)
         self.relabel()
+        self.input_mode_changed(self.tabs.currentIndex())
         self.offline_label = self.label("Offline", "muted")
         self.statusBar().addPermanentWidget(self.offline_label)
         self.update_output_state()
@@ -222,11 +235,60 @@ class Workspace(QMainWindow):
         if geometry:
             self.restoreGeometry(geometry)
 
+    def source_lines(self):
+        return tuple(i.line for i in self.result.instructions) if self.direction=="forward" else self.result.source_lines
+
+    def input_suffix(self):
+        return ".rtl" if self.direction=="forward" else ".asm"
+
+    def output_suffix(self):
+        return ".asm" if self.direction=="forward" else ".rtl"
+
+    def input_filter(self):
+        return "RTL (*.rtl *.txt);;All files (*)" if self.direction=="forward" else "Assembly (*.asm *.txt);;All files (*)"
+
+    def refresh_direction_labels(self):
+        reverse=self.direction=="reverse"
+        input_key="Assembly input" if reverse else "RTL input"
+        output_key="RTL output" if reverse else "Assembly output"
+        self.input_title.setText(self.t(input_key))
+        self.output_title.setText(self.t(output_key))
+        self.editor.setAccessibleName(self.t(input_key))
+        self.output.setAccessibleName(self.t(output_key))
+        self.export_button.setText(self.t("Export RTL" if reverse else "Export ASM"))
+        if reverse and self.tabs.currentIndex()==1:self.tabs.setCurrentIndex(0)
+        self.tabs.setTabEnabled(1,not reverse)
+        self.update_preview()
+
+    def set_direction(self,direction):
+        self.direction=direction
+        self.direction_box.blockSignals(True)
+        self.direction_box.setCurrentIndex(self.direction_box.findData(direction))
+        self.direction_box.blockSignals(False)
+        self.refresh_direction_labels()
+
+    def change_direction(self,*_):
+        direction=self.direction_box.currentData()
+        if direction==self.direction:return
+        if not self.confirm_discard():
+            self.set_direction(self.direction)
+            return
+        self.set_direction(direction)
+        self.replace_document("")
+
+    def open_number_lab(self):
+        from ui.program_lab import ProgramLab
+        lab=ProgramLab(self)
+        lab.inspector.setCurrentIndex(3)
+        lab.arithmetic.op.setCurrentIndex(0)
+        lab.exec()
+
     def input_mode_changed(self, index):
         self.settings.setValue("input_mode", index)
         total = max(self.workspace_split.height(), 520)
         diagnostic = 145 if not self.diagnostics_panel.isHidden() else 0
-        tools = 80 if index == 0 else 260
+        tools = 92 if index == 0 else 260
+        self.tabs.setMaximumHeight(100 if index == 0 else 360)
         self.workspace_split.setSizes([max(180, total-tools-diagnostic), tools, diagnostic])
 
     def t(self, text):
@@ -244,7 +306,7 @@ class Workspace(QMainWindow):
             widget.setObjectName("primary")
         widget.clicked.connect(lambda checked=False: action())
         self.labels.append((widget, key))
-        names = {"Open RTL":"open","Translate":"translate","Export ASM":"export",
+        names = {"Open RTL":"open","Choose file":"open","Translate":"translate","Export ASM":"export",
                  "Settings":"settings","Undo":"undo","Redo":"redo","Instruction reference":"search"}
         if key in names:
             self.icon_buttons.append((widget,names[key]))
@@ -355,8 +417,9 @@ class Workspace(QMainWindow):
         if name is None:
             raise ValueError("No matching instruction")
         memory = "{a}" in TEMPLATES[name]
-        return build_rtl(name, self.address.text() if memory else "",
+        rtl=build_rtl(name, self.address.text() if memory else "",
                          self.indirect.isChecked() if memory else False)
+        return rtl if self.direction=="forward" else translate(rtl).assembly
 
     def update_preview(self):
         name = self.operations.currentData()
@@ -365,9 +428,11 @@ class Workspace(QMainWindow):
         self.indirect.setEnabled(memory)
         valid = False
         try:
-            rtl = self.template()
-            self.preview.setText(rtl + "    →    " + translate(rtl).assembly)
-            valid = True
+            source = self.template()
+            result=translate(source) if self.direction=="forward" else reverse_translate(source)
+            target=result.assembly if self.direction=="forward" else result.rtl.rstrip("\n")
+            self.preview.setText(source + "    →    " + target)
+            valid = result.ok
         except ValueError:
             self.preview.setText(self.t("No matching instruction") if name is None else self.t("Choose 000–FFF."))
         self.insert_button.setEnabled(valid)
@@ -438,11 +503,12 @@ class Workspace(QMainWindow):
 
     def run_translation(self):
         source = self.editor.toPlainText()
-        self.result = translate(source)
+        self.result = translate(source) if self.direction=="forward" else reverse_translate(source)
         self.translated_source = source
         self.mapping_active = True
         try:
-            self.output.setPlainText(self.result.assembly if self.result.ok else "")
+            target=(self.result.assembly if self.direction=="forward" else self.result.rtl.rstrip("\n")) if self.result.ok else ""
+            self.output.setPlainText(target)
         finally:
             self.mapping_active = False
         self.follow_source()
@@ -457,7 +523,7 @@ class Workspace(QMainWindow):
         elif not self.result.ok:
             state, label = "error", self.t("Translation failed")
         else:
-            count = len(self.result.instructions)
+            count = len(self.source_lines())
             state, label = "success", f"{count} " + self.t("instruction" if count == 1 else "instructions")
         self.output_state.setText(label)
         self.output_state.setProperty("state", state)
@@ -474,8 +540,8 @@ class Workspace(QMainWindow):
         if self.mapping_active or not self.result or not self.result.ok or self.translated_source != self.editor.toPlainText():
             return
         line = self.editor.textCursor().blockNumber() + 1
-        for index, instruction in enumerate(self.result.instructions):
-            if instruction.line == line:
+        for index, source_line in enumerate(self.source_lines()):
+            if source_line == line:
                 self.mapping_active = True
                 try:
                     self.mapped_cursor(self.output, index)
@@ -487,10 +553,11 @@ class Workspace(QMainWindow):
         if self.mapping_active or not self.result or not self.result.ok or self.translated_source != self.editor.toPlainText():
             return
         index = self.output.textCursor().blockNumber()
-        if 0 <= index < len(self.result.instructions):
+        lines=self.source_lines()
+        if 0 <= index < len(lines):
             self.mapping_active = True
             try:
-                self.mapped_cursor(self.editor, self.result.instructions[index].line - 1)
+                self.mapped_cursor(self.editor, lines[index] - 1)
             finally:
                 self.mapping_active = False
 
@@ -540,8 +607,9 @@ class Workspace(QMainWindow):
         self.render_errors()
         self.update_preview()
         self.update_output_state()
-        self.editor.setAccessibleName(self.t("RTL input"))
-        self.output.setAccessibleName(self.t("Assembly output"))
+        self.direction_box.setItemText(0,self.t("RTL → ASM"))
+        self.direction_box.setItemText(1,self.t("ASM → RTL"))
+        self.refresh_direction_labels()
 
     def change_language(self):
         self.language = self.languages.currentData()
@@ -607,6 +675,7 @@ class Workspace(QMainWindow):
     def load_example(self, example):
         if not self.confirm_discard():
             return
+        self.set_direction("forward")
         self.replace_document(example.rtl, example=example)
         self.run_translation()
         self.statusBar().showMessage(example.description[self.language == "fa"])
@@ -618,41 +687,20 @@ class Workspace(QMainWindow):
     def open_file(self):
         if not self.confirm_discard():
             return
-        name, _ = QFileDialog.getOpenFileName(self, self.t("Open RTL"), self.last_directory(), "RTL (*.rtl *.txt);;All files (*)")
+        name, _ = QFileDialog.getOpenFileName(self, self.t("Choose file"), self.last_directory(), self.input_filter())
         if not name:
             return
         try:
             path = Path(name)
+            if path.stat().st_size>2_000_000:
+                raise ValueError(self.t("Input file too large"))
             value = path.read_text(encoding="utf-8-sig")
-        except (OSError, UnicodeError) as exc:
+        except (OSError, UnicodeError, ValueError) as exc:
             QMessageBox.warning(self, self.t("File error"), str(exc))
             return
         self.settings.setValue("last_directory", str(path.parent))
         self.replace_document(value, path=path)
-
-    def import_assembly(self):
-        from asm_to_rtl import reverse_translate
-        if not self.confirm_discard():
-            return
-        name,_=QFileDialog.getOpenFileName(self,self.t("Import ASM as RTL"),self.last_directory(),"Assembly (*.asm *.txt);;All files (*)")
-        if not name:return
-        try:
-            source=Path(name)
-            if source.stat().st_size>2_000_000:
-                raise ValueError(self.t("Assembly file too large"))
-            result=reverse_translate(source.read_text(encoding="utf-8-sig"))
-        except (OSError,UnicodeError,ValueError) as exc:
-            QMessageBox.warning(self,self.t("File error"),str(exc))
-            return
-        if not result.ok:
-            details="\n".join(f"{e.line}: {e.message}" for e in result.errors[:15])
-            QMessageBox.warning(self,self.t("Cannot reconstruct RTL"),details)
-            return
-        self.settings.setValue("last_directory",str(source.parent))
-        self.replace_document(result.rtl)
-        self.editor.document().setModified(True)
         self.run_translation()
-        self.statusBar().showMessage(self.t("Canonical RTL reconstructed; save as a new RTL file."))
 
     def save_file(self):
         if self.path is None:
@@ -660,13 +708,13 @@ class Workspace(QMainWindow):
         return self.write_document(self.path)
 
     def save_as(self):
-        suggested = str(self.path) if self.path else str(Path(self.last_directory()) / ((self.active_example.key if self.active_example else "untitled") + ".rtl"))
-        name, _ = QFileDialog.getSaveFileName(self, self.t("Save RTL as"), suggested, "RTL (*.rtl);;Text (*.txt)")
+        suggested = str(self.path) if self.path else str(Path(self.last_directory()) / ((self.active_example.key if self.active_example else "untitled") + self.input_suffix()))
+        name, _ = QFileDialog.getSaveFileName(self, self.t("Save input as"), suggested, self.input_filter())
         if not name:
             return False
         path = Path(name)
         if not path.suffix:
-            path = path.with_suffix(".rtl")
+            path = path.with_suffix(self.input_suffix())
         return self.write_document(path)
 
     def write_document(self, path):
@@ -679,28 +727,29 @@ class Workspace(QMainWindow):
         self.settings.setValue("last_directory", str(path.parent))
         self.editor.document().setModified(False)
         self.update_document_title()
-        self.statusBar().showMessage(self.t("RTL saved"))
+        self.statusBar().showMessage(self.t("Input saved"))
         return True
 
     def export_file(self):
         if self.result is None or not self.result.ok or self.translated_source != self.editor.toPlainText():
             QMessageBox.warning(self, self.t("No valid output"), self.t("Translate the input successfully before exporting."))
             return
-        suggested = str(self.path.with_suffix(".asm")) if self.path else str(Path(self.last_directory()) / ((self.active_example.key if self.active_example else "untitled") + ".asm"))
-        name, _ = QFileDialog.getSaveFileName(self, self.t("Export ASM"), suggested, "Assembly (*.asm)")
+        suggested = str(self.path.with_suffix(self.output_suffix())) if self.path else str(Path(self.last_directory()) / ((self.active_example.key if self.active_example else "untitled") + self.output_suffix()))
+        name, _ = QFileDialog.getSaveFileName(self, self.t("Export ASM" if self.direction=="forward" else "Export RTL"), suggested, "Assembly (*.asm)" if self.direction=="forward" else "RTL (*.rtl)")
         if not name:
             return
         path = Path(name)
         if not path.suffix:
-            path = path.with_suffix(".asm")
+            path = path.with_suffix(self.output_suffix())
         try:
             if self.path and path.resolve() == self.path.resolve():
                 raise OSError(self.t("Input and output must be different files"))
-            path.write_text(self.result.assembly + ("\n" if self.result.instructions else ""), encoding="utf-8")
+            output=self.output.toPlainText()
+            path.write_text(output + ("\n" if output else ""), encoding="utf-8")
         except (OSError, UnicodeError) as exc:
             QMessageBox.warning(self, self.t("File error"), str(exc))
             return
-        self.statusBar().showMessage(self.t("Assembly exported"))
+        self.statusBar().showMessage(self.t("Output exported"))
 
     def open_instruction_reference(self):
         self.tabs.setCurrentIndex(2)
@@ -713,6 +762,9 @@ class Workspace(QMainWindow):
 
     def open_program_lab(self):
         from ui.program_lab import ProgramLab
+        if self.direction=="reverse":
+            ProgramLab(self,self.editor.toPlainText()).exec()
+            return
         result = translate(self.editor.toPlainText())
         if not result.ok:
             ProgramLab(self).exec()

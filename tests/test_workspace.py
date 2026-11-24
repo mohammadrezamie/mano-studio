@@ -356,11 +356,20 @@ def test_optional_reverse_import(workspace,tmp_path,monkeypatch):
     from PySide6.QtWidgets import QFileDialog
     path=tmp_path/"input.asm"
     path.write_text("LDA 100 I\nHLT",encoding="utf-8")
+    workspace.direction_box.setCurrentIndex(1)
     monkeypatch.setattr(QFileDialog,"getOpenFileName",lambda *a:(str(path),""))
-    workspace.import_assembly()
-    assert workspace.path is None and workspace.editor.document().isModified()
-    assert workspace.output.toPlainText()=="LDA 100 I\nHLT"
+    workspace.open_file()
+    assert workspace.path==path and not workspace.editor.document().isModified()
+    assert workspace.output.toPlainText()=="AC ← M[M[100]]\nS ← 0"
+    target=tmp_path/"out"
+    monkeypatch.setattr(QFileDialog,"getSaveFileName",lambda *a:(str(target),""))
+    workspace.export_file()
+    assert target.with_suffix(".rtl").read_text(encoding="utf-8")=="AC ← M[M[100]]\nS ← 0\n"
     assert path.read_text(encoding="utf-8")=="LDA 100 I\nHLT"
+    workspace.editor.setPlainText("ORG 100\nHLT")
+    workspace.run_translation()
+    assert not workspace.result.ok and not workspace.export_button.isEnabled()
+    workspace.editor.document().setModified(False)
 
 
 def test_alu_base_switch_preserves_word(workspace):
