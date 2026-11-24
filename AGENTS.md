@@ -13,3 +13,5 @@ Read docs/LOGIC_LAB.md for circuit engine and roadmap. Keep RTL-to-ASM as the pr
 Owner requires recognizable standard gate shapes, accurate pin counts, inversion bubbles, meaningful wiring; see LOGIC_LAB.md. RTL-to-ASM stays first priority and default workspace; expand other Mano chapters as optional labs. Keep development-only policy.
 
 Read docs/UX_PLAN.md first. Owner requires integration and UX over feature count. Follow ordered checkpoints; reuse engines and views, commit substantive work during each turn, update status. Do not add redundant labs or release work.
+
+Owner workflow: BEFORE implementing each new request, record the request, scope, and plan in docs/STATUS.md (and UX_PLAN.md if policy changes). Then commit code incrementally, update final status and issue. Research globally when beneficial; cite sources and verify license/compatibility before reusing code or assets. Never copy unlicensed or proprietary implementation. Prefer established patterns and dependencies over reinvention, keep offline operation and RTL priority.
