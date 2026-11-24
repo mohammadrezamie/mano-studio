@@ -946,3 +946,22 @@ def test_io_organization_view(workspace):
     v.mask.setValue(0)
     assert not v.ack.isEnabled() and v.irq.pending==8
     lab.close()
+
+
+def test_dma_fifo_view(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    v=lab.io_organization
+    v.dma.run()
+    assert v.dma.model.done and v.dma.model.memory.read(0)==0x1234
+    assert v.irq.pending==4
+    v.dma.direction.setCurrentIndex(1)
+    v.dma.mode.setCurrentIndex(1);v.dma.load();v.dma.run()
+    assert list(v.dma.model.device)==[0x1234,0xABCD,0,0xFF]
+    assert v.dma.model.cycles==19
+    v.fifo.value.setValue(9);v.fifo.edge(False,True)
+    v.fifo.value.setValue(8);v.fifo.edge(True,True)
+    assert v.fifo.model.contents()==(8,)
+    v.fifo.edge(True,False)
+    assert v.fifo.model.empty
+    lab.close()

@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,QSpinBox,QCheckBox,
     QPushButton,QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QTabWidget)
 from io_organization import Handshake,PriorityInterrupt
+from ui.dma_fifo_view import DMAView,FIFOView
 
 
 class IOOrganizationView(QWidget):
@@ -13,6 +14,10 @@ class IOOrganizationView(QWidget):
         self.tabs=QTabWidget();layout.addWidget(self.tabs)
         self.tabs.addTab(self.handshake_page(),self.t("Handshake","دست‌دهی"))
         self.tabs.addTab(self.interrupt_page(),self.t("Priority interrupt","وقفه اولویت‌دار"))
+        self.dma=DMAView(self.fa,lambda:self.request(2))
+        self.fifo=FIFOView(self.fa)
+        self.tabs.addTab(self.dma,self.t("DMA","دسترسی مستقیم حافظه"))
+        self.tabs.addTab(self.fifo,self.t("FIFO","صف FIFO"))
 
     def t(self,en,fa):return fa if self.fa else en
 
