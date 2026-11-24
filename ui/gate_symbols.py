@@ -36,7 +36,7 @@ def draw_gate(scene, op, x, y, bits, output, palette):
     # Stubs run under the opaque body to meet its exact outline.
     for offset,bit in zip(pin_offsets(len(bits)),bits):
         line(0,offset,48,offset,bit)
-    line(75 if not invert else 85,CENTER,WIDTH,CENTER,output)
+    line(75,CENTER,WIDTH,CENTER,output)
     body=QPainterPath()
     if op == "NOT":
         body.moveTo(x+25,y+9)
