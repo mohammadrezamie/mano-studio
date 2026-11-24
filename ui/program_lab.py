@@ -17,6 +17,7 @@ from ui.cpu_organization_view import OrganizationView
 from ui.pipeline_view import PipelineView
 from ui.vector_pipeline_view import VectorPipelineView
 from ui.interleaving_view import InterleavingView
+from ui.floating_pipeline_view import FloatPipelineView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
@@ -137,6 +138,8 @@ class ProgramLab(QDialog):
         pipeline_tabs.addTab(self.vector_pipeline,self.t("Vector / matrix","بردار / ماتریس"))
         self.interleaving=InterleavingView(self.fa)
         pipeline_tabs.addTab(self.interleaving,self.t("Memory banks","بانک‌های حافظه"))
+        self.float_pipeline=FloatPipelineView(self.fa)
+        pipeline_tabs.addTab(self.float_pipeline,self.t("Floating pipeline","خط لوله ممیز شناور"))
         self.inspector.addTab(pipeline_tabs,self.t("Pipeline","خط لوله"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()

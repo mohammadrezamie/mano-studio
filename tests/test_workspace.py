@@ -911,3 +911,18 @@ def test_interleaving_view(workspace):
     view.sequential();view.run()
     assert view.model.cycles==64
     lab.close()
+
+
+def test_floating_pipeline_view(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.float_pipeline
+    view.step()
+    assert view.timeline.rowCount()==1 and not view.model.results
+    view.run()
+    assert view.model.cycles==9 and view.timeline.rowCount()==9
+    assert [r.result.word for r in view.model.results]==[0x3E00,0x3C00,0x3C00,2,0x7C00,0x7E00]
+    view.source.setPlainText("ADD 0000 FFFFF")
+    view.load()
+    assert view.model is None and view.timeline.rowCount()==0
+    lab.close()
