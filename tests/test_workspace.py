@@ -896,3 +896,18 @@ def test_vector_pipeline_view(workspace):
     view.load()
     assert view.model is None and view.trace.rowCount()==0
     lab.close()
+
+
+def test_interleaving_view(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.interleaving
+    view.sequential();view.run()
+    assert view.model.cycles==19 and view.timeline.rowCount()==19
+    view.strided();view.run()
+    assert view.model.cycles==64 and view.model.stalls==45
+    view.mapping.setCurrentIndex(1)
+    assert view.model is None and view.timeline.rowCount()==0
+    view.sequential();view.run()
+    assert view.model.cycles==64
+    lab.close()
