@@ -29,3 +29,6 @@ See UX_PLAN.md. One Computer lab replaces separate Live Lab/Program Lab and shar
 
 ### Current translator integration (supersedes separate reference dialog)
 Ctrl+Space and Help open the existing Builder tab and focus its search field. Search matches mnemonic, localized operation name and canonical RTL template. Same address controls, hex keypad, preview and insert/replace actions; no-match and invalid address disable insertion. Source/output cursor navigation uses original source line indices and ignores stale results. No new dependency. Visual verification pending.
+
+## Current file workflow and academic scope
+Examples menu loads four bilingual offline programs into the existing RTL editor, after unsaved-change confirmation. No separate example window. Example-specific data goes only to the optional Computer workspace when the RTL matches the original example; exported ASM is the actual translator output, with no appended data. New/Open clear stale results; document title shows name/modified status; Save As and suggested export filenames supported. Owner clarified no in-app source viewer; removed it. README identifies the sole academic source file. Screenshot capture explicitly applies the initial theme. Visual review still pending.
