@@ -600,3 +600,27 @@ def test_arithmetic_algorithm_modes(workspace):
     assert view.result.word==0 and view.result.carry==1
     assert view.stages.horizontalHeaderItem(3).text()=="Cin"
     lab.close()
+
+
+def test_extended_division_modes(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.arithmetic
+    view.width.setCurrentIndex(view.width.findData(4))
+    view.a.setText("1")
+    view.b.setText("3")
+    view.op.setCurrentIndex(view.op.findData("nonrestore"))
+    assert view.stages.rowCount()==5
+    assert view.stages.item(4,3).text()=="1"
+    view.op.setCurrentIndex(view.op.findData("signeddivide"))
+    view.a.setText("9")
+    view.b.setText("3")
+    assert view.result[-1].quotient==2
+    assert view.result[-1].remainder==1
+    assert "= -2" in view.flags.text() and "= -1" in view.flags.text()
+    view.a.setText("8")
+    view.b.setText("F")
+    assert "overflow" in view.flags.text().lower()
+    view.b.setText("0")
+    assert view.result is None and view.stages.rowCount()==0
+    lab.close()

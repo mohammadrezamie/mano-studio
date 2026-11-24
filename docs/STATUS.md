@@ -183,3 +183,7 @@ Added signed radix-2 Booth multiplication and unsigned restoring division to the
 
 ### Verification update
 The previous live timing-group revision `13d7c350135af290e2db6f70a48806013f50785f` completed successfully in Actions run 45444538323 (Windows/Ubuntu matrix). Arithmetic revision `361576fde939949b7aa8184698f570a943d7589f` queued in run 45445162711 when inspected. Added integration regression for both new algorithm modes, divide-by-zero clearing and switching back to ADD; current exact-head CI remains pending. Native Windows visual review still deferred.
+
+
+## Extended division algorithms
+Added non-restoring unsigned division (old remainder sign selects addition/subtraction, new sign yields quotient bit; one final correction when negative) and signed restoring division (two's complement input, magnitude trace, quotient truncates toward zero, remainder follows dividend sign, explicit MIN/-1 overflow). Both reuse Data & ALU; no new ISA instructions, no CPU or academic translator changes. Reference: https://eclipse.umbc.edu/robucci/cmpeRSD/Lectures/Lecture18__Iterative_Implementations_of_Elementary_Arithmetic_Functions/ and https://ic.unicamp.br/en/~rodolfo/Cursos/mc732/2026s2/slides/C03-arithmetic/ . Exhaustive 4/8-bit cases, 12/16-bit boundaries, input guards and GUI integration regression authored; exact-head CI pending. Intermediate signed magnitude is displayed as a trace, not a physical hardware implementation. Decimal arithmetic, floating-point and SC/R remain open. No release or installer work.

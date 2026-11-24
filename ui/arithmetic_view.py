@@ -3,7 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,QLineEdit,
     QCheckBox,QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView)
 from word_arithmetic import WIDTHS,OPERATIONS,alu,parse_word,representations
-from arithmetic_algorithms import booth, restoring_division
+from arithmetic_algorithms import booth, restoring_division, nonrestoring_division, signed_division
 
 class ArithmeticView(QWidget):
     def __init__(self,fa=False):
@@ -28,6 +28,8 @@ class ArithmeticView(QWidget):
         self.op.insertItem(0,self.t("Convert bases","تبدیل مبنا"),"convert")
         self.op.addItem(self.t("Booth signed multiply","ضرب علامت‌دار بوث"),"booth")
         self.op.addItem(self.t("Restoring unsigned divide","تقسیم بدون علامت بازگرداننده"),"divide")
+        self.op.addItem(self.t("Non-restoring unsigned divide","تقسیم بدون علامت غیربازگرداننده"),"nonrestore")
+        self.op.addItem(self.t("Restoring signed divide","تقسیم علامت‌دار بازگرداننده"),"signeddivide")
         self.op.setCurrentIndex(1)
         row.addWidget(self.op,1)
         self.cin=QCheckBox("Cin / E")
@@ -114,7 +116,7 @@ class ArithmeticView(QWidget):
         base=self.base.currentData()
         mode=self.op.currentData()
         op="CONVERT" if mode=="convert" else self.op.currentText()
-        if mode in ("booth","divide"):
+        if mode in ("booth","divide","nonrestore","signeddivide"):
             self.refresh_algorithm(mode,width,base)
             return
         self.note.setText(self.t("C: carry (SUB: no borrow). V: signed overflow. N: sign. Z: zero. Teaching flags are not extra Mano CPU registers.", "C: نقلی (در تفریق: بدون قرض). V: سرریز علامت‌دار. N: علامت. Z: صفر. این پرچم‌های آموزشی ثبات‌های اضافی مانو نیستند."))
@@ -176,6 +178,16 @@ class ArithmeticView(QWidget):
                 "Signed two's complement. Q0 Q−1: 01 adds M, 10 subtracts M; then arithmetic right shift. A is n+1 bits (shown signed). Product is 2n bits.",
                 "متمم دو علامت‌دار. زوج ۰۱ موجب جمع و ۱۰ موجب تفریق M است؛ سپس شیفت حسابی راست. A با n+1 بیت به‌صورت علامت‌دار و حاصل با 2n بیت نمایش داده می‌شود."))
             headers=[self.t("Cycle","چرخه"),"Q0 Q−1",self.t("Action","عمل"),"A "+self.t("before shift","پیش از شیفت"),"A","Q","Q−1"]
+        elif mode=="nonrestore":
+            self.note.setText(self.t(
+                "Unsigned non-restoring division: old R sign selects −B or +B after shift; new R sign selects quotient bit. Add B once if final R is negative.",
+                "تقسیم غیربازگرداننده: علامت قبلی R تعیین‌کننده جمع یا تفریق B پس از شیفت است؛ علامت جدید R بیت خارج‌قسمت را تعیین می‌کند. اگر R نهایی منفی باشد، یک بار B اضافه می‌شود."))
+            headers=[self.t("Cycle","چرخه"),"2R + bit",self.t("Action","عمل"),"R", "Q"]
+        elif mode=="signeddivide":
+            self.note.setText(self.t(
+                "Two's complement inputs; divide |A| by |B|, then set quotient sign and remainder sign. Truncate toward zero. Trace shows unsigned magnitudes.",
+                "ورودی متمم دو؛ قدر مطلق A بر قدر مطلق B تقسیم می‌شود، سپس علامت خارج‌قسمت و باقی‌مانده اعمال می‌شود. گرد کردن به سمت صفر است؛ جدول قدر مطلق‌ها را نشان می‌دهد."))
+            headers=[self.t("Cycle","چرخه"),"R "+self.t("shifted","شیفت‌یافته"),"R − |B|",self.t("Restore?","بازگردانی؟"),"R","Q"]
         else:
             self.note.setText(self.t(
                 "Unsigned division. Shift (R,Q), subtract divisor, restore R if negative; append quotient bit. R < divisor after each cycle.",
@@ -191,14 +203,29 @@ class ArithmeticView(QWidget):
                 self.flags.setText(f"{self.t('Product','حاصل‌ضرب')} = {product}   |   {product & ((1 << (2*width))-1):0{2*width}b}")
                 rows=[(r.cycle,r.pair,r.operation,r.accumulator_after_operation,r.accumulator,f"{r.multiplier:0{width}b}",r.previous_bit) for r in trace]
             else:
-                if base==10 and (int(self.a.text())<0 or int(self.b.text())<0):
+                if mode!="signeddivide" and base==10 and (int(self.a.text())<0 or int(self.b.text())<0):
                     raise ValueError("Unsigned operands required")
                 if b==0:
                     self.status.setText(self.t("Division by zero","تقسیم بر صفر مجاز نیست."))
                     return
-                q,r,trace=restoring_division(a,b,width)
-                self.flags.setText(f"{self.t('Quotient','خارج‌قسمت')} = {q}   |   {self.t('Remainder','باقی‌مانده')} = {r}")
-                rows=[(s.cycle,s.shifted_remainder,s.trial_remainder,self.t("Yes","بله") if s.restored else self.t("No","خیر"),s.remainder,f"{s.quotient:0{width}b}") for s in trace]
+                suffix=""
+                if mode=="nonrestore":
+                    answer=nonrestoring_division(a,b,width)
+                    q,r,trace=answer.quotient,answer.remainder,answer.steps
+                    rows=[(s.cycle,s.shifted_remainder,s.operation,s.partial_remainder,f"{s.quotient:0{width}b}") for s in trace]
+                    if answer.correction:
+                        rows.append((self.t("Final","نهایی"),"—","+B",r,f"{q:0{width}b}"))
+                else:
+                    if mode=="signeddivide":
+                        answer=signed_division(a,b,width)
+                        q,r,trace=answer.quotient,answer.remainder,answer.steps
+                        suffix=f" | |A| = {answer.magnitude_dividend}, |B| = {answer.magnitude_divisor}"
+                        if answer.overflow:
+                            suffix+=" | "+self.t("Signed quotient overflow","سرریز خارج‌قسمت علامت‌دار")
+                    else:
+                        q,r,trace=restoring_division(a,b,width)
+                    rows=[(s.cycle,s.shifted_remainder,s.trial_remainder,self.t("Yes","بله") if s.restored else self.t("No","خیر"),s.remainder,f"{s.quotient:0{width}b}") for s in trace]
+                self.flags.setText(f"{self.t('Quotient','خارج‌قسمت')} = {q}   |   {self.t('Remainder','باقی‌مانده')} = {r}"+suffix)
         except ValueError:
             self.status.setText(self.t("Invalid operand for selected base, width or signedness.","عدد ورودی با مبنا، طول کلمه یا علامت انتخاب‌شده سازگار نیست."))
             return

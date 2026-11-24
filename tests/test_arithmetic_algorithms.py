@@ -60,3 +60,66 @@ def test_large_boundaries(width):
 def test_invalid(fn,args):
     with pytest.raises(ValueError):
         fn(*args)
+
+
+from arithmetic_algorithms import nonrestoring_division, signed_division
+
+
+@pytest.mark.parametrize("width", [4, 8])
+def test_nonrestoring_exhaustive(width):
+    limit = 1 << width
+    for a in range(limit):
+        for b in range(1, limit):
+            out = nonrestoring_division(a, b, width)
+            assert (out.quotient, out.remainder) == divmod(a, b)
+            assert len(out.steps) == width
+            r, q = 0, a
+            for i, row in enumerate(out.steps, 1):
+                assert row.cycle == i
+                assert row.shifted_remainder == 2*r + (q >> (width-1))
+                assert row.operation == ("-B" if r >= 0 else "+B")
+                assert row.partial_remainder == row.shifted_remainder + (-b if r >= 0 else b)
+                assert -b <= row.partial_remainder < b
+                assert row.quotient == ((q << 1) % limit) + int(row.partial_remainder >= 0)
+                r, q = row.partial_remainder, row.quotient
+            assert out.correction == (b if r < 0 else 0)
+            assert out.remainder == r + out.correction
+
+
+@pytest.mark.parametrize("width", [4, 8])
+def test_signed_division_exhaustive(width):
+    bound = 1 << (width-1)
+    mask = 2*bound-1
+    for a in range(-bound, bound):
+        for b in range(-bound, bound):
+            if b == 0:
+                continue
+            out = signed_division(a & mask, b & mask, width)
+            expected = abs(a)//abs(b)
+            if (a < 0) != (b < 0):
+                expected = -expected
+            assert out.quotient == expected
+            assert out.remainder == a - b*expected
+            assert abs(out.remainder) < abs(b)
+            assert out.remainder == 0 or (out.remainder < 0) == (a < 0)
+            assert out.overflow == (a == -bound and b == -1)
+            assert out.steps[-1].quotient == abs(expected)
+            assert out.steps[-1].remainder == abs(out.remainder)
+
+
+@pytest.mark.parametrize("width", [12, 16])
+def test_division_boundaries(width):
+    limit = 1 << width
+    for a,b in [(0,1),(limit-1,1),(limit-1,limit-1),(1,limit-1),(limit//2,3)]:
+        r = nonrestoring_division(a,b,width)
+        assert (r.quotient,r.remainder)==divmod(a,b)
+    assert signed_division(limit//2,limit-1,width).overflow
+    assert signed_division(limit//2,1,width).quotient == -limit//2
+
+
+@pytest.mark.parametrize("fn,args", [(nonrestoring_division,(1,0,4)),
+    (nonrestoring_division,(16,1,4)), (signed_division,(1,0,4)),
+    (signed_division,(-1,1,4))])
+def test_new_division_invalid(fn,args):
+    with pytest.raises(ValueError):
+        fn(*args)
