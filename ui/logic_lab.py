@@ -4,14 +4,15 @@ from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton,
     QComboBox, QWidget, QGraphicsScene, QGraphicsView, QTableWidget,
-    QTableWidgetItem, QHeaderView, QAbstractItemView, QSplitter,
+    QTableWidgetItem, QHeaderView, QAbstractItemView, QSplitter, QSpinBox,
 )
-from logic_engine import CIRCUITS
+from logic_engine import CIRCUITS, ARITY, basic
+from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES
 
 
 class LogicDiagram(QGraphicsView):
-    """Auto layout by signal depth. Rectangular labeled gates (IEC-inspired)."""
+    """Auto layout by signal depth, with distinctive-shape symbols and pins."""
     def __init__(self, theme):
         super().__init__()
         self.theme = theme
@@ -36,46 +37,78 @@ class LogicDiagram(QGraphicsView):
         last = max(depth.values())+1
         columns[last] = [f"@{name}" for name,_ in circuit.outputs]
         positions = {}
-        height = max(map(len,columns.values()))*76+36
+        # Separate long routes above the symbols so they cannot run through gates.
+        depths = dict(depth)
+        depths.update({"@"+name:last for name,_ in circuit.outputs})
+        edges = [(src,gate.output,i,len(gate.inputs))
+                 for gate in circuit.gates for i,src in enumerate(gate.inputs)]
+        edges += [(src,"@"+name,0,1) for name,src in circuit.outputs]
+        long_edges = [edge for edge in edges if depths[edge[1]]-depths[edge[0]]>1]
+        top = 28 + len(long_edges)*9
+        pitch = 126
+        height = max(map(len,columns.values()))*pitch+36
         for col,names in columns.items():
             for index,name in enumerate(names):
-                positions[name] = (28+col*180, (height-len(names)*76)/2+index*76)
-        def wire(src,dst,index=0,count=1):
-            x,y = positions[src]
-            xx,yy = positions[dst]
-            start_x,start_y = x+108,y+25
-            end_y = yy+25+(index-(count-1)/2)*16
-            middle = start_x+(xx-start_x)*0.55
-            path=QPainterPath()
-            path.moveTo(start_x,start_y)
-            path.lineTo(middle,start_y)
-            path.lineTo(middle,end_y)
-            path.lineTo(xx,end_y)
-            item=scene.addPath(path,QPen(QColor(accent if values[src] else muted),2 if values[src] else 1))
-            item.setZValue(-1)
-        for gate in circuit.gates:
-            for i,src in enumerate(gate.inputs):
-                wire(src,gate.output,i,len(gate.inputs))
-        for name,signal in circuit.outputs:
-            wire(signal,"@"+name)
-        gate_names={gate.output:gate.op for gate in circuit.gates}
+                positions[name] = (28+col*220, top+(height-len(names)*pitch)/2+index*pitch)
+        fanout = {}
+        for src,dst,i,count in edges:
+            fanout.setdefault(src,[]).append((dst,i,count))
+        lane_counts = {}
+        long_index = 0
+        for src,targets in fanout.items():
+            sx,sy = output_point(*positions[src])
+            pen = QPen(QColor(accent if values[src] else muted),2 if values[src] else 1.1)
+            trunk = sx + 8
+            scene.addLine(sx,sy,trunk,sy,pen).setZValue(-1)
+            for dst,index,count in targets:
+                ex,ey = input_point(*positions[dst],index,count)
+                gap = depths[dst]-1
+                lane = lane_counts.get(gap,0)
+                lane_counts[gap] = lane+1
+                # Adjacent gap is wide enough for a range of separate tracks.
+                middle = ex-12-(lane%12)*7
+                path = QPainterPath()
+                path.moveTo(trunk,sy)
+                if depths[dst]-depths[src]>1:
+                    route_y = 14+long_index*9
+                    long_index += 1
+                    path.lineTo(trunk,route_y)
+                    path.lineTo(middle,route_y)
+                    path.lineTo(middle,ey)
+                else:
+                    path.lineTo(middle,sy)
+                    path.lineTo(middle,ey)
+                path.lineTo(ex,ey)
+                scene.addPath(path,pen).setZValue(-1)
+            if len(targets)>1:
+                scene.addEllipse(QRectF(trunk-3,sy-3,6,6),pen,QBrush(pen.color()))
+        gate_names={gate.output:gate for gate in circuit.gates}
         output_signals=dict(circuit.outputs)
         def text_at(text,x,y,color,size=11):
             item=scene.addSimpleText(text,QFont("Segoe UI",size))
             item.setBrush(QBrush(QColor(color)))
             item.setPos(x,y)
+            return item
         for name,(x,y) in positions.items():
             output=name.startswith("@")
             signal=output_signals[name[1:]] if output else name
             value=values[signal]
-            title=name[1:] if output else gate_names.get(name,name)
-            path=QPainterPath()
-            path.addRoundedRect(QRectF(x,y,108,50),9,9)
-            scene.addPath(path,QPen(QColor(accent if value else border),1.5),QBrush(QColor(panel)))
-            text_at(title,x+9,y+5,fg)
-            text_at(str(value),x+83,y+17,accent if value else muted,13)
             if name in gate_names:
-                text_at(name,x+9,y+26,muted,9)
+                gate=gate_names[name]
+                draw_gate(scene,gate.op,x,y,tuple(values[i] for i in gate.inputs),value,PALETTES[self.theme])
+                text_at(gate.op,x+25,y+HEIGHT+3,fg,10)
+                text_at(name,x+25,y-17,muted,9)
+            else:
+                title=name[1:] if output else name
+                color=accent if value else muted
+                pin_x=x if output else x+WIDTH
+                scene.addLine(pin_x,y+CENTER,x+(22 if output else 86),y+CENTER,QPen(QColor(color),1.8))
+                body=QPainterPath()
+                body.addRoundedRect(QRectF(x+22,y+CENTER-21,64,42),6,6)
+                scene.addPath(body,QPen(QColor(color),1.5),QBrush(QColor(panel)))
+                text_at(title,x+25,y+CENTER-19,fg,10)
+                text_at(str(value),x+69,y+CENTER, color,12)
+                scene.addEllipse(QRectF(pin_x-2,y+CENTER-2,4,4),QPen(QColor(color)),QBrush(QColor(color)))
         scene.setSceneRect(scene.itemsBoundingRect().adjusted(-16,-16,16,16))
 
     def fit(self):
@@ -98,6 +131,11 @@ class LogicLab(QDialog):
         for key,circuit in CIRCUITS.items():
             self.selector.addItem(circuit.title[self.fa],key)
         row.addWidget(self.selector,1)
+        row.addWidget(QLabel(self.t("Gate inputs","تعداد ورودی گیت")))
+        self.pin_count=QSpinBox()
+        self.pin_count.setRange(2,4)
+        self.pin_count.setValue(2)
+        row.addWidget(self.pin_count)
         for en,fa,fn in [("Fit","نمای کامل",lambda:self.diagram.fit()),
             ("Zoom +","بزرگ‌نمایی",lambda:self.diagram.scale(1.2,1.2)),
             ("Zoom −","کوچک‌نمایی",lambda:self.diagram.scale(1/1.2,1/1.2))]:
@@ -128,15 +166,19 @@ class LogicLab(QDialog):
         split.setSizes([400,220])
         layout.addWidget(split,1)
         self.selector.currentIndexChanged.connect(self.load)
+        self.pin_count.valueChanged.connect(self.load)
         self.load()
 
     def t(self,en,fa):
         return fa if self.fa else en
 
     def load(self):
-        self.circuit=CIRCUITS[self.selector.currentData()]
+        key=self.selector.currentData()
+        variable=key.upper() in ARITY and key!="not"
+        self.pin_count.setEnabled(variable)
+        self.circuit=basic(key.upper(),self.pin_count.value()) if variable else CIRCUITS[key]
         self.inputs={name:0 for name in self.circuit.inputs}
-        self.description.setText(self.circuit.explanation[self.fa])
+        self.description.setText(self.circuit.explanation[self.fa]+"  |  "+self.t("Inputs / Outputs", "ورودی / خروجی")+f": {len(self.circuit.inputs)} / {len(self.circuit.outputs)}")
         while self.input_grid.count():
             item=self.input_grid.takeAt(0)
             if item.widget():
