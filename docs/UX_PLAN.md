@@ -44,3 +44,6 @@ Sequential models and waveform view integrated within Logic Lab. First build can
 
 ### Step 5 — integrated chapter coverage checkpoint
 Added data representation and shared word arithmetic, 16 ALU operations with ripple stages, debugger with bounded reverse step and breakpoint trace, canonical reverse import. Previous exact head verified 265 tests per OS (45402185504). Latest base switching/trace optimization and new candidate smoke pending. Remaining: actual screenshots review, deeper instruction cycle and memory organization, classroom RTL dialect confirmation. No new standalone lab for these features.
+
+## Windows-first priority override
+Follow WINDOWS_READINESS.md; prioritize usable primary flows, native Windows visual quality, complete bilingual audit, maintainable service boundaries and tested Windows installation. Defer mobile, Linux distribution and optional scope expansion that jeopardizes the classroom target. No public release without approval.
