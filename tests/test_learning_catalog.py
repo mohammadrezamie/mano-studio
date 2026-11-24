@@ -3,10 +3,10 @@ from learning_catalog import CHAPTERS,TOOLS,BY_ID,search_tools,clean_progress
 
 def test_catalog_stable_and_complete_index():
     assert [c.number for c in CHAPTERS]==list(range(1,14))
-    assert len(TOOLS)==len(BY_ID)==38
+    assert len(TOOLS)==len(BY_ID)==39
     assert all(t.title[0] and t.title[1] and t.task[0] and t.task[1] for t in TOOLS)
     assert all(c.gap[0] and c.gap[1] for c in CHAPTERS)
-    assert [t.id for t in search_tools(chapter=13)]==['multiprocessor']
+    assert [t.id for t in search_tools(chapter=13)]==['multiprocessor','crossbar']
     assert {t.chapter for t in TOOLS}==set(range(1,14))
 
 

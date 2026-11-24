@@ -1181,7 +1181,8 @@ def test_multiprocessor_route_and_live_grant(workspace):
     lab=ProgramLab(workspace)
     lab.select_tool("multiprocessor")
     v=lab.multiprocessor
-    assert lab.inspector.currentWidget() is v
+    assert lab.inspector.currentWidget() is lab.multiprocessor_tabs
+    assert lab.multiprocessor_tabs.currentWidget() is v
     v.step()
     assert v.last.grant==0 and v.model.memory[0]==0x100
     v.run()
@@ -1270,3 +1271,23 @@ def test_serial_frame_fifo_and_irq_route(workspace,app):
     lab.select_tool("serial");assert v.model.active
     v.finish();assert v.model.fifo.contents()==(0xA5,)
     lab.close()
+
+
+def test_crossbar_routes_bilingual(workspace):
+    from ui.program_lab import ProgramLab
+    from PySide6.QtCore import Qt
+    for language in ("en","fa"):
+        workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+        lab=ProgramLab(workspace);lab.select_tool("crossbar")
+        v=lab.crossbar
+        assert lab.multiprocessor_tabs.currentWidget() is v
+        assert v.fa==(language=="fa")
+        assert v.layoutDirection()==(Qt.LayoutDirection.RightToLeft if v.fa else Qt.LayoutDirection.LeftToRight)
+        assert v.trace.layoutDirection()==Qt.LayoutDirection.LeftToRight
+        assert v.demo.itemText(0)==("بانک‌های مستقل" if v.fa else "Independent banks")
+        v.run();assert v.model.cycles==2 and sum(v.model.served)==8
+        v.demo.setCurrentIndex(1);v.example();v.run()
+        assert v.model.cycles==8
+        assert not v.canvas.grab().isNull()
+        lab.select_tool("multiprocessor");assert lab.multiprocessor_tabs.currentWidget() is lab.multiprocessor
+        lab.close()

@@ -28,3 +28,5 @@ Current increment: masked CAM and demand paging/TLB, 37 routes. Canvas head dac6
 Current increment: serial framing, FIFO and IRQ3, 38 routes. Verify all pending exact-head runs; next Chapter 13 crossbar/interconnect, synchronization and cache coherence, then circuit visual quality. No publication.
 
 Serial playback guard: refuses to start paced playback while hidden; regression shows the dialog, switches to Interrupt, checks the timer stops and the partial frame survives, then resumes completion. No idle/background timer. Exact-head CI remains pending.
+
+Current increment: Crossbar 4×4, 39 routes. Owner reconfirmed Persian/English parity; add both-language regression tests for new screens. Latest verified brand head 441d94c both runs green; newer runs pending. Next verify CI, multistage networks and synchronization/coherence, then circuit visual quality. No publication.

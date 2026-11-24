@@ -22,6 +22,7 @@ from ui.interleaving_view import InterleavingView
 from ui.floating_pipeline_view import FloatPipelineView
 from ui.io_organization_view import IOOrganizationView
 from ui.multiprocessor_view import MultiprocessorView
+from ui.crossbar_view import CrossbarView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
@@ -151,7 +152,11 @@ class ProgramLab(QDialog):
         self.io_organization=IOOrganizationView(self.fa,parent.theme)
         self.inspector.addTab(self.io_organization,self.t("I/O organization","سازمان ورودی/خروجی"))
         self.multiprocessor=MultiprocessorView(parent.theme,self.fa)
-        self.inspector.addTab(self.multiprocessor,self.t("Multiprocessors","چندپردازنده‌ها"))
+        self.crossbar=CrossbarView(parent.theme,self.fa)
+        self.multiprocessor_tabs=MotionTabs()
+        self.multiprocessor_tabs.addTab(self.multiprocessor,self.t("Shared bus","گذرگاه مشترک"))
+        self.multiprocessor_tabs.addTab(self.crossbar,self.t("Crossbar","اتصال متقاطع"))
+        self.inspector.addTab(self.multiprocessor_tabs,self.t("Multiprocessors","چندپردازنده‌ها"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
         self.input = QLineEdit()
@@ -172,7 +177,7 @@ class ProgramLab(QDialog):
         self.tool_pages={"live":self.datapath,"register-memory":lower,"debugger":trace_page,
                          "alu":alu_page,"codes":self.codes,"cycles":self.cycles,
                          "microprogram":self.microprogram,"organization":self.organization,
-                         "pipeline":pipeline_tabs,"io":self.io_organization,"multiprocessor":self.multiprocessor}
+                         "pipeline":pipeline_tabs,"io":self.io_organization,"multiprocessor":self.multiprocessor_tabs}
         self.navigation=NavigationRail(self.inspector,parent.settings,'computer',self.t('COMPUTER','کامپیوتر'),
             ('cpu','registers','debug','alu','codes','clock','microcode','organization','pipeline','io','network'),self.fa)
         shell.insertWidget(0,self.navigation)
@@ -196,9 +201,13 @@ class ProgramLab(QDialog):
         """Stable learning route IDs, independent of displayed tab titles."""
         if route in self.tool_pages:
             self.inspector.setCurrentWidget(self.tool_pages[route])
+            if route=="multiprocessor":self.multiprocessor_tabs.setCurrentWidget(self.multiprocessor)
             if route=="pipeline":self.pipeline_tabs.setCurrentWidget(self.pipeline)
             if route=="microprogram":self.microprogram.detail_tabs.setCurrentIndex(0)
             if route=="alu":self.arithmetic.op.setCurrentIndex(0)
+        elif route=="crossbar":
+            self.inspector.setCurrentWidget(self.multiprocessor_tabs)
+            self.multiprocessor_tabs.setCurrentWidget(self.crossbar)
         elif route=="microbuilder":
             self.inspector.setCurrentWidget(self.microprogram)
             self.microprogram.detail_tabs.setCurrentWidget(self.microprogram.builder)

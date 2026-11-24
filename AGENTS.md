@@ -41,3 +41,5 @@ Owner rejects legacy industrial visuals; prioritize original, modern, high-quali
 Owner explicitly authorizes all useful tooling/skills and generated assets; prefer live/procedural, theme-aware code-drawn visuals. Static graphics only for justified illustration, with provenance and local bundling. Preserve responsive and reduced-motion behavior. Use docs/CONTINUE.md as the canonical fresh-chat handoff and update it after each coherent checkpoint; read docs/BRAND_SYSTEM.md and docs/BETA_PREVIEW.md. No unverified release or completion claims.
 
 Owner rejects M monogram as generic. Brand must be distinctive, non-letter, code-driven where useful; image generation remains authorized when it adds genuine quality. Chapter 13 first shared-bus model added; full textbook remains open. See CONTINUE.md.
+
+Owner reconfirmed bilingual parity: new user-facing labels, explanations, errors and accessibility text must ship in English and Persian together; persist language, RTL shell/LTR technical data. Include regression in both locales; native visual review remains separate.

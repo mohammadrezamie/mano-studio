@@ -27,7 +27,7 @@ CHAPTERS=(
     Chapter(10,("Computer arithmetic","محاسبات کامپیوتری"),("Historical floating formats and more algorithms remain.","قالب‌های تاریخی ممیز شناور و الگوریتم‌های بیشتر باقی مانده‌اند.")),
     Chapter(11,("I/O organization","سازمان ورودی و خروجی"),("Baud recovery, other protocols and further I/O integration remain.","بازیابی نرخ بیت، پروتکل‌های دیگر و یکپارچگی بیشتر ورودی‌ـ‌خروجی باقی مانده‌اند.")),
     Chapter(12,("Memory organization","سازمان حافظه"),("Multi-level caches, timing and advanced memory protection remain.","نهان چندسطحی، زمان‌بندی و حفاظت پیشرفته حافظه باقی مانده‌اند.")),
-    Chapter(13,("Multiprocessors","چندپردازنده‌ها"),("Crossbar, multistage networks, synchronization and coherence remain.","اتصال متقاطع، شبکه چندمرحله‌ای، همگام‌سازی و انسجام باقی مانده‌اند.")),
+    Chapter(13,("Multiprocessors","چندپردازنده‌ها"),("Multistage networks, synchronization and coherence remain.","شبکه چندمرحله‌ای، همگام‌سازی و انسجام باقی مانده‌اند.")),
 )
 
 
@@ -81,6 +81,7 @@ TOOLS=(
     Tool("cam",12,"logic","cam",("Associative memory","حافظه انجمنی"),("Compare masked keys and multiple matches.","کلید ماسک‌شده و تطابق چندگانه را بررسی کنید."),"CAM mask content address"),
     Tool("virtual-memory",12,"logic","virtual-memory",("Virtual memory and TLB","حافظه مجازی و TLB"),("Trigger a page fault, evict a dirty page, and read its restored data.","خطای صفحه و جایگزینی صفحه تغییریافته را ایجاد و داده بازیابی‌شده را بخوانید."),"VPN PFN paging TLB page fault"),
     Tool("multiprocessor",13,"computer","multiprocessor",("Shared bus arbitration","داوری گذرگاه مشترک"),("Compare fixed and rotating priority with queued read/write requests.","اولویت ثابت و چرخشی را با درخواست‌های خواندن و نوشتن مقایسه کنید."),"multiprocessor arbitration round robin shared bus"),
+    Tool("crossbar",13,"computer","crossbar",("Crossbar interconnection","شبکه اتصال متقاطع"),("Compare independent bank transfers and contending queue heads.","انتقال مستقل بانک‌ها و تداخل سر صف‌ها را مقایسه کنید."),"crossbar switch memory bank arbitration"),
 )
 BY_ID={tool.id:tool for tool in TOOLS}
 BY_CHAPTER={chapter.number:chapter for chapter in CHAPTERS}
