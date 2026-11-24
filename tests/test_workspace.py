@@ -624,3 +624,28 @@ def test_extended_division_modes(workspace):
     view.b.setText("0")
     assert view.result is None and view.stages.rowCount()==0
     lab.close()
+
+
+def test_packed_bcd_modes(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.arithmetic
+    view.width.setCurrentIndex(view.width.findData(8))
+    view.a.setText("99")
+    view.b.setText("01")
+    view.op.setCurrentIndex(view.op.findData("bcdadd"))
+    assert view.result.word==0 and view.result.carry==1
+    assert view.stages.rowCount()==2 and view.stages.item(0,5).text()=="6"
+    assert view.representation.item(0,5).text()=="99"
+    view.base.setCurrentIndex(view.base.findData(10))
+    assert view.a.text()=="153" and view.result.word==0
+    view.base.setCurrentIndex(view.base.findData(16))
+    view.a.setText("00")
+    view.op.setCurrentIndex(view.op.findData("bcdsub"))
+    assert view.result.word==0x99 and view.result.borrow==1
+    view.a.setText("AB")
+    assert view.result is None and view.stages.rowCount()==0
+    view.op.setCurrentIndex(1)
+    assert view.result.word==0xAC
+    assert view.representation.item(0,5).text()=="-85"
+    lab.close()

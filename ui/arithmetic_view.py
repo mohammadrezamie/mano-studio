@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,QLineEdit,
     QCheckBox,QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView)
 from word_arithmetic import WIDTHS,OPERATIONS,alu,parse_word,representations
+from decimal_arithmetic import decimal_alu, packed_decimal
 from arithmetic_algorithms import booth, restoring_division, nonrestoring_division, signed_division
 
 class ArithmeticView(QWidget):
@@ -30,6 +31,8 @@ class ArithmeticView(QWidget):
         self.op.addItem(self.t("Restoring unsigned divide","تقسیم بدون علامت بازگرداننده"),"divide")
         self.op.addItem(self.t("Non-restoring unsigned divide","تقسیم بدون علامت غیربازگرداننده"),"nonrestore")
         self.op.addItem(self.t("Restoring signed divide","تقسیم علامت‌دار بازگرداننده"),"signeddivide")
+        self.op.addItem(self.t("Packed BCD add","جمع BCD فشرده"),"bcdadd")
+        self.op.addItem(self.t("Packed BCD subtract","تفریق BCD فشرده"),"bcdsub")
         self.op.setCurrentIndex(1)
         row.addWidget(self.op,1)
         self.cin=QCheckBox("Cin / E")
@@ -116,6 +119,10 @@ class ArithmeticView(QWidget):
         base=self.base.currentData()
         mode=self.op.currentData()
         op="CONVERT" if mode=="convert" else self.op.currentText()
+        if mode in ("bcdadd","bcdsub"):
+            self.refresh_decimal(mode,width,base)
+            return
+        self.representation.setHorizontalHeaderLabels([self.t("Word","کلمه"),"BIN","OCT","HEX",self.t("Unsigned","بدون علامت"),self.t("Signed","علامت‌دار")])
         if mode in ("booth","divide","nonrestore","signeddivide"):
             self.refresh_algorithm(mode,width,base)
             return
@@ -239,6 +246,50 @@ class ArithmeticView(QWidget):
         self.stages.setRowCount(len(rows))
         for row,values in enumerate(rows):
             for col,value in enumerate(values):
+                item=QTableWidgetItem(str(value))
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.stages.setItem(row,col,item)
+
+    def refresh_decimal(self,mode,width,base):
+        """Display packed BCD words and actual decimal correction stages."""
+        self.result=None
+        self.b.setEnabled(True)
+        self.cin.setEnabled(False)
+        self.note.show()
+        self.stages.show()
+        self.note.setText(self.t(
+            "Each nibble is a decimal digit (0–9). Enter packed raw words: HEX 0099 means decimal 99; DEC is the raw binary word value. Subtraction uses 9's complement + 1. Result wraps to selected digit count; C=1 means no borrow for SUB.",
+            "هر چهار بیت یک رقم ده‌دهی ۰ تا ۹ است. کلمهٔ خام را وارد کنید: HEX 0099 یعنی ۹۹ ده‌دهی؛ DEC مقدار عددی کلمهٔ خام است. تفریق با متمم ۹ به‌علاوهٔ یک انجام می‌شود؛ نتیجه در تعداد رقم انتخابی محدود است و C=1 در تفریق یعنی بدون قرض."))
+        self.representation.setRowCount(3)
+        self.representation.setHorizontalHeaderLabels([self.t("Word","کلمه"),"BIN","OCT","HEX",self.t("Raw unsigned","خام بدون علامت"),"BCD "+self.t("decimal","ده‌دهی")])
+        self.representation.clearContents()
+        self.stages.setRowCount(0)
+        self.stages.setColumnCount(8)
+        self.stages.setHorizontalHeaderLabels([self.t("Digit","رقم"),"A","9−B" if mode=="bcdsub" else "B","Cin",self.t("Raw sum","جمع خام"),"+6",self.t("Result","نتیجه"),"Cout"])
+        self.flags.clear()
+        try:
+            if base==10 and (int(self.a.text())<0 or int(self.b.text())<0):
+                raise ValueError("Negative packed word")
+            a=parse_word(self.a.text(),base,width)
+            b=parse_word(self.b.text(),base,width)
+            result=decimal_alu("ADD" if mode=="bcdadd" else "SUB",a,b,width)
+        except ValueError:
+            self.status.setText(self.t("Invalid packed BCD: each nibble must be 0–9 and fit the word width.","کلمهٔ BCD نامعتبر است؛ هر چهار بیت باید رقمی از ۰ تا ۹ و در طول کلمه باشد."))
+            return
+        self.status.clear()
+        self.result=result
+        digits=width//4
+        self.flags.setText(f"{self.t('Result','نتیجه')} = {result.decimal:0{digits}d} | C = {result.carry}"+(f" | {self.t('Borrow','قرض')} = {result.borrow}" if result.borrow is not None else ""))
+        for row,(label,word) in enumerate((("A",a),("B",b),(self.t("Result","نتیجه"),result.word))):
+            rep=representations(word,width)
+            values=[label,rep["BIN"],rep["OCT"],rep["HEX"],rep["Unsigned"],f"{packed_decimal(word,width):0{digits}d}"]
+            for col,value in enumerate(values):
+                item=QTableWidgetItem(value)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.representation.setItem(row,col,item)
+        self.stages.setRowCount(len(result.steps))
+        for row,s in enumerate(result.steps):
+            for col,value in enumerate((s.position,s.a,s.b,s.carry_in,f"{s.binary_sum:05b}",s.correction,s.digit,s.carry_out)):
                 item=QTableWidgetItem(str(value))
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.stages.setItem(row,col,item)
