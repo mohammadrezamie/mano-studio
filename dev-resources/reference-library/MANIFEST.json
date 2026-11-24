@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "notes": "Reference snapshots, not installed executable skills. Source rules do not govern Mano. Original licenses apply to copied files.",
+  "files": [
+    {
+      "destination": "dev-resources/reference-library/takin/ui-ux-pro-max/SKILL.md",
+      "source_repository": "mohammadrezamie/tnacompany",
+      "source_commit": "219e40f8443a7890473edbf4b9970a8f244563b2",
+      "source_path": ".agents/skills/ui-ux-pro-max/SKILL.md",
+      "source_blob": "fe9c311fd689cb5c0a6a33448b2aabe88e372636",
+      "license": "MIT",
+      "mode": "verbatim text snapshot"
+    },
+    {
+      "destination": "dev-resources/reference-library/takin/ui-ux-pro-max/LICENSE",
+      "source_repository": "mohammadrezamie/tnacompany",
+      "source_commit": "219e40f8443a7890473edbf4b9970a8f244563b2",
+      "source_path": ".agents/skills/ui-ux-pro-max/LICENSE",
+      "source_blob": "1e71cbf26660f31903807d099fe902c098fc7e4c",
+      "license": "MIT",
+      "mode": "verbatim text snapshot"
+    },
+    {
+      "destination": "dev-resources/reference-library/takin/ui-ux-pro-max/UPSTREAM.md",
+      "source_repository": "mohammadrezamie/tnacompany",
+      "source_commit": "219e40f8443a7890473edbf4b9970a8f244563b2",
+      "source_path": ".agents/skills/ui-ux-pro-max/UPSTREAM.md",
+      "source_blob": "afc3ccbd558293df705a3f70bbb2650063e583bb",
+      "license": "MIT",
+      "mode": "verbatim text snapshot"
+    },
+    {
+      "destination": "dev-resources/reference-library/takin/ui-ux-pro-max/references/quick-reference.md",
+      "source_repository": "mohammadrezamie/tnacompany",
+      "source_commit": "219e40f8443a7890473edbf4b9970a8f244563b2",
+      "source_path": ".agents/skills/ui-ux-pro-max/references/quick-reference.md",
+      "source_blob": "bff0965d7285a13a735f12d0026472c06dfb9b8d",
+      "license": "MIT",
+      "mode": "verbatim text snapshot"
+    },
+    {
+      "destination": "dev-resources/reference-library/takin/ui-ux-pro-max/references/pro-rules.md",
+      "source_repository": "mohammadrezamie/tnacompany",
+      "source_commit": "219e40f8443a7890473edbf4b9970a8f244563b2",
+      "source_path": ".agents/skills/ui-ux-pro-max/references/pro-rules.md",
+      "source_blob": "b2ce233287e37ec9ca13476c4014b922e9d5a0e9",
+      "license": "MIT",
+      "mode": "verbatim text snapshot"
+    },
+    {
+      "destination": "dev-resources/reference-library/takin/frontend-design/SKILL.md",
+      "source_repository": "mohammadrezamie/tnacompany",
+      "source_commit": "219e40f8443a7890473edbf4b9970a8f244563b2",
+      "source_path": ".agents/skills/frontend-design/SKILL.md",
+      "source_blob": "68e021a55b9e274d8ac681f8103698ff0a81a820",
+      "license": "Apache-2.0",
+      "mode": "verbatim text snapshot"
+    },
+    {
+      "destination": "dev-resources/reference-library/takin/frontend-design/LICENSE.txt",
+      "source_repository": "mohammadrezamie/tnacompany",
+      "source_commit": "219e40f8443a7890473edbf4b9970a8f244563b2",
+      "source_path": ".agents/skills/frontend-design/LICENSE.txt",
+      "source_blob": "f433b1a53f5b830a205fd2df78e2b34974656c7b",
+      "license": "Apache-2.0",
+      "mode": "verbatim text snapshot"
+    },
+    {
+      "destination": "dev-resources/reference-library/takin/frontend-design/UPSTREAM.md",
+      "source_repository": "mohammadrezamie/tnacompany",
+      "source_commit": "219e40f8443a7890473edbf4b9970a8f244563b2",
+      "source_path": ".agents/skills/frontend-design/UPSTREAM.md",
+      "source_blob": "0e8ecb507f84b4c2600bf2833172cb5841b90e42",
+      "license": "Apache-2.0",
+      "mode": "verbatim text snapshot"
+    },
+    {
+      "destination": "dev-resources/reference-library/darschin/LICENSE",
+      "source_repository": "mohammadrezamie/DarsChin",
+      "source_commit": "daad12c4c50241618f1152c94aa5e29a0b6149a8",
+      "source_path": "LICENSE",
+      "source_blob": "3d806c6822429d9677d4c0a89f8471e2e30085ee",
+      "license": "MIT",
+      "mode": "verbatim text snapshot"
+    },
+    {
+      "destination": "dev-resources/reference-library/darschin/docs/PERSIAN_DOCUMENTATION_STANDARD_FA.md",
+      "source_repository": "mohammadrezamie/DarsChin",
+      "source_commit": "daad12c4c50241618f1152c94aa5e29a0b6149a8",
+      "source_path": "docs/PERSIAN_DOCUMENTATION_STANDARD_FA.md",
+      "source_blob": "0dde274a0216f193b8286164d4c78fcae4d8ea8d",
+      "license": "MIT",
+      "mode": "verbatim text snapshot"
+    },
+    {
+      "destination": "dev-resources/reference-library/darschin/docs/DEVELOPMENT.md",
+      "source_repository": "mohammadrezamie/DarsChin",
+      "source_commit": "daad12c4c50241618f1152c94aa5e29a0b6149a8",
+      "source_path": "docs/DEVELOPMENT.md",
+      "source_blob": "b71e453fd218f5146d94a1878a1754201cf368b8",
+      "license": "MIT",
+      "mode": "verbatim text snapshot"
+    }
+  ]
+}

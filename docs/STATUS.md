@@ -80,3 +80,6 @@ Intermediate sequential revision 1d8df6893acbb99d9b4a092f792179ddeda478c0 verifi
 
 ## Candidate verification handoff
 Run 45399054249 on candidate code 054cbc995f88f5cb07a6406e38c97922dbb48235 completed successfully: 208 tests each on Windows and Ubuntu; both real desktop preview archives exist. Reusable build orchestration revision 8b004aa7f2074c508dacd04f5ac403ac0a7297e5 had no visible run at inspection. This checkpoint is a deliberate candidate push to invoke the gated build on the final source. No executable or installer artifact yet verified; check exact-head Actions. TakinTech remains untouched, no release/tag. No claim of unattended assistant development.
+
+## Local reusable reference library
+Owner requests local copies of useful resources from TakinTech and DarsChin. Read-only inspection of both; no source repo changes. Copied 11 licensed reference files including licenses and provenance into dev-resources/reference-library, with exact source commit/blob manifest. Added Mano-specific active quality skill under .agents/skills/mano-quality and root AGENTS pointer. Source archives are static and not executable skill installs; no search scripts/datasets, private data, source app code, brand assets or dependencies imported. Academic translator and runtime/build files unchanged. Documentation-only checkpoint, not new binary acceptance evidence.
