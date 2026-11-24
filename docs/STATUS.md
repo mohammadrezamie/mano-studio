@@ -77,3 +77,6 @@ Prior exact-head run 45398375394: 201 passed each Windows/Ubuntu. TakinTech skil
 
 ## Candidate CI orchestration
 Intermediate sequential revision 1d8df6893acbb99d9b4a092f792179ddeda478c0 verified 208 passed on each OS (45398887634). Candidate 054cbc995f88f5cb07a6406e38c97922dbb48235 had Tests in progress but no separate packaging run visible. Switched to reusable Windows build invoked by Tests after successful matrix for deliberate `build: candidate` push; no duplicate auto-trigger workflow. Exact final candidate build/visual result not yet confirmed. Source unchanged.
+
+## Candidate verification handoff
+Run 45399054249 on candidate code 054cbc995f88f5cb07a6406e38c97922dbb48235 completed successfully: 208 tests each on Windows and Ubuntu; both real desktop preview archives exist. Reusable build orchestration revision 8b004aa7f2074c508dacd04f5ac403ac0a7297e5 had no visible run at inspection. This checkpoint is a deliberate candidate push to invoke the gated build on the final source. No executable or installer artifact yet verified; check exact-head Actions. TakinTech remains untouched, no release/tag. No claim of unattended assistant development.
