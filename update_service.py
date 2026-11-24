@@ -1,0 +1,73 @@
+"""Only explicit update checks may use the network; never on startup."""
+from dataclasses import dataclass
+import json
+import re
+from urllib.request import Request, urlopen
+
+RELEASES_URL = "https://api.github.com/repos/mohammadrezamie/mano-studio/releases"
+RELEASES_PAGE = "https://github.com/mohammadrezamie/mano-studio/releases"
+VERSION = "0.3.0-dev.1"
+
+
+def version_key(tag):
+    match = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)(?:-(dev|alpha|beta|rc)(?:\.(\d+))?)?", tag)
+    if not match:
+        raise ValueError("Unknown version format")
+    a, b, c, stage, number = match.groups()
+    return int(a), int(b), int(c), {"dev": 0, "alpha": 1, "beta": 2, "rc": 3, None: 4}[stage], int(number or 0)
+
+
+@dataclass(frozen=True)
+class ReleaseInfo:
+    tag: str
+    notes: str
+    installer_size: int | None
+
+
+def release_info(*, explicit=False, opener=urlopen):
+    if not explicit:
+        raise PermissionError("Network access requires an explicit update check")
+    request = Request(RELEASES_URL, headers={"Accept": "application/vnd.github+json", "User-Agent": "ManoStudio-UpdateCheck"})
+    with opener(request, timeout=6) as response:
+        payload = response.read(2_000_001)
+    if len(payload) > 2_000_000:
+        raise ValueError("Release response too large")
+    data = json.loads(payload)
+    if not isinstance(data, list):
+        raise ValueError("Invalid release response")
+    candidates = []
+    for item in data:
+        if not isinstance(item, dict) or item.get("draft", True):
+            continue
+        tag = item.get("tag_name", "")
+        if not isinstance(tag, str):
+            continue
+        try:
+            key = version_key(tag)
+        except ValueError:
+            continue
+        if key > version_key(VERSION):
+            notes = item.get("body")
+            notes = notes[:8000] if isinstance(notes, str) else ""
+            assets = item.get("assets", [])
+            size = None
+            # Metadata only: never trust a release asset as an executable.
+            # A single setup asset gives an indicative download size.
+            if isinstance(assets, list):
+                setups = [a for a in assets if isinstance(a, dict)
+                          and isinstance(a.get("name"), str)
+                          and a["name"].lower().startswith("manostudio")
+                          and "setup" in a["name"].lower()
+                          and a["name"].lower().endswith(".exe")
+                          and type(a.get("size")) is int and a["size"] > 0]
+                if len(setups) == 1:
+                    size = setups[0]["size"]
+            candidates.append((key, ReleaseInfo(tag, notes, size)))
+    return max(candidates, key=lambda candidate: candidate[0])[1] if candidates else None
+
+
+def check_updates(*, explicit=False, opener=urlopen):
+    """Compatibility API for callers needing only the version tag."""
+    release = release_info(explicit=explicit, opener=opener)
+    return release.tag if release else None
+

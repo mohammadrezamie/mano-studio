@@ -1,0 +1,476 @@
+"""Live program workspace: actual assembler and CPU, not the fixed demo."""
+from pathlib import Path
+from ui.motion import MotionTabs
+from ui.navigation_rail import NavigationRail
+import csv
+import re
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QPlainTextEdit, QTableWidget, QTableWidgetItem, QHeaderView,
+    QAbstractItemView, QSplitter, QSpinBox, QLineEdit, QTabWidget, QFileDialog, QMessageBox, QWidget)
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QTextCursor
+from execution_history import ExecutionHistory
+from ui.arithmetic_view import ArithmeticView
+from ui.data_codes_view import DataCodesView
+from ui.cycle_view import CycleView
+from ui.microprogram_view import MicroprogramView
+from ui.cpu_organization_view import OrganizationView
+from ui.pipeline_view import PipelineView
+from ui.vector_pipeline_view import VectorPipelineView
+from ui.interleaving_view import InterleavingView
+from ui.floating_pipeline_view import FloatPipelineView
+from ui.io_organization_view import IOOrganizationView
+from ui.multiprocessor_view import MultiprocessorView
+from ui.crossbar_view import CrossbarView
+from ui.synchronization_view import SynchronizationView
+from ui.localization import error_text
+from assembler import assemble
+from simulator import CPU
+from ui.workspace import code_editor
+from ui.datapath_view import DatapathView
+
+EXAMPLE = """ORG 000
+LDA A
+ADD B
+STA C
+HLT
+A, DEC 5
+B, DEC 3
+C, HEX 0000
+END"""
+
+
+class ProgramLab(QDialog):
+    def __init__(self, parent, assembly=""):
+        super().__init__(parent)
+        self.fa = parent.language == "fa"
+        self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.fa else Qt.LayoutDirection.LeftToRight)
+        self.setWindowTitle("Mano Studio — " + self.t("Computer", "کامپیوتر"))
+        self.resize(1280, 800)
+        self.cpu = None
+        self.program = None
+        self.steps = 0
+        self.history = None
+        self.break_resume = None
+        self.visible_trace=[]
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.run_tick)
+        shell=QHBoxLayout(self);shell.setContentsMargins(12,12,12,12);shell.setSpacing(12)
+        content=QWidget();layout=QVBoxLayout(content);layout.setContentsMargins(0,0,0,0);layout.setSpacing(8)
+        shell.addWidget(content,1)
+        intro = QLabel(self.t("Assemble and execute your own program, one instruction at a time.",
+            "برنامه خود را اسمبل کنید و اجرای هر دستور را مرحله‌به‌مرحله ببینید."))
+        intro.setWordWrap(True)
+        layout.addWidget(intro)
+        panes = QSplitter(Qt.Orientation.Horizontal)
+        self.source = code_editor(theme=parent.theme)
+        self.source.setPlainText(assembly or EXAMPLE)
+        self.machine = code_editor(True, theme=parent.theme)
+        panes.addWidget(self.source)
+        panes.addWidget(self.machine)
+        panes.setSizes([500, 500])
+        layout.addWidget(panes, 2)
+        controls = QHBoxLayout()
+        for en, fa, slot in [("Load example","مثال جمع",self.example),
+            ("Assemble / Reset","اسمبل و بازنشانی",self.load),
+            ("Back","گام قبل",self.back),("Step","گام بعد",self.step),("Run","اجرا",self.run),
+            ("Pause","توقف موقت",self.pause)]:
+            b = QPushButton(self.t(en,fa))
+            b.clicked.connect(slot)
+            controls.addWidget(b)
+            if en=="Back":self.back_button=b
+        self.speed = QSpinBox()
+        self.speed.setRange(100, 2000)
+        self.speed.setValue(600)
+        self.speed.setSuffix(" ms")
+        self.speed.valueChanged.connect(self.timer.setInterval)
+        controls.addWidget(self.speed)
+        cpu_controls=QWidget();cpu_controls.setLayout(controls)
+        layout.addWidget(cpu_controls)
+        lower = QSplitter(Qt.Orientation.Horizontal)
+        self.registers = QTableWidget(0, 2)
+        self.registers.setHorizontalHeaderLabels([self.t("Register","ثبات"), self.t("Value (HEX)","مقدار هگز")])
+        self.memory = QTableWidget(0, 2)
+        self.memory.setHorizontalHeaderLabels([self.t("Address","آدرس"), self.t("Word (HEX)","کلمه هگز")])
+        for table in (self.registers,self.memory):
+            table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+            table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+            lower.addWidget(table)
+        self.inspector=MotionTabs()
+        self.datapath=DatapathView(parent.theme, parent.settings.value("reduced_motion", False, type=bool) or not parent.settings.value("lab_motion", True, type=bool), fa=self.fa)
+        self.inspector.addTab(self.datapath,self.t("Live view","نمای زنده"))
+        self.inspector.addTab(lower,self.t("Registers & memory","ثبات‌ها و حافظه"))
+        trace_page=QWidget()
+        trace_layout=QVBoxLayout(trace_page)
+        trace_tools=QHBoxLayout()
+        self.break_address=QLineEdit()
+        self.break_address.setMaxLength(3)
+        self.break_address.setPlaceholderText(self.t("Breakpoint HEX","نقطه توقف هگز"))
+        trace_tools.addWidget(self.break_address)
+        for en,fa,fn in [("Toggle breakpoint","تغییر نقطه توقف",self.toggle_breakpoint),
+                         ("Export trace","خروجی رد اجرا",self.export_trace)]:
+            button=QPushButton(self.t(en,fa))
+            button.clicked.connect(fn)
+            trace_tools.addWidget(button)
+        trace_layout.addLayout(trace_tools)
+        self.break_label=QLabel()
+        trace_layout.addWidget(self.break_label)
+        self.trace=QTableWidget(0,7)
+        self.trace.setHorizontalHeaderLabels(["#","PC",self.t("Word","کلمه"),"OP","EA","AC",self.t("Next PC","PC بعدی")])
+        self.trace.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.trace.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.trace.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.trace.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.trace.cellClicked.connect(self.trace_selected)
+        trace_layout.addWidget(self.trace)
+        self.inspector.addTab(trace_page,self.t("Debugger","اشکال‌زدا"))
+        alu_page=QWidget()
+        alu_layout=QVBoxLayout(alu_page)
+        use_registers=QPushButton(self.t("Use AC, DR & E","استفاده از AC، DR و E"))
+        use_registers.clicked.connect(self.use_registers)
+        alu_layout.addWidget(use_registers)
+        self.arithmetic=ArithmeticView(self.fa)
+        alu_layout.addWidget(self.arithmetic)
+        self.inspector.addTab(alu_page,self.t("Data & ALU","داده و ALU"))
+        self.codes=DataCodesView(self.fa)
+        self.inspector.addTab(self.codes,self.t("Data codes","کدهای داده"))
+        self.cycles=CycleView(self.fa,self.microstep,self.microback)
+        self.inspector.addTab(self.cycles,self.t("Instruction cycle","چرخه دستور"))
+        self.microprogram=MicroprogramView(self.fa)
+        self.inspector.addTab(self.microprogram,self.t("Microprogram","ریزبرنامه"))
+        self.organization=OrganizationView(self.fa)
+        self.inspector.addTab(self.organization,self.t("CPU organization","سازمان CPU"))
+        self.pipeline=PipelineView(self.fa)
+        self.vector_pipeline=VectorPipelineView(self.fa)
+        self.pipeline_tabs=pipeline_tabs=MotionTabs()
+        pipeline_tabs.addTab(self.pipeline,self.t("Instruction pipeline","خط لوله دستورات"))
+        pipeline_tabs.addTab(self.vector_pipeline,self.t("Vector / matrix","بردار / ماتریس"))
+        self.interleaving=InterleavingView(self.fa)
+        pipeline_tabs.addTab(self.interleaving,self.t("Memory banks","بانک‌های حافظه"))
+        self.float_pipeline=FloatPipelineView(self.fa)
+        pipeline_tabs.addTab(self.float_pipeline,self.t("Floating pipeline","خط لوله ممیز شناور"))
+        self.inspector.addTab(pipeline_tabs,self.t("Pipeline","خط لوله"))
+        self.io_organization=IOOrganizationView(self.fa,parent.theme)
+        self.inspector.addTab(self.io_organization,self.t("I/O organization","سازمان ورودی/خروجی"))
+        self.multiprocessor=MultiprocessorView(parent.theme,self.fa)
+        self.crossbar=CrossbarView(parent.theme,self.fa)
+        self.multiprocessor_tabs=MotionTabs()
+        self.multiprocessor_tabs.addTab(self.multiprocessor,self.t("Shared bus","گذرگاه مشترک"))
+        self.multiprocessor_tabs.addTab(self.crossbar,self.t("Crossbar","اتصال متقاطع"))
+        self.synchronization=SynchronizationView(parent.theme,self.fa)
+        self.multiprocessor_tabs.addTab(self.synchronization,self.t("Synchronization","همگام‌سازی"))
+        self.inspector.addTab(self.multiprocessor_tabs,self.t("Multiprocessors","چندپردازنده‌ها"))
+        layout.addWidget(self.inspector, 2)
+        io = QHBoxLayout()
+        self.input = QLineEdit()
+        self.input.setPlaceholderText(self.t("Input byte (00–FF)","بایت ورودی (00–FF)"))
+        self.input.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        io.addWidget(self.input)
+        for en,fa,slot in [("Send input","ارسال ورودی",self.send_input),
+                           ("Read output","خواندن خروجی",self.read_output)]:
+            b=QPushButton(self.t(en,fa))
+            b.clicked.connect(slot)
+            io.addWidget(b)
+        cpu_io=QWidget();cpu_io.setLayout(io)
+        layout.addWidget(cpu_io)
+        self.status = QLabel()
+        self.status.setWordWrap(True)
+        layout.addWidget(self.status)
+        self.cpu_widgets=(intro,panes,cpu_controls,cpu_io,self.status)
+        self.tool_pages={"live":self.datapath,"register-memory":lower,"debugger":trace_page,
+                         "alu":alu_page,"codes":self.codes,"cycles":self.cycles,
+                         "microprogram":self.microprogram,"organization":self.organization,
+                         "pipeline":pipeline_tabs,"io":self.io_organization,"multiprocessor":self.multiprocessor_tabs}
+        self.navigation=NavigationRail(self.inspector,parent.settings,'computer',self.t('COMPUTER','کامپیوتر'),
+            ('cpu','registers','debug','alu','codes','clock','microcode','organization','pipeline','io','network'),self.fa)
+        shell.insertWidget(0,self.navigation)
+        self.datapath.focus.toggled.connect(self.update_cpu_context)
+        self.inspector.currentChanged.connect(self.update_cpu_context)
+        self.source.textChanged.connect(self.invalidate)
+        self.load()
+        self.update_cpu_context()
+
+    def update_cpu_context(self,*_):
+        page=self.inspector.currentWidget()
+        visible=page in tuple(self.tool_pages[key] for key in ("live","register-memory","debugger","alu","cycles"))
+        focused=page is self.datapath and self.datapath.focus.isChecked()
+        if not visible:self.pause()
+        for widget in self.cpu_widgets:widget.setVisible(visible and not focused)
+        if focused:
+            # Preserve execution controls while maximizing the visualization.
+            self.cpu_widgets[2].show()
+
+    def select_tool(self,route):
+        """Stable learning route IDs, independent of displayed tab titles."""
+        if route in self.tool_pages:
+            self.inspector.setCurrentWidget(self.tool_pages[route])
+            if route=="multiprocessor":self.multiprocessor_tabs.setCurrentWidget(self.multiprocessor)
+            if route=="pipeline":self.pipeline_tabs.setCurrentWidget(self.pipeline)
+            if route=="microprogram":self.microprogram.detail_tabs.setCurrentIndex(0)
+            if route=="alu":self.arithmetic.op.setCurrentIndex(0)
+        elif route in ("crossbar","synchronization"):
+            self.inspector.setCurrentWidget(self.multiprocessor_tabs)
+            self.multiprocessor_tabs.setCurrentWidget(self.crossbar if route=="crossbar" else self.synchronization)
+        elif route=="microbuilder":
+            self.inspector.setCurrentWidget(self.microprogram)
+            self.microprogram.detail_tabs.setCurrentWidget(self.microprogram.builder)
+        elif route in ("general-registers","stacks","addressing","formats"):
+            self.inspector.setCurrentWidget(self.organization)
+            self.organization.tabs.setCurrentIndex(("general-registers","stacks","addressing","formats").index(route))
+        elif route in ("vector","interleaving","floating-pipeline"):
+            self.inspector.setCurrentWidget(self.pipeline_tabs)
+            self.pipeline_tabs.setCurrentWidget({"vector":self.vector_pipeline,"interleaving":self.interleaving,"floating-pipeline":self.float_pipeline}[route])
+        elif route in ("handshake","interrupt","dma","fifo","serial"):
+            self.inspector.setCurrentWidget(self.io_organization)
+            self.io_organization.tabs.setCurrentIndex(("handshake","interrupt","dma","fifo","serial").index(route))
+        elif route in ("booth","division","decimal","floating"):
+            self.inspector.setCurrentWidget(self.tool_pages["alu"])
+            data={"booth":"booth","division":"divide","decimal":"bcdadd","floating":"fpdecode"}[route]
+            self.arithmetic.op.setCurrentIndex(self.arithmetic.op.findData(data))
+        else:raise ValueError("Unknown computer route")
+        self.update_cpu_context()
+
+    def t(self,en,fa):
+        return fa if self.fa else en
+
+    def invalidate(self):
+        self.pause()
+        self.cpu = self.program = None
+        self.history = None
+        self.break_resume = None
+        self.steps=0
+        self.refresh_trace()
+        self.machine.clear()
+        self.datapath.set_state(None)
+        self.registers.setRowCount(0)
+        self.memory.setRowCount(0)
+        self.status.setText(self.t("Source changed. Assemble again.","کد تغییر کرد؛ دوباره اسمبل کنید."))
+
+    def example(self):
+        self.source.setPlainText(EXAMPLE)
+        self.load()
+
+    def load(self):
+        self.pause()
+        self.program = assemble(self.source.toPlainText())
+        self.cpu = None
+        self.history = None
+        self.break_resume = None
+        self.steps = 0
+        self.refresh_trace()
+        if not self.program.ok:
+            self.datapath.set_state(None)
+            self.machine.setPlainText("\n".join(f"{e.line}: {error_text(e.message,self.fa)}" for e in self.program.errors))
+            self.status.setText(self.t("Assembly failed.","اسمبل ناموفق بود."))
+            self.registers.setRowCount(0)
+            self.memory.setRowCount(0)
+            return
+        self.machine.setPlainText(self.program.listing())
+        self.cpu = CPU(self.program.words, self.program.entry)
+        self.history = ExecutionHistory(self.cpu)
+        self.addresses = set(self.program.words)
+        self.refresh()
+        self.status.setText(self.t("Ready.","آماده."))
+
+    def refresh(self,event=None):
+        self.datapath.set_state(self.cpu,self.cpu.pending_event or event)
+        self.refresh_trace()
+        values = self.cpu.registers()
+        self.registers.setRowCount(len(values))
+        for row,(name,value) in enumerate(values.items()):
+            width = 3 if name in ("PC","AR") else 4 if name in ("AC","DR","IR","TR") else 2 if name in ("INPR","OUTR") else 1
+            self.registers.setItem(row,0,QTableWidgetItem(name))
+            item = QTableWidgetItem(f"{value:0{width}X}")
+            if event and event.before.get(name) != value:
+                from PySide6.QtGui import QColor
+                item.setBackground(QColor(80,145,185,70))
+            self.registers.setItem(row,1,item)
+        if event:
+            self.addresses.update(a for g in event.microevents for a,_ in g.reads)
+            self.addresses.update(a for a,old,new in event.writes)
+            if event.effective_address is not None:
+                self.addresses.add(event.effective_address)
+        addresses = sorted(self.addresses)
+        self.memory.setRowCount(len(addresses))
+        for row,a in enumerate(addresses):
+            self.memory.setItem(row,0,QTableWidgetItem(f"{a:03X}"))
+            self.memory.setItem(row,1,QTableWidgetItem(f"{self.cpu.memory[a]:04X}"))
+
+    def step(self):
+        if self.cpu is None:
+            self.pause()
+            return
+        if self.steps >= 10000:
+            self.pause()
+            self.status.setText(self.t("Step limit reached. Reset to continue.","حد اجرای گام‌ها رسید؛ بازنشانی کنید."))
+            return
+        self.break_resume=None
+        try:
+            event = self.history.step()
+        except ValueError as error:
+            self.pause()
+            self.status.setText(error_text(error,self.fa))
+            return
+        if event is None:
+            self.pause()
+            return
+        self.steps = self.history.steps
+        self.refresh(event)
+        self.select_address(event.address)
+        self.status.setText(f"{event.address:03X} · {event.mnemonic} · AC={self.cpu.ac:04X} · PC={self.cpu.pc:03X}")
+        if self.cpu.halted:
+            self.pause()
+
+    def microstep(self):
+        self.pause()
+        if self.cpu is None or self.steps>=10000:return
+        self.break_resume=None
+        try:group=self.history.microstep()
+        except ValueError as error:
+            self.status.setText(error_text(error,self.fa));return
+        if group is None:return
+        self.steps=self.history.steps
+        event=self.cpu.pending_event or self.cpu.completed_event
+        self.refresh(event)
+        self.select_address(event.address)
+        self.cycles.groups.setCurrentCell(len(event.microevents)-1,0)
+        self.status.setText(f"{event.mnemonic} · T{group.timing} · AC={self.cpu.ac:04X} · PC={self.cpu.pc:03X}")
+
+    def microback(self):
+        self.pause()
+        if self.history is None:return
+        group=self.history.microback()
+        if group is None:return
+        self.steps=self.history.steps
+        self.break_resume=None
+        pending=self.cpu.pending_event
+        self.refresh(pending)
+        self.select_address(pending.address if pending else self.cpu.pc)
+        self.status.setText(self.t("Timing group reversed.","یک گروه زمانی واگرد شد."))
+
+    def run(self):
+        if self.cpu and not self.cpu.halted:
+            self.timer.start(self.speed.value())
+
+    def run_tick(self):
+        if self.history and self.history.should_break() and self.break_resume != self.cpu.pc:
+            self.break_resume=self.cpu.pc
+            self.pause()
+            self.status.setText(self.t("Breakpoint at ","توقف در ")+f"{self.cpu.pc:03X}")
+            self.select_address(self.cpu.pc)
+            return
+        self.break_resume=None
+        self.step()
+
+    def pause(self):
+        self.timer.stop()
+        if hasattr(self, "datapath"):
+            self.datapath.stop()
+
+    def send_input(self):
+        if self.cpu:
+            try:
+                self.pause()
+                self.cpu.input_byte(int(self.input.text(),16))
+                self.history.barrier()
+                self.refresh()
+            except ValueError as error:
+                self.status.setText(error_text(error,self.fa))
+
+    def read_output(self):
+        if self.cpu:
+            self.pause()
+            try:byte = self.cpu.output_byte()
+            except ValueError as error:
+                self.status.setText(error_text(error,self.fa));return
+            if byte is not None:self.history.barrier()
+            self.refresh()
+            self.status.setText(self.t("No output pending.","خروجی آماده نیست.") if byte is None else f"OUT: {byte:02X}")
+
+    def back(self):
+        self.pause()
+        if self.history and self.history.back():
+            self.steps=self.history.steps
+            self.break_resume=None
+            self.refresh()
+            self.select_address(self.cpu.pc)
+            self.status.setText(self.t("Reversed to PC=","بازگشت به PC=")+f"{self.cpu.pc:03X}")
+
+    def toggle_breakpoint(self):
+        if self.history is None:return
+        raw=self.break_address.text().strip()
+        if not re.fullmatch(r"[0-9a-fA-F]{1,3}",raw):
+            self.status.setText(self.t("Enter 000–FFF.","آدرس 000 تا FFF وارد کنید."))
+            return
+        self.history.toggle_breakpoint(int(raw,16))
+        self.break_resume=None
+        self.refresh_trace()
+
+    def trace_rows(self):
+        if not self.history:return []
+        return [(entry.number,f"{e.address:03X}",f"{e.word:04X}",e.mnemonic,
+                 "—" if e.effective_address is None else f"{e.effective_address:03X}",
+                 f"{e.after['AC']:04X}",f"{e.after['PC']:03X}")
+                for entry in self.history.entries for e in (entry.event,)]
+
+    def refresh_trace(self):
+        partial=self.cpu.pending_event if self.cpu else None
+        latest=partial or (self.history.entries[-1].event if self.history and self.history.entries else None)
+        if self.cycles.current_trace != latest:self.cycles.show_event(latest,partial is not None)
+        can_back=bool(self.history and (self.history.entries or self.cpu.in_progress))
+        self.back_button.setEnabled(can_back)
+        self.cycles.back_button.setEnabled(can_back)
+        self.cycles.step_button.setEnabled(bool(self.cpu and not self.cpu.halted and self.steps<10000))
+        rows=self.trace_rows()
+        if rows!=self.visible_trace:
+            # In the common forward-step case, insert only the new row.
+            # At capacity, remove the oldest row before appending.
+            previous=self.visible_trace
+            if previous and len(rows)==len(previous) and rows[:-1]==previous[1:]:
+                self.trace.removeRow(0)
+                start=len(rows)-1
+            elif rows[:len(previous)]==previous:
+                start=len(previous)
+            else:
+                start=0
+            self.trace.setRowCount(len(rows))
+            for i in range(start,len(rows)):
+                for j,value in enumerate(rows[i]):
+                    self.trace.setItem(i,j,QTableWidgetItem(str(value)))
+            self.visible_trace=rows
+            if rows:self.trace.scrollToBottom()
+        self.break_label.setText(self.t("Breakpoints: ","نقاط توقف: ")+
+            (", ".join(f"{a:03X}" for a in sorted(self.history.breakpoints)) if self.history and self.history.breakpoints else "—"))
+
+    def select_address(self,address):
+        if not self.program or address not in self.program.source_lines:return
+        block=self.source.document().findBlockByNumber(self.program.source_lines[address]-1)
+        if block.isValid():
+            self.source.setTextCursor(QTextCursor(block))
+            self.source.ensureCursorVisible()
+
+    def trace_selected(self,row,column):
+        rows=self.trace_rows()
+        if 0<=row<len(rows):
+            self.select_address(int(rows[row][1],16))
+            self.cycles.show_event(self.history.entries[row].event)
+
+    def write_trace(self,path):
+        with Path(path).open("w",encoding="utf-8-sig",newline="") as stream:
+            writer=csv.writer(stream)
+            writer.writerow(["Step","PC","Word","Mnemonic","EA","AC","Next PC"])
+            writer.writerows(self.trace_rows())
+
+    def export_trace(self):
+        path,_=QFileDialog.getSaveFileName(self,self.t("Export trace","خروجی رد اجرا"),"trace.csv","CSV (*.csv)")
+        if path:
+            try:self.write_trace(Path(path) if Path(path).suffix else Path(path).with_suffix(".csv"))
+            except OSError as exc:QMessageBox.warning(self,self.t("Export failed","خروجی ناموفق"),error_text(exc,self.fa))
+
+    def use_registers(self):
+        if self.cpu:self.arithmetic.set_operands(self.cpu.ac,self.cpu.dr,self.cpu.e)
+
+    def done(self,result):
+        self.pause()
+        super().done(result)
