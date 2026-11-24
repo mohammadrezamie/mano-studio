@@ -23,3 +23,6 @@ Initial interactive addition demonstration (LDA, ADD, STA, HLT), computed values
 
 ## Primary translator usability
 Keep RTL editor the default screen. A local instruction reference supports search across 25 mnemonics, descriptions and RTL, address and indirect options, verified preview through translate(), and insertion at the editor cursor's line boundary. Ctrl+Space opens the reference. Optional circuit/CPU labs remain grouped under Labs. No release activity until requested.
+
+## Integrated UX override
+See UX_PLAN.md. One Computer lab replaces separate Live Lab/Program Lab and shares one CPU state. Main translator has a single primary Translate action, explicit Open RTL/Export ASM, secondary File/Help/Labs menus, context-sensitive diagnostics and compact entry tools. This is a development refactor, not visual signoff. Next consolidate reference and builder and review design system in actual UI.
