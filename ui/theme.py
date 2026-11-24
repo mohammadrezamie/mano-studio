@@ -6,7 +6,7 @@ PALETTES = {
 }
 
 
-def stylesheet(theme):
+def stylesheet(theme, glass_enabled=True):
     theme = theme if theme in PALETTES else "dark"
     bg, panel, raised, fg, muted, accent, border = PALETTES[theme]
     light = theme == "light"
@@ -14,6 +14,8 @@ def stylesheet(theme):
     glass = "rgba(255,255,255,115)" if light else "rgba(15,24,43,125)" if theme == "dark" else "rgba(47,31,37,140)"
     rim = "rgba(255,255,255,235)" if light else "rgba(255,255,255,65)"
     gradient = f"qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 {shine},stop:0.48 {glass},stop:1 {glass})"
+    if not glass_enabled:
+        glass, rim, gradient = panel, border, raised
     return f"""
     QWidget {{ color: {fg}; font-size: 13px; }}
     QMainWindow, QDialog, QMenu, QComboBox QAbstractItemView {{ background: {bg}; }}
