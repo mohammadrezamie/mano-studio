@@ -26,3 +26,6 @@ Keep RTL editor the default screen. A local instruction reference supports searc
 
 ## Integrated UX override
 See UX_PLAN.md. One Computer lab replaces separate Live Lab/Program Lab and shares one CPU state. Main translator has a single primary Translate action, explicit Open RTL/Export ASM, secondary File/Help/Labs menus, context-sensitive diagnostics and compact entry tools. This is a development refactor, not visual signoff. Next consolidate reference and builder and review design system in actual UI.
+
+### Current translator integration (supersedes separate reference dialog)
+Ctrl+Space and Help open the existing Builder tab and focus its search field. Search matches mnemonic, localized operation name and canonical RTL template. Same address controls, hex keypad, preview and insert/replace actions; no-match and invalid address disable insertion. Source/output cursor navigation uses original source line indices and ignores stale results. No new dependency. Visual verification pending.
