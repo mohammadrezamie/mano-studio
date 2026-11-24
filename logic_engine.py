@@ -10,15 +10,21 @@ from types import MappingProxyType
 ARITY = {"NOT": 1, "AND": 2, "OR": 2, "XOR": 2, "NAND": 2, "NOR": 2, "XNOR": 2}
 
 
+def valid_arity(op, count):
+    return (op == "NOT" and count == 1) or (op in ARITY and op != "NOT" and 2 <= count <= 4)
+
+
 def gate_value(op, *bits):
-    if op not in ARITY or len(bits) != ARITY[op] or any(b not in (0, 1) for b in bits):
+    if not valid_arity(op, len(bits)) or any(b not in (0, 1) for b in bits):
         raise ValueError("Invalid gate or inputs")
     a = bits[0]
     if op == "NOT":
         return 1-a
-    b = bits[1]
-    return {"AND": a & b, "OR": a | b, "XOR": a ^ b,
-            "NAND": 1-(a & b), "NOR": 1-(a | b), "XNOR": 1-(a ^ b)}[op]
+    conjunction = int(all(bits))
+    disjunction = int(any(bits))
+    parity = sum(bits) % 2
+    return {"AND": conjunction, "OR": disjunction, "XOR": parity,
+            "NAND": 1-conjunction, "NOR": 1-disjunction, "XNOR": 1-parity}[op]
 
 
 @dataclass(frozen=True)
@@ -41,7 +47,7 @@ class Circuit:
         if len(known) != len(self.inputs):
             raise ValueError("Duplicate input")
         for gate in self.gates:
-            if gate.output in known or ARITY.get(gate.op) != len(gate.inputs) or not set(gate.inputs) <= known:
+            if gate.output in known or not valid_arity(gate.op, len(gate.inputs)) or not set(gate.inputs) <= known:
                 raise ValueError("Invalid, cyclic or unordered gate netlist")
             known.add(gate.output)
         if len({name for name, _ in self.outputs}) != len(self.outputs) or any(signal not in known for _,signal in self.outputs):
@@ -70,10 +76,13 @@ def g(output, op, *inputs):
     return Gate(output, op, inputs)
 
 
-def basic(op):
-    inputs = ("A",) if op == "NOT" else ("A","B")
+def basic(op, count=None):
+    count = ARITY[op] if count is None else count
+    if not valid_arity(op, count):
+        raise ValueError("Unsupported input count")
+    inputs = tuple("ABCD"[:count])
     return Circuit(inputs,(g("q",op,*inputs),),(("Y","q"),),
-                   (op,op),("One elementary logic gate.", "یک گیت منطقی پایه."))
+                   (op,op),("One elementary logic gate. Multi-input XOR/XNOR use odd/even parity.", "یک گیت پایه؛ XOR و XNOR چندورودی بر اساس زوج یا فرد بودن تعداد بیت‌های یک عمل می‌کنند."))
 
 
 CIRCUITS = {op.lower(): basic(op) for op in ARITY}
