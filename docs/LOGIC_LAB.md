@@ -39,3 +39,6 @@ Five new 4-bit models: serial shift, universal shift, loadable up/down counter, 
 
 ## Memory devices tab
 Integrated ideal RAM/ROM functional bus model, six organization choices, explicit active-low controls, selected address, visible storage and high-impedance Z output. A write happens only on Apply cycle; ROM never writes. Demo resets when organization changes. No physical chip pin numbers, electrical delays or persistence. See CURRICULUM_COVERAGE.md.
+
+## Memory & bus
+Existing memory device tab now groups chip, expansion, and register bus views. Bank table uses actual chip contents, decoded select and data slices; write is explicit and disabled memory returns Z. Register bus displays three registers with buffer/enable and destination controls; X marks conflicting bits, Z undriven, only exactly one enabled source can load destinations. Functional diagram, not hardware timing. Config changes reset demo data. No new dependencies.

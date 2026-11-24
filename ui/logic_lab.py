@@ -17,6 +17,8 @@ from ui.circuit_editor import CircuitEditor
 from ui.localization import error_text
 from ui.sequential_view import SequentialView
 from ui.memory_view import MemoryView
+from ui.memory_array_view import MemoryArrayView
+from ui.bus_view import BusView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES, STATUS
 
@@ -320,7 +322,13 @@ class LogicLab(QDialog):
         self.sequential=SequentialView(parent.theme,self.fa)
         self.mode_tabs.addTab(self.sequential,self.t("Sequential","مدارهای ترتیبی"))
         self.memory_view=MemoryView(parent.theme,self.fa)
-        self.mode_tabs.addTab(self.memory_view,self.t("Memory devices","قطعات حافظه"))
+        memory_tabs=QTabWidget()
+        memory_tabs.addTab(self.memory_view,self.t("Memory chip","تراشه حافظه"))
+        self.memory_array=MemoryArrayView(self.fa)
+        memory_tabs.addTab(self.memory_array,self.t("Memory expansion","گسترش حافظه"))
+        self.bus_view=BusView(parent.theme,self.fa)
+        memory_tabs.addTab(self.bus_view,self.t("Register bus","گذرگاه ثبات‌ها"))
+        self.mode_tabs.addTab(memory_tabs,self.t("Memory & bus","حافظه و گذرگاه"))
         layout=QVBoxLayout(combinational)
         title=QLabel(self.t("Logic Lab · Digital circuits","آزمایشگاه مدار منطقی"))
         title.setObjectName("brand")

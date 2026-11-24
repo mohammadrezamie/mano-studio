@@ -511,3 +511,27 @@ def test_memory_and_data_codes_views(workspace):
     codes.input.setText("1010")
     assert not codes.output.toPlainText()
     computer.close()
+
+
+def test_memory_expansion_and_register_bus(workspace):
+    from ui.logic_lab import LogicLab
+    lab=LogicLab(workspace)
+    view=lab.memory_array
+    view.address.setValue(17)
+    view.word.setText("ABCD")
+    view.write()
+    assert view.model.read(17)==0xABCD
+    assert view.model.chips[1][0].words[1]==0xCD
+    assert view.model.chips[1][1].words[1]==0xAB
+    assert view.model.read(1)==0
+    bus=lab.bus_view
+    bus.words[0].setValue(0xA5)
+    bus.en[0].setChecked(True)
+    bus.ld[1].setChecked(True)
+    bus.transfer()
+    assert bus.words[1].value()==0xA5
+    bus.words[2].setValue(1)
+    bus.en[2].setChecked(True)
+    bus.transfer()
+    assert bus.words[1].value()==0xA5
+    lab.close()
