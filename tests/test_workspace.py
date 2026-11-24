@@ -737,3 +737,23 @@ def test_symbolic_microassembler_ui(workspace):
     view.load()
     assert view.model is None and not view.listing.toPlainText() and view.status.text()
     lab.close()
+
+
+def test_microprogram_reverse_and_sequencer(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.microprogram
+    assert not view.back_button.isEnabled()
+    for _ in range(3):view.step()
+    assert view.sequencer.trace.next_source=="MAP"
+    assert view.trace.rowCount()==3 and view.model.car==0
+    view.back()
+    assert view.model.car==66 and view.trace.rowCount()==2
+    assert view.sequencer.trace.after["CAR"]==66
+    view.back();view.back()
+    assert view.model.car==64 and view.sequencer.trace is None
+    assert not view.back_button.isEnabled()
+    view.step()
+    view.control.setPlainText("40:00000")
+    assert view.history is None and view.trace.rowCount()==0
+    lab.close()

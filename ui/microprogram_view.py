@@ -1,9 +1,11 @@
 """Interactive Chapter 7 control memory, independent of the Basic Computer."""
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPlainTextEdit,
-    QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QPushButton,QSpinBox,QComboBox)
+    QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QPushButton,QSpinBox,QComboBox,QTabWidget)
 from microprogram import MicroComputer,parse_image,demo_images,CONDITIONS,BRANCHES
 from microassembler import assemble_micro, DEMO_SOURCE, full_demo
+from microprogram_history import MicroHistory
+from ui.microsequencer_view import MicrosequencerView
 
 
 class MicroprogramView(QWidget):
@@ -11,6 +13,7 @@ class MicroprogramView(QWidget):
         super().__init__()
         self.fa=fa
         self.model=None
+        self.history=None
         self.last=None
         layout=QVBoxLayout(self)
         note=QLabel(self.t("Chapter 7 model: 128 × 20 control store; 11-bit PC/AR. Not the Basic Computer ISA. Edit raw or symbolic control source, load, then execute one microinstruction.",
@@ -35,9 +38,10 @@ class MicroprogramView(QWidget):
         row=QHBoxLayout()
         row.addWidget(QLabel("CAR"))
         self.entry=QSpinBox();self.entry.setRange(0,127);self.entry.setValue(64);row.addWidget(self.entry)
-        for en,fa_label,fn in [("Example","مثال",self.example),("Load / Reset","بارگذاری / بازنشانی",self.load),("Next microinstruction","ریزدستور بعدی",self.step)]:
+        for en,fa_label,fn in [("Example","مثال",self.example),("Load / Reset","بارگذاری / بازنشانی",self.load),("Previous microinstruction","ریزدستور قبلی",self.back),("Next microinstruction","ریزدستور بعدی",self.step)]:
             button=QPushButton(self.t(en,fa_label));button.clicked.connect(fn);row.addWidget(button)
             if fn==self.step:self.step_button=button
+            if fn==self.back:self.back_button=button
         layout.addLayout(row)
         self.fields=QLabel();self.fields.setWordWrap(True);self.fields.setLayoutDirection(Qt.LayoutDirection.LeftToRight);layout.addWidget(self.fields)
         self.table=QTableWidget(0,3)
@@ -45,7 +49,18 @@ class MicroprogramView(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        layout.addWidget(self.table,1)
+        self.detail_tabs=QTabWidget()
+        self.detail_tabs.addTab(self.table,self.t("Registers","ثبات‌ها"))
+        self.sequencer=MicrosequencerView(fa)
+        self.detail_tabs.addTab(self.sequencer,self.t("Address selector","انتخاب آدرس"))
+        self.trace=QTableWidget(0,5)
+        self.trace.setHorizontalHeaderLabels(["#","CAR","HEX","Source",self.t("Next CAR","CAR بعدی")])
+        if fa:self.trace.setHorizontalHeaderItem(3,QTableWidgetItem("منبع"))
+        self.trace.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.trace.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.trace.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.detail_tabs.addTab(self.trace,self.t("History","تاریخچه"))
+        layout.addWidget(self.detail_tabs,1)
         self.listing=QPlainTextEdit();self.listing.setReadOnly(True);self.listing.setMaximumHeight(65)
         self.listing.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.listing.setAccessibleName(self.t("Assembled control image","تصویر اسمبل‌شده کنترل"));layout.addWidget(self.listing)
@@ -59,7 +74,8 @@ class MicroprogramView(QWidget):
     def t(self,en,fa):return fa if self.fa else en
 
     def invalidate(self,*_):
-        self.model=self.last=None
+        self.model=self.last=self.history=None
+        self.sequencer.set_trace(None);self.trace.setRowCount(0);self.back_button.setEnabled(False)
         self.table.setRowCount(0);self.fields.clear();self.listing.clear();self.step_button.setEnabled(False)
         self.status.setText(self.t("Images changed. Load again.","تصویر حافظه تغییر کرد؛ دوباره بارگذاری کنید."))
 
@@ -95,6 +111,7 @@ class MicroprogramView(QWidget):
             self.listing.setPlainText("\n".join(f"{a:02X}:{w:05X}" for a,w in sorted(c.items())))
         except ValueError as e:
             self.status.setText(self.t(str(e),"تصویر حافظه نامعتبر است؛ آدرس‌ها و کلمات هگز را بررسی کنید."));return
+        self.history=MicroHistory(self.model)
         self.step_button.setEnabled(True)
         regs=self.model.registers();self.show_regs(regs,regs)
         self.status.setText(self.t("Ready.","آماده."))
@@ -110,12 +127,40 @@ class MicroprogramView(QWidget):
 
     def step(self):
         if self.model is None:return
-        try:g=self.model.step()
+        try:g=self.history.step()
         except ValueError as e:
             self.status.setText(self.t(str(e),"ریزدستور نامعتبر، مقداردهی‌نشده یا دارای عملیات متعارض است."));return
-        self.last=g;self.show_regs(g.before,g.after)
+        self.show_step(g)
+        self.refresh_history()
+
+    def show_step(self,g):
+        self.last=g;self.sequencer.set_trace(g);self.show_regs(g.before,g.after)
         m=g.instruction
         self.fields.setText(f"F1 {m.f1:03b} | F2 {m.f2:03b} | F3 {m.f3:03b} | CD {m.cd:02b} | BR {m.br:02b} | AD {m.ad:07b}\n"
             +(", ".join(m.operations) or "NOP")+f" | {CONDITIONS[m.cd]}={int(g.condition)} | {BRANCHES[m.br]} | CAR ← {g.next_source} ({g.after['CAR']:02X})")
         accesses=[f"M[{a:03X}] → {v:04X}" for a,v in g.reads]+[f"M[{a:03X}]: {old:04X} → {v:04X}" for a,old,v in g.writes]
         self.status.setText(" · ".join(accesses) or self.t("No memory access.","بدون دسترسی حافظه."))
+
+
+    def refresh_history(self):
+        entries=self.history.entries
+        self.trace.setRowCount(len(entries))
+        for row,(number,event) in enumerate(entries):
+            values=(number,f"{event.before['CAR']:02X}",f"{event.word:05X}",event.next_source,f"{event.after['CAR']:02X}")
+            for col,value in enumerate(values):
+                self.trace.setItem(row,col,QTableWidgetItem(str(value)))
+        if entries:self.trace.scrollToBottom()
+        self.back_button.setEnabled(bool(entries))
+
+    def back(self):
+        if self.history is None or self.history.back() is None:return
+        if self.history.entries:
+            self.show_step(self.history.entries[-1][1])
+        else:
+            self.last=None
+            self.fields.clear()
+            self.sequencer.set_trace(None)
+            regs=self.model.registers()
+            self.show_regs(regs,regs)
+        self.refresh_history()
+        self.status.setText(self.t("Microinstruction reversed.","ریزدستور واگرد شد."))

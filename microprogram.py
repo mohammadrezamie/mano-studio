@@ -45,6 +45,14 @@ class Microstep:
     next_source:str
     reads:tuple
     writes:tuple
+    created_cells:tuple = ()
+
+    @property
+    def address_candidates(self):
+        """All four pre-edge inputs of the CAR multiplexer, not predictions."""
+        return (("CAR+1",(self.before['CAR']+1)&127),
+                ("AD",self.instruction.ad),("SBR",self.before['SBR']),
+                ("MAP",((self.before['DR']>>11)&15)<<2))
 
 
 class MicroComputer:
@@ -114,9 +122,10 @@ class MicroComputer:
         else:
             next_address,source=sequential,"CAR+1"
         for name,value in updates.items():setattr(self,name.lower(),value)
+        created=tuple(address for address,_,_ in writes if address not in self.memory)
         for address,_,value in writes:self.memory[address]=value
         self.car=next_address
-        return Microstep(word,ins,old,self.registers(),condition,source,tuple(reads),tuple(writes))
+        return Microstep(word,ins,old,self.registers(),condition,source,tuple(reads),tuple(writes),created)
 
 
 def parse_image(text,address_limit,word_limit):
