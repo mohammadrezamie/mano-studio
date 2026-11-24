@@ -456,7 +456,8 @@ class Workspace(QMainWindow):
         elif not self.result.ok:
             state, label = "error", self.t("Translation failed")
         else:
-            state, label = "success", f"{len(self.result.instructions)} " + self.t("instructions")
+            count = len(self.result.instructions)
+            state, label = "success", f"{count} " + self.t("instruction" if count == 1 else "instructions")
         self.output_state.setText(label)
         self.output_state.setProperty("state", state)
         self.output_state.style().unpolish(self.output_state)
