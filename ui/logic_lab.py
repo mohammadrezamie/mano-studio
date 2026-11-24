@@ -1,6 +1,7 @@
 """Live schematic, binary input controls and truth tables from one netlist."""
 from pathlib import Path
 from ui.motion import MotionTabs
+from ui.navigation_rail import NavigationRail
 import csv
 from PySide6.QtCore import Qt, QRectF, QPointF, Signal, QSize
 from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QPainterPath
@@ -314,10 +315,10 @@ class LogicLab(QDialog):
         self.document=None
         self.selected_key=None
         self.setWindowTitle("Mano Studio — "+self.t("Logic Lab","آزمایشگاه منطق"))
-        self.resize(1100,740)
-        outer=QVBoxLayout(self)
+        self.resize(1280,800)
+        outer=QHBoxLayout(self);outer.setContentsMargins(12,12,12,12);outer.setSpacing(12)
         self.mode_tabs=MotionTabs()
-        outer.addWidget(self.mode_tabs)
+        outer.addWidget(self.mode_tabs,1)
         combinational=QWidget()
         self.mode_tabs.addTab(combinational,self.t("Combinational","مدارهای ترکیبی"))
         self.sequential=SequentialView(parent.theme,self.fa)
@@ -330,6 +331,8 @@ class LogicLab(QDialog):
         self.bus_view=BusView(parent.theme,self.fa)
         memory_tabs.addTab(self.bus_view,self.t("Register bus","گذرگاه ثبات‌ها"))
         self.mode_tabs.addTab(memory_tabs,self.t("Memory & bus","حافظه و گذرگاه"))
+        self.navigation=NavigationRail(self.mode_tabs,parent.settings,"logic",self.t("DIGITAL LOGIC","منطق دیجیتال"),("logic","clock","registers"),self.fa)
+        outer.insertWidget(0,self.navigation)
         layout=QVBoxLayout(combinational)
         title=QLabel(self.t("Logic Lab · Digital circuits","آزمایشگاه مدار منطقی"))
         title.setObjectName("brand")

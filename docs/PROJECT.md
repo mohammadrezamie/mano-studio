@@ -1,6 +1,6 @@
 # Product specification
 Mano Studio — Build. Translate. Simulate. Learn.
-Free offline-first open-source desktop IDE for Morris Mano, Computer System Architecture, 3rd ed., chapters 4–6 (verify instructor edition). Academic origin: RTL text input to assembly file output. Standard assembler additionally converts assembly to machine code; do not confuse the two.
+Free offline-first open-source desktop IDE for Morris Mano, Computer System Architecture, 3rd ed., all 13 chapters as the long-term curriculum goal (verify instructor edition). Academic origin: RTL text input to assembly file output. Standard assembler additionally converts assembly to machine code; do not confuse the two.
 ## Requirements
 Windows 10/11 x64 standalone Setup.exe, no Python installation required; PySide6 GUI, Python core, PyInstaller and Inno Setup. English default and Persian selectable, mirrored UI but LTR code. Dark/light themes, split editors, line numbers, syntax highlighting, diagnostics with line numbers, visual operation builder (add/edit/delete/reorder), TXT/RTL import, ASM export. Later HEX/BIN export, two-pass assembler, CPU simulator, memory/register inspector, step/run/reset, educational explanations, examples, autosave/recovery, shortcuts and printable report.
 ## Architecture
@@ -17,3 +17,5 @@ All 25 named Basic Computer instructions in the documented provisional dialect, 
 
 ## Permanent academic contract (owner clarification)
 Keep rtl_translator.py as a single standalone Python file throughout the entire project, with complete actual RTL-to-ASM rules, validation, diagnostics and CLI; no imports from any project module or third-party library. Professor reviews this source; the student must be able to understand and explain it independently. Keep readable bilingual explanatory comments, standalone examples and defense guide synchronized. The UI calls translate() directly; no decoy or duplicated implementation. The remaining optional software may use justified technologies and licensed resources. Documentation is continuously maintained before/during/after changes. No release or installer activity until requested.
+
+Quality-first owner override: no arbitrary app size cap; prioritize scientific correctness, modern visual polish, purposeful motion, complete book coverage and maintainable integrated features. See DESIGN_SYSTEM.md, TECH_STACK.md, CURRICULUM_COVERAGE.md and RELEASE_POLICY.md.

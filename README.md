@@ -12,7 +12,7 @@ python main.py
 ```
 Three entry modes, three themes, Computer (assembler, CPU, reversible debugger, Data & ALU), and Digital Logic (editable combinational schematic, clocked components and waveform) are implemented. Optional canonical ASM-to-RTL import is available in the same editor. The **[Learning Center](docs/LEARNING_CENTER.md)** (Ctrl+K) connects 33 interactive learning entries across 12 of the 13 indexed chapters, with bilingual search, explicit coverage gaps and local personal practice progress. See [development candidate](docs/BUILD_CANDIDATE.md), [live Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [status](docs/STATUS.md). No published release. Development artifacts are not stable releases.
 
-Design and motion standards: [Design system](docs/DESIGN_SYSTEM.md) · [Animation guide](docs/ANIMATION_GUIDE.md) · [Technology decisions](docs/TECH_STACK.md).
+Computer and Digital Logic use a shared collapsible navigation rail, preserving existing simulator state and direct learning routes. Design and motion standards: [Design system](docs/DESIGN_SYSTEM.md) · [Animation guide](docs/ANIMATION_GUIDE.md) · [Technology decisions](docs/TECH_STACK.md).
 
 ## Academic assignment — فایل تکلیف استاد
 

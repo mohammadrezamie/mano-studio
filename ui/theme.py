@@ -87,6 +87,14 @@ def stylesheet(theme, glass_enabled=True):
     QPushButton#primary:hover {{ border-color: {fg}; }}
     QPushButton#primary:disabled {{ background: {raised}; color: {muted}; border-color: {border}; }}
     QPushButton#learnAction {{ color: {accent}; border-color: {accent}; font-weight: 600; }}
+    QFrame#navigationRail {{ background: {gradient}; border: 1px solid {rim}; border-radius: {RADIUS["shell"]}px; }}
+    QListWidget#navigationList {{ background: transparent; border: 1px solid transparent; padding: 2px; outline: none; }}
+    QListWidget#navigationList::item {{ padding: 10px 7px; border: 1px solid transparent; border-radius: {RADIUS["control"]}px; }}
+    QListWidget#navigationList::item:hover {{ background: {raised}; }}
+    QListWidget#navigationList::item:selected {{ background: {raised}; border-color: {accent}; color: {fg}; }}
+    QListWidget#navigationList:focus {{ border-color: {accent}; }}
+    QPushButton#railToggle {{ padding: 2px; background: transparent; }}
+    QPushButton#railToggle:hover {{ background: {raised}; }}
     QListWidget#learningList {{ padding: 5px; outline: none; }}
     QListWidget#learningList::item {{ padding: 9px 10px; margin: 2px 1px; border-radius: {RADIUS["control"]}px; border: 1px solid transparent; }}
     QListWidget#learningList::item:hover {{ background: {raised}; }}

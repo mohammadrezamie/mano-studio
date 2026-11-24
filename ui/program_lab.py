@@ -1,6 +1,7 @@
 """Live program workspace: actual assembler and CPU, not the fixed demo."""
 from pathlib import Path
 from ui.motion import MotionTabs
+from ui.navigation_rail import NavigationRail
 import csv
 import re
 from PySide6.QtCore import QTimer
@@ -42,7 +43,7 @@ class ProgramLab(QDialog):
         super().__init__(parent)
         self.fa = parent.language == "fa"
         self.setWindowTitle("Mano Studio — " + self.t("Computer", "کامپیوتر"))
-        self.resize(1060, 700)
+        self.resize(1280, 800)
         self.cpu = None
         self.program = None
         self.steps = 0
@@ -51,7 +52,9 @@ class ProgramLab(QDialog):
         self.visible_trace=[]
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.run_tick)
-        layout = QVBoxLayout(self)
+        shell=QHBoxLayout(self);shell.setContentsMargins(12,12,12,12);shell.setSpacing(12)
+        content=QWidget();layout=QVBoxLayout(content);layout.setContentsMargins(0,0,0,0);layout.setSpacing(8)
+        shell.addWidget(content,1)
         intro = QLabel(self.t("Assemble and execute your own program, one instruction at a time.",
             "برنامه خود را اسمبل کنید و اجرای هر دستور را مرحله‌به‌مرحله ببینید."))
         intro.setWordWrap(True)
@@ -167,6 +170,9 @@ class ProgramLab(QDialog):
                          "alu":alu_page,"codes":self.codes,"cycles":self.cycles,
                          "microprogram":self.microprogram,"organization":self.organization,
                          "pipeline":pipeline_tabs,"io":self.io_organization}
+        self.navigation=NavigationRail(self.inspector,parent.settings,'computer',self.t('COMPUTER','کامپیوتر'),
+            ('cpu','registers','debug','alu','codes','clock','microcode','organization','pipeline','io'),self.fa)
+        shell.insertWidget(0,self.navigation)
         self.inspector.currentChanged.connect(self.update_cpu_context)
         self.source.textChanged.connect(self.invalidate)
         self.load()

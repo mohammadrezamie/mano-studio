@@ -22,3 +22,9 @@ Inspected TakinTech AGENTS.md, START_HERE, canonical documentation map, CI_BUDGE
 ## Chapter coverage and debugger design
 - Morris Mano, Computer System Architecture, 3rd ed., chapters 3–4: fixed-width representation and arithmetic/logic/shift operations; chapter 5–6: Basic Computer and programming. https://studylib.net/doc/28115245/manuel-computer-system-architecture-by-morris-mano-- (chapter section indexing; independent original implementation, no text or figures imported).
 - https://sourceware.org/gdb/current/onlinedocs/gdb.html/Process-Record-and-Replay.html — bounded execution log and reverse navigation inspiration; original StepEvent-based implementation, no source copied.
+
+## Quality-first external research
+- https://github.com/mortbopet/Ripes — visual processor/pipeline/cache teaching patterns; separate RISC-V architecture, no source imported.
+- https://github.com/logisim-evolution/logisim-evolution — GPLv3 logic circuit workflow reference, not copied.
+- https://github.com/zhiyiYo/PyQt-Fluent-Widgets — modern navigation and control hierarchy reference; license obligations require review before any reuse, not a dependency.
+- https://doc.qt.io/qt-6/qlistwidget.html and https://doc.qt.io/qt-6/qstackedwidget.html — Qt-native controls for accessible page navigation. Implemented original rail over existing tab state, no third-party code or assets imported.

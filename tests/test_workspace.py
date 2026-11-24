@@ -1069,3 +1069,53 @@ def test_learning_visual_roles(workspace):
     assert center.gap.objectName()=="muted"
     assert center.progress.maximum()==center.list.count()
     center.close()
+
+
+def test_shared_navigation_rail(workspace,app):
+    from ui.program_lab import ProgramLab
+    from ui.logic_lab import LogicLab
+    from PySide6.QtTest import QTest
+    from PySide6.QtCore import Qt
+    lab=ProgramLab(workspace)
+    lab.show();app.processEvents()
+    nav=lab.navigation
+    assert nav.list.count()==lab.inspector.count()==10
+    assert not nav.compact and lab.inspector.tabBar().isHidden()
+    cpu=lab.cpu
+    nav.list.setCurrentRow(9)
+    assert lab.inspector.currentWidget() is lab.io_organization
+    assert lab.cpu is cpu
+    lab.select_tool("microbuilder")
+    assert nav.list.currentRow()==6
+    nav.list.setFocus()
+    QTest.keyClick(nav.list,Qt.Key.Key_Down)
+    assert lab.inspector.currentWidget() is lab.organization
+    nav.toggle.click()
+    assert nav.compact and nav.list.isHidden() and not lab.inspector.tabBar().isHidden()
+    assert lab.inspector.currentWidget() is lab.organization
+    lab.select_tool("dma")
+    assert nav.list.currentRow()==9
+    nav.toggle.click()
+    assert not nav.compact and nav.list.currentRow()==9
+    nav.set_compact(True)
+    restored=ProgramLab(workspace)
+    assert restored.navigation.compact
+    logic=LogicLab(workspace)
+    assert not logic.navigation.compact
+    logic.select_tool("bus")
+    assert logic.navigation.list.currentRow()==2
+    logic.navigation.list.setCurrentRow(1)
+    assert logic.mode_tabs.currentWidget() is logic.sequential
+    lab.close();restored.close();logic.close()
+
+
+def test_navigation_rail_persian(workspace):
+    from ui.program_lab import ProgramLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData("fa"))
+    lab=ProgramLab(workspace)
+    assert lab.navigation.list.item(0).text()=="نمای زنده"
+    assert lab.navigation.list.item(9).text()=="سازمان ورودی/خروجی"
+    assert "جمع" in lab.navigation.toggle.accessibleName()
+    lab.navigation.set_compact(True)
+    assert "باز" in lab.navigation.toggle.accessibleName()
+    lab.close()
