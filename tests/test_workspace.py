@@ -926,3 +926,23 @@ def test_floating_pipeline_view(workspace):
     view.load()
     assert view.model is None and view.timeline.rowCount()==0
     lab.close()
+
+
+def test_io_organization_view(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    v=lab.io_organization
+    for action in v.handshake.SEQUENCES["source"]:v.advance(action)
+    assert v.handshake.received==[0x41] and v.handshake_trace.rowCount()==4
+    v.handshake_mode.setCurrentIndex(1)
+    for action in v.handshake.SEQUENCES["destination"]:v.advance(action)
+    assert v.handshake.received==[0x41] and v.handshake_trace.rowCount()==4
+    v.request(3);v.request(1)
+    assert v.irq.select().winner==1
+    v.acknowledge()
+    assert v.irq.service==[1] and not v.ack.isEnabled()
+    v.end()
+    assert v.irq.select().winner==3
+    v.mask.setValue(0)
+    assert not v.ack.isEnabled() and v.irq.pending==8
+    lab.close()

@@ -18,6 +18,7 @@ from ui.pipeline_view import PipelineView
 from ui.vector_pipeline_view import VectorPipelineView
 from ui.interleaving_view import InterleavingView
 from ui.floating_pipeline_view import FloatPipelineView
+from ui.io_organization_view import IOOrganizationView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
@@ -141,6 +142,8 @@ class ProgramLab(QDialog):
         self.float_pipeline=FloatPipelineView(self.fa)
         pipeline_tabs.addTab(self.float_pipeline,self.t("Floating pipeline","خط لوله ممیز شناور"))
         self.inspector.addTab(pipeline_tabs,self.t("Pipeline","خط لوله"))
+        self.io_organization=IOOrganizationView(self.fa)
+        self.inspector.addTab(self.io_organization,self.t("I/O organization","سازمان ورودی/خروجی"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
         self.input = QLineEdit()
