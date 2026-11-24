@@ -1246,3 +1246,22 @@ def test_cam_and_paging_routes(workspace):
     assert v.paging.last.value==0xCAFE and v.paging.model.page_outs==1
     assert v.paging.trace.rowCount()==7 and not v.paging.canvas.grab().isNull()
     lab.close()
+
+
+def test_serial_frame_fifo_and_irq_route(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace);lab.select_tool("serial")
+    io=lab.io_organization;v=io.serial
+    assert io.tabs.currentWidget() is v
+    v.parity.setCurrentIndex(1)
+    v.start();v.step();assert v.model.rx==[0]
+    v.finish();assert v.model.fifo.contents()==(0xA5,)
+    assert io.irq.select().pending & 8
+    v.flip.setCurrentIndex(v.flip.findData(1))
+    v.start();v.finish()
+    assert v.model.result.parity_error and v.model.fifo.contents()==(0xA5,)
+    assert v.trace.rowCount()==11 and not v.canvas.grab().isNull()
+    v.read();assert v.model.fifo.empty
+    v.flip.setCurrentIndex(0);v.start();v.play()
+    v.hide();assert not v.timer.isActive()
+    lab.close()

@@ -25,7 +25,7 @@ CHAPTERS=(
     Chapter(8,("CPU organization","سازمان پردازنده"),("Full RISC/CISC comparison and instruction encodings remain.","مقایسه کامل RISC/CISC و کدگذاری دستورها باقی مانده‌اند.")),
     Chapter(9,("Pipeline and vector processing","خط لوله و پردازش برداری"),("Variable latency and additional array processor models remain.","تأخیر متغیر و مدل‌های بیشتر پردازنده آرایه‌ای باقی مانده‌اند.")),
     Chapter(10,("Computer arithmetic","محاسبات کامپیوتری"),("Historical floating formats and more algorithms remain.","قالب‌های تاریخی ممیز شناور و الگوریتم‌های بیشتر باقی مانده‌اند.")),
-    Chapter(11,("I/O organization","سازمان ورودی و خروجی"),("Serial framing and further I/O integration remain.","قالب‌بندی سریال و یکپارچگی بیشتر ورودی‌ـ‌خروجی باقی مانده‌اند.")),
+    Chapter(11,("I/O organization","سازمان ورودی و خروجی"),("Baud recovery, other protocols and further I/O integration remain.","بازیابی نرخ بیت، پروتکل‌های دیگر و یکپارچگی بیشتر ورودی‌ـ‌خروجی باقی مانده‌اند.")),
     Chapter(12,("Memory organization","سازمان حافظه"),("Multi-level caches, timing and advanced memory protection remain.","نهان چندسطحی، زمان‌بندی و حفاظت پیشرفته حافظه باقی مانده‌اند.")),
     Chapter(13,("Multiprocessors","چندپردازنده‌ها"),("Crossbar, multistage networks, synchronization and coherence remain.","اتصال متقاطع، شبکه چندمرحله‌ای، همگام‌سازی و انسجام باقی مانده‌اند.")),
 )
@@ -73,6 +73,7 @@ TOOLS=(
     Tool("interrupt",11,"computer","interrupt",("Priority interrupt","وقفه اولویت‌دار"),("Mask requests, acknowledge a winner and return with EOI.","درخواست‌ها را ماسک کنید، وقفه را تأیید و با EOI بازگردید."),"IRQ IEN daisy chain"),
     Tool("dma",11,"computer","dma",("Direct memory access","دسترسی مستقیم حافظه"),("Compare burst and cycle-stealing transfers and completion IRQ.","انتقال بلوکی و سرقت چرخه و وقفه پایان را مقایسه کنید."),"DMA BR BG"),
     Tool("fifo",11,"computer","fifo",("Circular FIFO","صف حلقوی FIFO"),("Fill, read and exchange words while tracking pointers.","صف را پر کنید، بخوانید و اشاره‌گرها را دنبال کنید."),"FIFO queue RP WP"),
+    Tool("serial",11,"computer","serial",("Serial framing and receiver FIFO","فریم سریال و صف دریافت"),("Step through a frame, inject a parity or stop error and inspect IRQ3.","فریم را گام‌به‌گام اجرا، خطای توازن یا پایان ایجاد و IRQ3 را بررسی کنید."),"UART TX RX parity baud framing serial"),
     Tool("memory-chip",12,"logic","memory-chip",("RAM & ROM chips","تراشه‌های RAM و ROM"),("Inspect select, output and write enable controls.","کنترل انتخاب، فعال‌سازی خروجی و نوشتن را بررسی کنید."),"RAM ROM CS OE WE"),
     Tool("memory-array",12,"logic","memory-array",("Memory expansion","گسترش حافظه"),("Combine depth banks and parallel word lanes.","بانک‌های عمقی و مسیرهای موازی کلمه را ترکیب کنید."),"memory bank"),
     Tool("interleaving",12,"computer","interleaving",("Memory interleaving","حافظه درهم‌تنیده"),("Compare consecutive and strided bank access timing.","زمان‌بندی دسترسی متوالی و گام‌دار بانک‌ها را مقایسه کنید."),"bank conflict stride"),

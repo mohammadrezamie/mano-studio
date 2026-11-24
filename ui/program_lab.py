@@ -148,7 +148,7 @@ class ProgramLab(QDialog):
         self.float_pipeline=FloatPipelineView(self.fa)
         pipeline_tabs.addTab(self.float_pipeline,self.t("Floating pipeline","خط لوله ممیز شناور"))
         self.inspector.addTab(pipeline_tabs,self.t("Pipeline","خط لوله"))
-        self.io_organization=IOOrganizationView(self.fa)
+        self.io_organization=IOOrganizationView(self.fa,parent.theme)
         self.inspector.addTab(self.io_organization,self.t("I/O organization","سازمان ورودی/خروجی"))
         self.multiprocessor=MultiprocessorView(parent.theme,self.fa)
         self.inspector.addTab(self.multiprocessor,self.t("Multiprocessors","چندپردازنده‌ها"))
@@ -208,9 +208,9 @@ class ProgramLab(QDialog):
         elif route in ("vector","interleaving","floating-pipeline"):
             self.inspector.setCurrentWidget(self.pipeline_tabs)
             self.pipeline_tabs.setCurrentWidget({"vector":self.vector_pipeline,"interleaving":self.interleaving,"floating-pipeline":self.float_pipeline}[route])
-        elif route in ("handshake","interrupt","dma","fifo"):
+        elif route in ("handshake","interrupt","dma","fifo","serial"):
             self.inspector.setCurrentWidget(self.io_organization)
-            self.io_organization.tabs.setCurrentIndex(("handshake","interrupt","dma","fifo").index(route))
+            self.io_organization.tabs.setCurrentIndex(("handshake","interrupt","dma","fifo","serial").index(route))
         elif route in ("booth","division","decimal","floating"):
             self.inspector.setCurrentWidget(self.tool_pages["alu"])
             data={"booth":"booth","division":"divide","decimal":"bcdadd","floating":"fpdecode"}[route]

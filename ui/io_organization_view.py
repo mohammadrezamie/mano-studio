@@ -5,10 +5,11 @@ from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,
 from io_organization import Handshake,PriorityInterrupt
 from ui.motion import MotionTabs
 from ui.dma_fifo_view import DMAView,FIFOView
+from ui.serial_view import SerialView
 
 
 class IOOrganizationView(QWidget):
-    def __init__(self,fa=False):
+    def __init__(self,fa=False,theme='dark'):
         super().__init__()
         self.fa=fa
         layout=QVBoxLayout(self)
@@ -19,6 +20,8 @@ class IOOrganizationView(QWidget):
         self.fifo=FIFOView(self.fa)
         self.tabs.addTab(self.dma,self.t("DMA","دسترسی مستقیم حافظه"))
         self.tabs.addTab(self.fifo,self.t("FIFO","صف FIFO"))
+        self.serial=SerialView(self.fa,lambda:self.request(3),theme)
+        self.tabs.addTab(self.serial,self.t("Serial framing","فریم سریال"))
 
     def t(self,en,fa):return fa if self.fa else en
 

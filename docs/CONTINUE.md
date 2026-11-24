@@ -24,3 +24,5 @@ Current increment: interactive waveform analyzer; exact-head CI pending, earlier
 Current increment: Chapter 12 cache, 35 learning routes. Latest exact verified navigation head 66d1a14 both runs 45479351841/45479338618 green; newer exact-head CI pending at inspection. Next verify cache/waveform/brand/multiprocessor tests, associative and virtual memory, serial, coherence and circuit visual quality.
 
 Current increment: masked CAM and demand paging/TLB, 37 routes. Canvas head dac6bea both runs green; subsequent CI pending at inspection. Verify new and previous tests, then serial framing, multiprocessor interconnect/coherence and circuit visualization. No publication.
+
+Current increment: serial framing, FIFO and IRQ3, 38 routes. Verify all pending exact-head runs; next Chapter 13 crossbar/interconnect, synchronization and cache coherence, then circuit visual quality. No publication.
