@@ -44,3 +44,6 @@ Updated AGENTS.md, UX_PLAN.md and PROJECT.md for continuous documentation and pe
 
 ## Current work — translator workflow refinement
 Continue UX_PLAN step 2: add integrated bilingual offline examples using canonical RTL and the same translator; protect unsaved work, distinguish opening examples from opening a real file, improve Save As/export defaults and document identity, and correct actual screenshot styling. Keep rtl_translator.py unchanged and all core functionality offline. No installer/release or manual acceptance testing. Record code and regression results as they become available.
+
+## Owner clarification during current work
+The instructor needs only the marked standalone rtl_translator.py file in the repository, not an in-app source viewer. Remove the unnecessary viewer and its menu action; identify the exact file in README/defense guide. Keep optional features out of the core. Continue example/file workflow refinement. No change to translator logic, installer or release.
