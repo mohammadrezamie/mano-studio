@@ -9,3 +9,5 @@ Mandatory owner release/comfort decisions: read docs/RELEASE_POLICY.md before an
 Latest owner priority overrides earlier packaging milestones: development only, no installer/release work or publication until owner asks. Keep ordinary regression tests but defer manual acceptance testing to owner. Read docs/SIMULATOR.md; preserve separate RTL translator and event-driven CPU. Continue PR #9 branch.
 
 Read docs/LOGIC_LAB.md for circuit engine and roadmap. Keep RTL-to-ASM as the primary classroom deliverable. Optional labs grouped under Labs; preserve offline design, calm graphics, bilingual UX, and no release/installer work until owner asks.
+
+Owner requires recognizable standard gate shapes, accurate pin counts, inversion bubbles, meaningful wiring; see LOGIC_LAB.md. RTL-to-ASM stays first priority and default workspace; expand other Mano chapters as optional labs. Keep development-only policy.
