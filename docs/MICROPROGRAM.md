@@ -7,7 +7,7 @@ Select Raw HEX or Symbolic microassembly, then Load / Reset. A mode switch inval
 Symbolic grammar (case insensitive):
 
 - ORG decimal-address (0–127); explicit 0x hex allowed.
-- Optional label: before an operation, or on a line by itself.
+- Optional label: before an operation, or on a line by itself; not before ORG.
 - One or more comma-separated microoperations, then condition U/I/S/Z, branch JMP/CALL/RET/MAP, and target.
 - JMP/CALL require a decimal/0x address, label or NEXT (CAR+1 modulo 128).
 - RET/MAP omit target or use zero. Comments begin with # or semicolon.

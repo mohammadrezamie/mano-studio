@@ -13,8 +13,8 @@ class MicroprogramView(QWidget):
         self.model=None
         self.last=None
         layout=QVBoxLayout(self)
-        note=QLabel(self.t("Chapter 7 model: 128 × 20 control store; 11-bit PC/AR. Not the Basic Computer ISA. Edit HEX address:word images, load, then execute one microinstruction.",
-            "مدل فصل هفتم: حافظه کنترل ۱۲۸ × ۲۰ و PC/AR یازده‌بیتی. این مدل با پردازنده پایه متفاوت است. تصویر هگز آدرس:کلمه را ویرایش و بارگذاری کنید و ریزدستور را اجرا کنید."))
+        note=QLabel(self.t("Chapter 7 model: 128 × 20 control store; 11-bit PC/AR. Not the Basic Computer ISA. Edit raw or symbolic control source, load, then execute one microinstruction.",
+            "مدل فصل هفتم: حافظه کنترل ۱۲۸ × ۲۰ و PC/AR یازده‌بیتی. این مدل با پردازنده پایه متفاوت است. متن خام یا نمادین حافظه کنترل را ویرایش و بارگذاری کنید و ریزدستور را اجرا کنید."))
         note.setWordWrap(True);layout.addWidget(note)
         mode_row=QHBoxLayout()
         self.mode=QComboBox()
@@ -26,7 +26,7 @@ class MicroprogramView(QWidget):
         row=QHBoxLayout()
         self.control=QPlainTextEdit()
         self.data=QPlainTextEdit()
-        for edit,en,fa_label in [(self.control,"Control store (HEX)","حافظه کنترل (هگز)"),(self.data,"Data memory (HEX)","حافظه داده (هگز)")]:
+        for edit,en,fa_label in [(self.control,"Control source","متن حافظه کنترل"),(self.data,"Data memory (HEX)","حافظه داده (هگز)")]:
             col=QVBoxLayout();col.addWidget(QLabel(self.t(en,fa_label)))
             edit.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
             edit.setAccessibleName(self.t(en,fa_label))
@@ -75,7 +75,7 @@ class MicroprogramView(QWidget):
             self.control.setPlainText(DEMO_SOURCE)
         else:
             c,d=demo_images()
-            self.control.setPlainText("\\n".join(f"{a:02X}:{w:05X}" for a,w in sorted(c.items())))
+            self.control.setPlainText("\n".join(f"{a:02X}:{w:05X}" for a,w in sorted(c.items())))
         self.data.setPlainText("\n".join(f"{a:03X}:{w:04X}" for a,w in sorted(d.items())))
         self.entry.setValue(64);self.load()
 

@@ -60,6 +60,8 @@ def assemble_micro(source):
             label,text=(v.strip() for v in text.split(":",1))
             if not re.fullmatch(r"[A-Z_][A-Z0-9_]*",label) or label in {"NEXT","ORG"} or label in labels:
                 error(line,"LABEL",label)
+            elif text.split() and text.split()[0]=="ORG":
+                error(line,"SYNTAX","Label cannot prefix ORG")
             elif location>=128:
                 error(line,"ADDRESS",label)
             else:labels[label]=location

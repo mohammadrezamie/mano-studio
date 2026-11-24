@@ -24,6 +24,7 @@ def test_forward_labels_and_fields():
     ("NOP, READ U MAP","OPERATION"),
     ("ORG 0\nNOP U MAP\nORG 0\nNOP U MAP","OVERLAP"),
     ("READ JMP NEXT","SYNTAX"),
+    ("X: ORG 64\nNOP U MAP","SYNTAX"),
     ("# empty","EMPTY")])
 def test_diagnostics_atomic(source,code):
     r=assemble_micro(source)
