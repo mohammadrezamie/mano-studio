@@ -790,3 +790,26 @@ def test_microinstruction_builder_and_source_navigation(workspace):
     builder.append()
     assert "ORG 91" in view.control.toPlainText() and view.history is None
     lab.close()
+
+
+def test_cpu_organization_view(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.organization
+    view.external.setValue(12)
+    view.selectors[2].setCurrentIndex(1)
+    view.execute()
+    assert view.registers.words[0]==12
+    view.selectors[0].setCurrentIndex(1)
+    view.op.setCurrentIndex(view.op.findData(2))
+    view.execute()
+    assert view.registers.words[0]==24 and "001" in view.control.text()
+    view.stack_input.setValue(0xABCD)
+    view.push()
+    assert view.stack.sp==1 and view.stack.words[1]==0xABCD
+    view.stack_input.setValue(0)
+    view.pop()
+    assert view.stack_input.value()==0xABCD and view.stack.empty
+    view.pop()
+    assert view.stack.empty and view.stack_status.text()
+    lab.close()
