@@ -109,7 +109,7 @@ class SerialView(QWidget):
         self.refresh()
     def play(self):
         if self.timer.isActive():self.timer.stop()
-        elif self.model.active:self.timer.start()
+        elif self.model.active and self.isVisible():self.timer.start()
         self.refresh()
     def finish(self):
         self.timer.stop()

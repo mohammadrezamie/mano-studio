@@ -1248,7 +1248,7 @@ def test_cam_and_paging_routes(workspace):
     lab.close()
 
 
-def test_serial_frame_fifo_and_irq_route(workspace):
+def test_serial_frame_fifo_and_irq_route(workspace,app):
     from ui.program_lab import ProgramLab
     lab=ProgramLab(workspace);lab.select_tool("serial")
     io=lab.io_organization;v=io.serial
@@ -1262,6 +1262,11 @@ def test_serial_frame_fifo_and_irq_route(workspace):
     assert v.model.result.parity_error and v.model.fifo.contents()==(0xA5,)
     assert v.trace.rowCount()==11 and not v.canvas.grab().isNull()
     v.read();assert v.model.fifo.empty
+    lab.show();app.processEvents()
     v.flip.setCurrentIndex(0);v.start();v.play()
-    v.hide();assert not v.timer.isActive()
+    assert v.timer.isActive()
+    lab.select_tool("interrupt");app.processEvents()
+    assert not v.timer.isActive() and v.model.active
+    lab.select_tool("serial");assert v.model.active
+    v.finish();assert v.model.fifo.contents()==(0xA5,)
     lab.close()
