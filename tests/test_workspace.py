@@ -1216,3 +1216,18 @@ def test_waveform_inspection_and_export(workspace,tmp_path):
     assert len(target.read_text().splitlines())==65
     v.reset();assert v.cursor==0 and len(v.waveform.rows)==1
     lab.close()
+
+
+def test_cache_view_conflicts_and_dirty_flush(workspace):
+    from ui.logic_lab import LogicLab
+    lab=LogicLab(workspace);lab.select_tool("cache")
+    v=lab.cache
+    assert lab.memory_tabs.currentWidget() is v
+    v.example();assert v.model.hits==0 and v.trace.rowCount()==6
+    v.ways.setCurrentIndex(1);v.example()
+    assert v.model.hits==4 and v.lines.rowCount()==8
+    v.address.setValue(4);v.value.setValue(0xABCD);v.access(True)
+    assert v.model.memory.read(4)==0 and v.last.value==0xABCD
+    v.flush();assert v.model.memory.read(4)==0xABCD
+    assert not v.canvas.grab().isNull()
+    lab.close()

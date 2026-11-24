@@ -26,7 +26,7 @@ CHAPTERS=(
     Chapter(9,("Pipeline and vector processing","خط لوله و پردازش برداری"),("Variable latency and additional array processor models remain.","تأخیر متغیر و مدل‌های بیشتر پردازنده آرایه‌ای باقی مانده‌اند.")),
     Chapter(10,("Computer arithmetic","محاسبات کامپیوتری"),("Historical floating formats and more algorithms remain.","قالب‌های تاریخی ممیز شناور و الگوریتم‌های بیشتر باقی مانده‌اند.")),
     Chapter(11,("I/O organization","سازمان ورودی و خروجی"),("Serial framing and further I/O integration remain.","قالب‌بندی سریال و یکپارچگی بیشتر ورودی‌ـ‌خروجی باقی مانده‌اند.")),
-    Chapter(12,("Memory organization","سازمان حافظه"),("Cache, associative and virtual memory remain.","حافظه نهان، انجمنی و مجازی باقی مانده‌اند.")),
+    Chapter(12,("Memory organization","سازمان حافظه"),("Associative and virtual memory, multi-level caches and timing remain.","حافظه انجمنی و مجازی، نهان چندسطحی و زمان‌بندی باقی مانده‌اند.")),
     Chapter(13,("Multiprocessors","چندپردازنده‌ها"),("Crossbar, multistage networks, synchronization and coherence remain.","اتصال متقاطع، شبکه چندمرحله‌ای، همگام‌سازی و انسجام باقی مانده‌اند.")),
 )
 
@@ -76,6 +76,7 @@ TOOLS=(
     Tool("memory-chip",12,"logic","memory-chip",("RAM & ROM chips","تراشه‌های RAM و ROM"),("Inspect select, output and write enable controls.","کنترل انتخاب، فعال‌سازی خروجی و نوشتن را بررسی کنید."),"RAM ROM CS OE WE"),
     Tool("memory-array",12,"logic","memory-array",("Memory expansion","گسترش حافظه"),("Combine depth banks and parallel word lanes.","بانک‌های عمقی و مسیرهای موازی کلمه را ترکیب کنید."),"memory bank"),
     Tool("interleaving",12,"computer","interleaving",("Memory interleaving","حافظه درهم‌تنیده"),("Compare consecutive and strided bank access timing.","زمان‌بندی دسترسی متوالی و گام‌دار بانک‌ها را مقایسه کنید."),"bank conflict stride"),
+    Tool("cache",12,"logic","cache",("Cache mapping and replacement","نگاشت و جایگزینی حافظه نهان"),("Compare direct and associative mapping, then inspect dirty writeback.","نگاشت مستقیم و انجمنی را مقایسه و بازنویسی خط تغییریافته را بررسی کنید."),"cache tag index offset LRU FIFO write-back write-through"),
     Tool("multiprocessor",13,"computer","multiprocessor",("Shared bus arbitration","داوری گذرگاه مشترک"),("Compare fixed and rotating priority with queued read/write requests.","اولویت ثابت و چرخشی را با درخواست‌های خواندن و نوشتن مقایسه کنید."),"multiprocessor arbitration round robin shared bus"),
 )
 BY_ID={tool.id:tool for tool in TOOLS}

@@ -20,3 +20,5 @@ Source of truth is the live repository and tests, not old chat summaries.
 Latest verified evidence: motion f02f517 runs 45478369514 and 45478353916 success; navigation 66d1a14 run 45479351841 success. Later canvas, brand and multiprocessor exact-head CI pending. Owner forbids generic letter-M branding; maintain non-letter symbol or improve it, not a monogram.
 
 Current increment: interactive waveform analyzer; exact-head CI pending, earlier motion runs green as above. Next: cache/serial and circuit visualization; no release changes.
+
+Current increment: Chapter 12 cache, 35 learning routes. Latest exact verified navigation head 66d1a14 both runs 45479351841/45479338618 green; newer exact-head CI pending at inspection. Next verify cache/waveform/brand/multiprocessor tests, associative and virtual memory, serial, coherence and circuit visual quality.
