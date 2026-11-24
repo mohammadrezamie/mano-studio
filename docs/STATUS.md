@@ -86,3 +86,6 @@ Owner requests local copies of useful resources from TakinTech and DarsChin. Rea
 
 ## Current major development batch
 Owner requests ambitious continued development with selective research/reuse, quality and integration above feature count. Next: chapter 3/4 data representation and ALU in existing Computer inspector, shared word arithmetic with CPU; chapter 5/6 debugging via execution history, breakpoints, reverse step and source mapping; reverse canonical assembly-to-RTL as an optional editor import (not a change to academic translator); improve real offline workflows and check candidate CI. Last candidate build workflow not visible at inspected head; distinguish verified test/source artifacts from executable. No external repository writes, no public release. All new work remains in draft PR #9. Preserve independent translator.
+
+### Core checkpoint
+Added fixed-width 4/8/12/16-bit representation and ripple ALU, shared with CPU ADD/AND/CMA/INC/CIR/CIL without changing Mano E semantics. Added bounded reversible execution history using existing StepEvent register and memory deltas, breakpoints and explicit external-I/O barriers. Tests added; GUI integration next. Design inspiration: chapter 3/4 and GDB record/replay (https://sourceware.org/gdb/current/onlinedocs/gdb.html/Process-Record-and-Replay.html); original implementation, no code copied.

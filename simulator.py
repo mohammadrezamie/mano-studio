@@ -5,6 +5,7 @@ Interrupts are modeled at instruction boundaries, not clock-cycle timing.
 """
 from dataclasses import dataclass
 from mano_isa import FIXED_BY_CODE, MEMORY_BY_CODE
+from word_arithmetic import alu
 
 
 @dataclass(frozen=True)
@@ -80,10 +81,10 @@ class CPU:
             effective = a = self.ar
             if op in ("AND", "ADD", "LDA", "ISZ"):
                 self.dr = self.memory[a]
-            if op == "AND": self.ac &= self.dr
+            if op == "AND": self.ac = alu("AND",self.ac,self.dr).word
             elif op == "ADD":
-                total = self.ac + self.dr
-                self.ac, self.e = total & 0xFFFF, total >> 16
+                result = alu("ADD",self.ac,self.dr)
+                self.ac, self.e = result.word, result.carry
             elif op == "LDA": self.ac = self.dr
             elif op == "STA": store(a, self.ac)
             elif op == "BUN": self.pc = a
@@ -96,11 +97,12 @@ class CPU:
                 if not self.dr: self.pc = (self.pc + 1) & 0xFFF
         elif op == "CLA": self.ac = 0
         elif op == "CLE": self.e = 0
-        elif op == "CMA": self.ac ^= 0xFFFF
+        elif op == "CMA": self.ac = alu("NOT",self.ac).word
         elif op == "CME": self.e ^= 1
-        elif op == "CIR": self.ac, self.e = (self.e << 15) | (self.ac >> 1), self.ac & 1
-        elif op == "CIL": self.ac, self.e = ((self.ac << 1) | self.e) & 0xFFFF, self.ac >> 15
-        elif op == "INC": self.ac = (self.ac + 1) & 0xFFFF
+        elif op in ("CIR", "CIL"):
+            result = alu(op,self.ac,carry_in=self.e)
+            self.ac,self.e = result.word,result.carry
+        elif op == "INC": self.ac = alu("INC",self.ac).word
         elif op in ("SPA", "SNA", "SZA", "SZE", "SKI", "SKO"):
             condition = {"SPA": not self.ac & 0x8000, "SNA": bool(self.ac & 0x8000),
                          "SZA": self.ac == 0, "SZE": self.e == 0,
