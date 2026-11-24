@@ -29,3 +29,6 @@ The actual RTL-to-ASM algorithm remains entirely in root rtl_translator.py, stan
 
 ### Step 2 — examples and file workflow checkpoint
 Four integrated offline examples, Save As, document name/dirty state, remembered input directory, suggested ASM output filename and stale-output reset implemented. Removed unnecessary source viewer per owner request. The fixed Qt event-name collision passed 180 automated tests on Windows and Ubuntu (run 45395541255). New example/file changes await latest CI and visual review. Next: step 3 visual system refinement; keep translator independent and marked in README.
+
+### Step 3 progress
+Implemented shared visual tokens/QPalette, original vector action icons, editor panels, theme-aware code syntax, output state/count and offline status. Verified preceding step 2 CI (183 passed each on Windows and Ubuntu, run 45395897557). New theme regression case added; current run not yet confirmed. Next: inspect actual screenshots and resolve regressions, then refine integrated Digital Logic UX (step 4). No installer/release activity.
