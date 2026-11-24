@@ -34,7 +34,7 @@ class CodeHighlighter(QSyntaxHighlighter):
                 self.setFormat(match.start(), match.end() - match.start(), fmt)
 
 
-def code_editor(readonly=False):
+def code_editor(readonly=False, theme=None):
     editor = CodeEditor()
     editor.setReadOnly(readonly)
     editor.setLayoutDirection(LTR)
@@ -45,6 +45,8 @@ def code_editor(readonly=False):
     editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
     editor.resize_gutter()
     editor.highlighter = CodeHighlighter(editor.document())
+    editor.highlighter.theme = theme if theme in SYNTAX else "dark"
+    editor.highlighter.rehighlight()
     return editor
 
 
