@@ -7,7 +7,7 @@ from ui.theme import PALETTES, stylesheet
 from ui.strings import FA
 from ui.glass import paint_backdrop
 
-VERSION = "0.3.0-dev"
+from update_service import VERSION
 
 
 def main():
@@ -21,13 +21,14 @@ def main():
         theme = "dark"
     app.setLayoutDirection(Qt.LayoutDirection.RightToLeft if language == "fa" else Qt.LayoutDirection.LeftToRight)
     app.setStyle("Fusion")
-    app.setStyleSheet(stylesheet(theme))
+    glass_enabled = settings.value("glass_enabled", True, type=bool)
+    app.setStyleSheet(stylesheet(theme, glass_enabled))
     bg, panel, raised, fg, muted, accent, border = PALETTES[theme]
     pix = QPixmap(640, 310)
     pix.fill(QColor(bg))
     painter = QPainter(pix)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    paint_backdrop(painter, pix.rect(), theme)
+    paint_backdrop(painter, pix.rect(), theme, glass_enabled)
     painter.setPen(QColor(accent))
     painter.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
     painter.drawText(35, 85, "MANO STUDIO")
