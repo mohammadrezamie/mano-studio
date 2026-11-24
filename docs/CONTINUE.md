@@ -22,3 +22,5 @@ Latest verified evidence: motion f02f517 runs 45478369514 and 45478353916 succes
 Current increment: interactive waveform analyzer; exact-head CI pending, earlier motion runs green as above. Next: cache/serial and circuit visualization; no release changes.
 
 Current increment: Chapter 12 cache, 35 learning routes. Latest exact verified navigation head 66d1a14 both runs 45479351841/45479338618 green; newer exact-head CI pending at inspection. Next verify cache/waveform/brand/multiprocessor tests, associative and virtual memory, serial, coherence and circuit visual quality.
+
+Current increment: masked CAM and demand paging/TLB, 37 routes. Canvas head dac6bea both runs green; subsequent CI pending at inspection. Verify new and previous tests, then serial framing, multiprocessor interconnect/coherence and circuit visualization. No publication.

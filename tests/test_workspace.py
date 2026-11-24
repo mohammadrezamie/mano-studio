@@ -1231,3 +1231,18 @@ def test_cache_view_conflicts_and_dirty_flush(workspace):
     v.flush();assert v.model.memory.read(4)==0xABCD
     assert not v.canvas.grab().isNull()
     lab.close()
+
+
+def test_cam_and_paging_routes(workspace):
+    from ui.logic_lab import LogicLab
+    lab=LogicLab(workspace);lab.select_tool("cam")
+    v=lab.address_translation
+    assert v.tabs.currentWidget() is v.cam
+    assert v.cam.match.matches==(0,1,3)
+    v.cam.mask.setValue(255);assert v.cam.match.matches==(3,)
+    lab.select_tool("virtual-memory")
+    assert v.tabs.currentWidget() is v.paging
+    v.paging.example()
+    assert v.paging.last.value==0xCAFE and v.paging.model.page_outs==1
+    assert v.paging.trace.rowCount()==7 and not v.paging.canvas.grab().isNull()
+    lab.close()

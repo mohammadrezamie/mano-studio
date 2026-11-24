@@ -22,6 +22,7 @@ from ui.memory_view import MemoryView
 from ui.memory_array_view import MemoryArrayView
 from ui.bus_view import BusView
 from ui.cache_view import CacheView
+from ui.virtual_memory_view import AddressTranslationView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES, STATUS
 
@@ -333,6 +334,8 @@ class LogicLab(QDialog):
         memory_tabs.addTab(self.bus_view,self.t("Register bus","گذرگاه ثبات‌ها"))
         self.cache=CacheView(parent.theme,self.fa)
         memory_tabs.addTab(self.cache,self.t("Cache","حافظه نهان"))
+        self.address_translation=AddressTranslationView(parent.theme,self.fa)
+        memory_tabs.addTab(self.address_translation,self.t("CAM / Virtual memory","حافظه انجمنی / مجازی"))
         self.mode_tabs.addTab(memory_tabs,self.t("Memory & bus","حافظه و گذرگاه"))
         self.navigation=NavigationRail(self.mode_tabs,parent.settings,"logic",self.t("DIGITAL LOGIC","منطق دیجیتال"),("logic","clock","registers"),self.fa)
         outer.insertWidget(0,self.navigation)
@@ -440,6 +443,10 @@ class LogicLab(QDialog):
     def select_tool(self,route):
         if route in ("gates","sequential"):
             self.mode_tabs.setCurrentIndex(0 if route=="gates" else 1)
+        elif route in ("cam","virtual-memory"):
+            self.mode_tabs.setCurrentWidget(self.memory_tabs)
+            self.memory_tabs.setCurrentWidget(self.address_translation)
+            self.address_translation.tabs.setCurrentWidget(self.address_translation.cam if route=="cam" else self.address_translation.paging)
         elif route in ("memory-chip","memory-array","bus","cache"):
             self.mode_tabs.setCurrentWidget(self.memory_tabs)
             self.memory_tabs.setCurrentWidget({"memory-chip":self.memory_view,"memory-array":self.memory_array,"bus":self.bus_view,"cache":self.cache}[route])

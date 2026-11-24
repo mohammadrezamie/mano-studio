@@ -6,7 +6,7 @@ The user wants an early usable preview representing the whole book; this is not 
 |---|---|
 | Academic RTL translator, 25 named instructions, separate Python file | Implemented in documented dialect; instructor dialect verification open |
 | Bilingual desktop/editor, export, settings, offline, three themes | Implemented, regressions; newest exact-head CI pending |
-| Learning Center and working Computer/Logic labs | 35 routes across all 13 indexed chapters; chapter 13 first shared-bus model implemented |
+| Learning Center and working Computer/Logic labs | 37 routes across all 13 indexed chapters; chapter 13 first shared-bus model implemented |
 | Brand, splash and visual feedback | Procedural implementation; current render tests/native review pending |
 | All 13 chapters represented by at least one verified interactive exercise | Implemented routes for 13 chapters; newest exact-head verification pending |
 | Exact-head Windows/Ubuntu regression | Latest checks pending |
