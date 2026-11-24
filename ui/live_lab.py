@@ -8,17 +8,18 @@ from ui.theme import PALETTES
 
 
 class Datapath(QWidget):
-    def __init__(self, cpu, theme):
+    def __init__(self, cpu, theme, glass_enabled=True):
         super().__init__()
         self.cpu = cpu
         self.theme = theme
+        self.glass_enabled = glass_enabled
         self.phase = 0.0
         self.setMinimumHeight(260)
 
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        paint_backdrop(p, self.rect(), self.theme)
+        paint_backdrop(p, self.rect(), self.theme, self.glass_enabled)
         p.scale(self.width() / 680, self.height() / 260)
         bg, panel, raised, fg, muted, accent, border = PALETTES[self.theme]
         def card(x, y, w, h, title, lines):
@@ -66,12 +67,13 @@ class LabDialog(QDialog):
         note = QLabel("نمایش آموزشی اجرای چهار دستور؛ نه شبیه‌ساز کامل یا زمان‌بندی ریزعملیات." if self.fa else "Four-instruction educational example; not a full simulator or microoperation timing view.")
         note.setWordWrap(True)
         layout.addWidget(note)
-        self.view = Datapath(self.cpu, theme)
+        self.view = Datapath(self.cpu, theme, settings.value("glass_enabled", True, type=bool))
         layout.addWidget(self.view, 1)
         self.status = QLabel()
         layout.addWidget(self.status)
         self.motion = QCheckBox("انیمیشن" if self.fa else "Animation")
-        self.motion.setChecked(settings.value("lab_motion", True, type=bool))
+        self.motion.setChecked(settings.value("lab_motion", True, type=bool) and not settings.value("reduced_motion", False, type=bool))
+        self.motion.setEnabled(not settings.value("reduced_motion", False, type=bool))
         self.motion.toggled.connect(lambda value: settings.setValue("lab_motion", value))
         layout.addWidget(self.motion)
         row = QHBoxLayout()
@@ -89,6 +91,7 @@ class LabDialog(QDialog):
         self.frames = QTimer(self)
         self.frames.setInterval(30)
         self.frames.timeout.connect(self.frame)
+        self.motion.toggled.connect(self.motion_changed)
         self.refresh()
 
     def refresh(self):
@@ -98,6 +101,12 @@ class LabDialog(QDialog):
                     "HLT": ("Program halted", "پایان اجرای برنامه")}
         self.status.setText(messages[self.cpu.last][self.fa] + f"  |  AC = {self.cpu.ac}")
         self.view.update()
+
+    def motion_changed(self, enabled):
+        if not enabled:
+            self.frames.stop()
+            self.view.phase = 1
+            self.view.update()
 
     def frame(self):
         self.view.phase = min(1.0, self.view.phase + 0.05)
