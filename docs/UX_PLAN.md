@@ -32,3 +32,6 @@ Four integrated offline examples, Save As, document name/dirty state, remembered
 
 ### Step 3 progress
 Implemented shared visual tokens/QPalette, original vector action icons, editor panels, theme-aware code syntax, output state/count and offline status. Verified preceding step 2 CI (183 passed each on Windows and Ubuntu, run 45395897557). New theme regression case added; current run not yet confirmed. Next: inspect actual screenshots and resolve regressions, then refine integrated Digital Logic UX (step 4). No installer/release activity.
+
+### Step 4 progress
+Step 3 previous revision verified 184 tests on Windows and Ubuntu (45396606423); visual signoff remains pending. Step 4 started with shared editable circuit documents, embedded pin editor, apply/cancel/undo and local JSON save/open. All custom/preset circuits use the same Circuit evaluation and standard gate symbols. No new lab window or dependencies. Next: graphical connection and placement interaction and sequential views; verify new CI first.
