@@ -1,5 +1,6 @@
 """Workspace UI. All translation is delegated to rtl_translator.py."""
 from pathlib import Path
+from ui.motion import MotionTabs, set_reduced_motion
 from PySide6.QtCore import Qt, QTimer, QSize
 from PySide6.QtGui import QFontDatabase, QTextCursor, QTextCharFormat, QSyntaxHighlighter, QColor, QShortcut, QKeySequence
 from PySide6.QtWidgets import (
@@ -140,7 +141,10 @@ class Workspace(QMainWindow):
         labs = QPushButton(self.t("Learning Center"))
         self.labels.append((labs, "Learning Center"))
         self.lab_actions = []
+        labs.setObjectName("learnAction")
+        labs.setToolTip(self.t("Learning Center")+" · Ctrl+K")
         labs.clicked.connect(self.open_learning_center)
+        self.learning_button=labs
         self.learning_shortcut=QShortcut(QKeySequence("Ctrl+K"),self)
         self.learning_shortcut.activated.connect(self.open_learning_center)
         toolbar.addWidget(labs)
@@ -179,7 +183,7 @@ class Workspace(QMainWindow):
             editors.addWidget(pane)
         editors.setSizes([600, 600])
         split.addWidget(editors)
-        self.tabs = QTabWidget()
+        self.tabs = MotionTabs()
         page = QWidget()
         row = QHBoxLayout(page)
         row.addWidget(self.button("Undo", self.editor.undo))
@@ -610,6 +614,7 @@ class Workspace(QMainWindow):
         self.direction_box.setItemText(0,self.t("RTL → ASM"))
         self.direction_box.setItemText(1,self.t("ASM → RTL"))
         self.refresh_direction_labels()
+        self.learning_button.setToolTip(self.t("Learning Center")+" · Ctrl+K")
 
     def change_language(self):
         self.language = self.languages.currentData()
@@ -627,6 +632,7 @@ class Workspace(QMainWindow):
     def apply_appearance(self):
         enabled = self.settings.value("glass_enabled", True, type=bool)
         apply_theme(QApplication.instance(), self.theme, enabled)
+        set_reduced_motion(QApplication.instance(), self.settings.value("reduced_motion", False, type=bool))
         bg, panel, raised, fg, muted, accent, border = PALETTES[self.theme]
         self.brand_mark.setPixmap(icon("brand",accent,28).pixmap(QSize(28,28)))
         for button,name in self.icon_buttons:

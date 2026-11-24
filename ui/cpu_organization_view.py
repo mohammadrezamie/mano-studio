@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,QSpinBox,
     QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QPushButton,QTabWidget,QPlainTextEdit)
 from cpu_organization import RegisterFile,RegisterControl,RegisterStack,MemoryStack,OPR,ADDRESS_MODES,resolve_address
+from ui.motion import MotionTabs
 from microprogram import parse_image
 from ui.expression_view import ExpressionView
 
@@ -17,7 +18,7 @@ class OrganizationView(QWidget):
         super().__init__()
         self.fa=fa
         layout=QVBoxLayout(self)
-        self.tabs=tabs=QTabWidget();layout.addWidget(tabs)
+        self.tabs=tabs=MotionTabs();layout.addWidget(tabs)
         self.registers=RegisterFile()
         self.stack=RegisterStack()
         page=QWidget();body=QVBoxLayout(page)

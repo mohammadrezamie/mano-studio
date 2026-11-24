@@ -9,6 +9,10 @@ SYNTAX = {
     "light": ("#195b9b", "#7545a1", "#52677c"),
     "night": ("#eac08d", "#d9a9c1", "#bda69a"),
 }
+SPACING = (4, 8, 12, 16, 24, 32)
+RADIUS = {"small":6,"control":9,"panel":14,"shell":16}
+TYPE = {"caption":12,"body":13,"section":15,"title":21,"hero":28}
+
 STATUS = {
     "dark": ("#9ed9b8", "#ffb5ab"),
     "light": ("#176942", "#a62f36"),
@@ -51,17 +55,21 @@ def stylesheet(theme, glass_enabled=True):
     QWidget {{ color: {fg}; }}
     QMainWindow, QDialog, QMenu, QComboBox QAbstractItemView {{ background: {bg}; }}
     QWidget#glassRoot {{ background: transparent; }}
-    QFrame#glassBar {{ background: {gradient}; border: 1px solid {rim}; border-radius: 15px; }}
-    QFrame#editorPanel {{ background: {panel}; border: 1px solid {border}; border-radius: 12px; }}
+    QFrame#glassBar {{ background: {gradient}; border: 1px solid {rim}; border-radius: {RADIUS["shell"]}px; }}
+    QFrame#editorPanel {{ background: {panel}; border: 1px solid {border}; border-radius: {RADIUS["panel"]}px; }}
     QLabel {{ background: transparent; }}
-    QLabel#brand {{ font-size: 20px; font-weight: bold; color: {fg}; }}
+    QLabel#brand {{ font-size: {TYPE["title"]}px; font-weight: 600; color: {fg}; }}
+    QLabel#hero {{ font-size: {TYPE["hero"]}px; font-weight: 600; color: {fg}; }}
+    QLabel#metric {{ font-size: 24px; font-weight: 600; color: {fg}; }}
+    QLabel#eyebrow {{ font-size: {TYPE["caption"]}px; font-weight: 600; color: {muted}; }}
+    QLabel#learningTask {{ font-size: {TYPE["section"]}px; color: {fg}; }}
     QLabel#subtitle, QLabel#muted {{ color: {muted}; }}
     QLabel#section {{ font-weight: bold; color: {fg}; padding: 3px 2px; }}
     QLabel[state="success"] {{ color: {good}; }}
     QLabel[state="error"] {{ color: {bad}; }}
     QLabel[state="neutral"] {{ color: {muted}; }}
     QPlainTextEdit, QLineEdit, QTableWidget, QListWidget, QSpinBox {{
-        background: {panel}; border: 1px solid {border}; border-radius: 8px;
+        background: {panel}; border: 1px solid {border}; border-radius: {RADIUS["control"]}px;
         selection-background-color: {accent}; selection-color: {on_accent}; padding: 5px;
     }}
     QPlainTextEdit#workspaceCode {{ border: 1px solid transparent; border-radius: 6px; padding: 2px; }}
@@ -78,10 +86,21 @@ def stylesheet(theme, glass_enabled=True):
     QPushButton#primary {{ background: {accent}; color: {on_accent}; font-weight: bold; border: 1px solid {accent}; }}
     QPushButton#primary:hover {{ border-color: {fg}; }}
     QPushButton#primary:disabled {{ background: {raised}; color: {muted}; border-color: {border}; }}
+    QPushButton#learnAction {{ color: {accent}; border-color: {accent}; font-weight: 600; }}
+    QListWidget#learningList {{ padding: 5px; outline: none; }}
+    QListWidget#learningList::item {{ padding: 9px 10px; margin: 2px 1px; border-radius: {RADIUS["control"]}px; border: 1px solid transparent; }}
+    QListWidget#learningList::item:hover {{ background: {raised}; }}
+    QListWidget#learningList::item:selected {{ background: {raised}; border-color: {accent}; color: {fg}; }}
+    QListWidget#learningList:focus {{ border-color: {accent}; }}
+    QProgressBar {{ border: 0; background: {raised}; border-radius: 4px; min-height: 8px; max-height: 8px; }}
+    QProgressBar::chunk {{ background: {accent}; border-radius: 4px; }}
     QTabBar::tab {{ background: transparent; padding: 8px 13px; border: 1px solid transparent; border-radius: 8px; margin: 2px; }}
     QTabBar::tab:selected {{ background: {raised}; border-color: {border}; color: {accent}; }}
+    QTabBar::tab:hover {{ background: {raised}; }}
+    QTabBar::tab:focus {{ border-color: {accent}; }}
     QTabWidget::pane {{ background: {glass}; border: 1px solid {border}; border-radius: 12px; }}
     QHeaderView::section {{ background: {raised}; color: {fg}; padding: 6px; border: none; }}
+    QTableWidget::item {{ padding: 3px; }}
     QTableWidget {{ gridline-color: {border}; alternate-background-color: {raised}; }}
     QMenu {{ border: 1px solid {border}; padding: 5px; }}
     QMenu::item {{ padding: 7px 18px; border-radius: 5px; }}

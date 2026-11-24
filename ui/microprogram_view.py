@@ -4,6 +4,7 @@ from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPlainTextEdit,
     QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QPushButton,QSpinBox,QComboBox,QTabWidget)
 from microprogram import MicroComputer,parse_image,demo_images,CONDITIONS,BRANCHES
+from ui.motion import MotionTabs
 from microassembler import assemble_micro, DEMO_SOURCE, full_demo
 from microprogram_history import MicroHistory
 from ui.microsequencer_view import MicrosequencerView
@@ -52,7 +53,7 @@ class MicroprogramView(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        self.detail_tabs=QTabWidget()
+        self.detail_tabs=MotionTabs()
         self.detail_tabs.addTab(self.table,self.t("Registers","ثبات‌ها"))
         self.sequencer=MicrosequencerView(fa)
         self.detail_tabs.addTab(self.sequencer,self.t("Address selector","انتخاب آدرس"))

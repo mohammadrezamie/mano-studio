@@ -1,5 +1,6 @@
 """Live schematic, binary input controls and truth tables from one netlist."""
 from pathlib import Path
+from ui.motion import MotionTabs
 import csv
 from PySide6.QtCore import Qt, QRectF, QPointF, Signal, QSize
 from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QPainterPath
@@ -315,14 +316,14 @@ class LogicLab(QDialog):
         self.setWindowTitle("Mano Studio — "+self.t("Logic Lab","آزمایشگاه منطق"))
         self.resize(1100,740)
         outer=QVBoxLayout(self)
-        self.mode_tabs=QTabWidget()
+        self.mode_tabs=MotionTabs()
         outer.addWidget(self.mode_tabs)
         combinational=QWidget()
         self.mode_tabs.addTab(combinational,self.t("Combinational","مدارهای ترکیبی"))
         self.sequential=SequentialView(parent.theme,self.fa)
         self.mode_tabs.addTab(self.sequential,self.t("Sequential","مدارهای ترتیبی"))
         self.memory_view=MemoryView(parent.theme,self.fa)
-        self.memory_tabs=memory_tabs=QTabWidget()
+        self.memory_tabs=memory_tabs=MotionTabs()
         memory_tabs.addTab(self.memory_view,self.t("Memory chip","تراشه حافظه"))
         self.memory_array=MemoryArrayView(self.fa)
         memory_tabs.addTab(self.memory_array,self.t("Memory expansion","گسترش حافظه"))
@@ -410,7 +411,7 @@ class LogicLab(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.table.cellClicked.connect(self.choose_row)
-        results=QTabWidget()
+        results=MotionTabs()
         results.addTab(self.table,self.t("Truth table","جدول درستی"))
         self.equations=QPlainTextEdit()
         self.equations.setReadOnly(True)

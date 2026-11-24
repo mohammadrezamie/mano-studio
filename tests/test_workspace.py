@@ -1031,3 +1031,41 @@ def test_focused_learning_tool_pauses_without_reset(workspace):
     lab.select_tool("live")
     assert lab.cpu is cpu and lab.steps==before
     lab.close()
+
+
+def test_shared_motion_policy(workspace,app):
+    from ui.motion import MotionTabs,motion_allowed,TAB_DURATION
+    from ui.preferences import Preferences
+    from PySide6.QtCore import QAbstractAnimation
+    from PySide6.QtWidgets import QWidget
+    tabs=MotionTabs()
+    tabs.addTab(QWidget(),"First")
+    tabs.addTab(QWidget(),"Second")
+    tabs.resize(400,220);tabs.show();app.processEvents()
+    bar=tabs.tabBar()
+    assert isinstance(workspace.tabs,MotionTabs)
+    assert bar._animation.duration()==TAB_DURATION
+    prefs=Preferences(workspace)
+    prefs.change("reduced_motion",True)
+    assert not motion_allowed()
+    tabs.setCurrentIndex(1)
+    assert bar._animation.state()==QAbstractAnimation.State.Stopped
+    assert bar._position==bar.target()
+    prefs.change("reduced_motion",False)
+    assert motion_allowed()
+    tabs.setCurrentIndex(0)
+    app.processEvents()
+    prefs.change("reduced_motion",True)
+    assert bar._animation.state()==QAbstractAnimation.State.Stopped
+    assert bar._position==bar.target()
+    tabs.close();prefs.close()
+
+
+def test_learning_visual_roles(workspace):
+    from ui.learning_center import LearningCenter
+    center=LearningCenter(workspace)
+    assert center.list.objectName()=="learningList"
+    assert center.task.objectName()=="learningTask"
+    assert center.gap.objectName()=="muted"
+    assert center.progress.maximum()==center.list.count()
+    center.close()

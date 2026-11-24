@@ -1,5 +1,6 @@
 """Live program workspace: actual assembler and CPU, not the fixed demo."""
 from pathlib import Path
+from ui.motion import MotionTabs
 import csv
 import re
 from PySide6.QtCore import QTimer
@@ -89,7 +90,7 @@ class ProgramLab(QDialog):
             table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
             lower.addWidget(table)
-        self.inspector=QTabWidget()
+        self.inspector=MotionTabs()
         self.datapath=DatapathView(parent.theme, parent.settings.value("reduced_motion", False, type=bool) or not parent.settings.value("lab_motion", True, type=bool), fa=self.fa)
         self.inspector.addTab(self.datapath,self.t("Live view","نمای زنده"))
         self.inspector.addTab(lower,self.t("Registers & memory","ثبات‌ها و حافظه"))
@@ -135,7 +136,7 @@ class ProgramLab(QDialog):
         self.inspector.addTab(self.organization,self.t("CPU organization","سازمان CPU"))
         self.pipeline=PipelineView(self.fa)
         self.vector_pipeline=VectorPipelineView(self.fa)
-        self.pipeline_tabs=pipeline_tabs=QTabWidget()
+        self.pipeline_tabs=pipeline_tabs=MotionTabs()
         pipeline_tabs.addTab(self.pipeline,self.t("Instruction pipeline","خط لوله دستورات"))
         pipeline_tabs.addTab(self.vector_pipeline,self.t("Vector / matrix","بردار / ماتریس"))
         self.interleaving=InterleavingView(self.fa)
