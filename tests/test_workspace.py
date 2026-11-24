@@ -197,11 +197,11 @@ def test_computer_single_state(workspace):
     lab=ProgramLab(workspace,"ORG 000\nLDA 100\nADD 101\nSTA 102\nHLT\nORG 100\nDEC 5\nDEC 3\nDEC 0\nEND")
     assert lab.datapath.cpu is lab.cpu
     lab.step()
-    assert lab.datapath.event.mnemonic=="LDA" and lab.cpu.ac==5
+    assert lab.datapath.last_step.mnemonic=="LDA" and lab.cpu.ac==5
     lab.step()
-    assert lab.datapath.event.after["AC"]==8
+    assert lab.datapath.last_step.after["AC"]==8
     lab.step()
-    assert lab.datapath.event.writes==((0x102,0,8),)
+    assert lab.datapath.last_step.writes==((0x102,0,8),)
     assert lab.cpu.memory[0x102]==8
     lab.source.setPlainText("HLT")
     assert lab.cpu is None and lab.datapath.cpu is None
