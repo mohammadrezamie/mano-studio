@@ -251,3 +251,21 @@ def test_visual_status_and_theme(workspace):
         assert workspace.editor.highlighter.theme==theme
         assert workspace.output.highlighter.theme==theme
         assert QApplication.instance().palette().color(QPalette.ColorRole.Base)==QColor(PALETTES[theme][1])
+
+
+def test_integrated_circuit_edit(workspace):
+    from ui.logic_lab import LogicLab
+    lab=LogicLab(workspace)
+    lab.selector.setCurrentIndex(lab.selector.findData("and"))
+    lab.edit_circuit()
+    assert not lab.selector.isEnabled()
+    lab.circuit_editor.gates.cellWidget(0,1).setCurrentText("OR")
+    lab.circuit_editor.apply()
+    assert lab.selector.currentData()=="custom" and lab.dirty
+    lab.change("A",True)
+    assert lab.summary.text()=="Y = 1"
+    lab.undo_edit()
+    lab.change("A",True)
+    assert lab.summary.text()=="Y = 0"
+    lab.dirty=False
+    lab.close()
