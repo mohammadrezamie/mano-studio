@@ -92,7 +92,7 @@ class Workspace(QMainWindow):
         toolbar = QHBoxLayout(toolbar_frame)
         for name, slot in [("New", self.new_file), ("Open RTL", self.open_file),
                            ("Save RTL", self.save_file), ("Export ASM", self.export_file),
-                           ("Source", self.show_source), ("About", self.about)]:
+                           ("Source", self.show_source), ("Live Lab", self.open_lab), ("About", self.about)]:
             toolbar.addWidget(self.button(name, slot))
         toolbar.addStretch()
         toolbar.addWidget(self.button("Translate", self.run_translation, True))
@@ -446,6 +446,10 @@ class Workspace(QMainWindow):
         copy.clicked.connect(lambda: QApplication.clipboard().setText(source))
         layout.addWidget(copy)
         dialog.exec()
+
+    def open_lab(self):
+        from ui.live_lab import LabDialog
+        LabDialog(self, self.language, self.theme, self.settings).exec()
 
     def about(self):
         QMessageBox.about(self, "Mano Studio", "Mano Studio · 0.3.0-dev\n" + self.t("Academic project · Morris Mano Basic Computer") + "\nMIT · " + self.t("Open source") + "\nhttps://github.com/mohammadrezamie/mano-studio")
