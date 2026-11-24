@@ -78,8 +78,12 @@ class CircuitDocument:
             inputs, gates, outputs = obj["inputs"], obj["gates"], obj["outputs"]
             if not all(isinstance(v,list) for v in (inputs,gates,outputs)):
                 raise ValueError("Expected arrays.")
+            if len(inputs)>MAX_INPUTS or len(gates)>MAX_GATES or len(outputs)>MAX_OUTPUTS:
+                raise ValueError("Circuit size outside supported limits.")
+            if any(not isinstance(o,list) or len(o)!=2 for o in outputs):
+                raise ValueError("Each output must be a name/source pair.")
             for g in gates:
-                if not isinstance(g["inputs"],list):
+                if not isinstance(g,dict) or not isinstance(g["inputs"],list):
                     raise ValueError("Expected gate input array.")
             doc = cls(tuple(checked_name(n) for n in inputs),
                 tuple(Gate(checked_name(g["output"]),checked_name(g["op"]),
