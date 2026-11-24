@@ -176,3 +176,7 @@ Run 45443855329 failed on both platforms: CycleView.event shadowed QWidget.event
 
 ### Live timing engine checkpoint
 Refactored CPU timing trace into single resumable execution path, integrated Next/Previous timing controls and partial trace, atomic completion/history, partial cancel and bounded replay reversal. I/O guarded at instruction boundaries; breakpoints ignore partial PC. Added 35 core/GUI regression cases. Previous Qt construction failure fixed in ecc7b59; neither fix nor new engine yet confirmed by exact-head CI. No physical timing/SC/R claim, no release, translator unchanged.
+
+
+## Chapter 10: register arithmetic algorithms
+Added signed radix-2 Booth multiplication and unsigned restoring division to the existing Data & ALU inspector (4/8/12/16-bit operands). Pure `arithmetic_algorithms.py` models actual register transitions; Booth uses n+1 accumulator bits to handle the most negative signed input, n iterations, 2n-bit result. Division displays shift, trial subtraction, restore decision, remainder and quotient; zero divisor is rejected. Existing ALU and CPU instruction semantics unchanged; these are educational algorithms, not Mano ISA opcodes. References: https://csg.csail.mit.edu/6.175/archive/2016/labs/lab2-multipliers.html and https://ebooks.inflibnet.ac.in/csp2/chapter/81/ . Authored exhaustive 4/8-bit tests, 12/16-bit boundaries and invalid inputs. Exact-head CI and native UI review pending. Signed division, non-restoring division, floating point and decimal arithmetic remain open. No installer or release work.

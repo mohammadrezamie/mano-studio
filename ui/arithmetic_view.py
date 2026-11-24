@@ -3,6 +3,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,QLineEdit,
     QCheckBox,QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView)
 from word_arithmetic import WIDTHS,OPERATIONS,alu,parse_word,representations
+from arithmetic_algorithms import booth, restoring_division
 
 class ArithmeticView(QWidget):
     def __init__(self,fa=False):
@@ -25,6 +26,8 @@ class ArithmeticView(QWidget):
         self.op=QComboBox()
         self.op.addItems(OPERATIONS)
         self.op.insertItem(0,self.t("Convert bases","تبدیل مبنا"),"convert")
+        self.op.addItem(self.t("Booth signed multiply","ضرب علامت‌دار بوث"),"booth")
+        self.op.addItem(self.t("Restoring unsigned divide","تقسیم بدون علامت بازگرداننده"),"divide")
         self.op.setCurrentIndex(1)
         row.addWidget(self.op,1)
         self.cin=QCheckBox("Cin / E")
@@ -109,7 +112,14 @@ class ArithmeticView(QWidget):
     def refresh(self,*_):
         width=self.width.currentData()
         base=self.base.currentData()
-        op="CONVERT" if self.op.currentData()=="convert" else self.op.currentText()
+        mode=self.op.currentData()
+        op="CONVERT" if mode=="convert" else self.op.currentText()
+        if mode in ("booth","divide"):
+            self.refresh_algorithm(mode,width,base)
+            return
+        self.note.setText(self.t("C: carry (SUB: no borrow). V: signed overflow. N: sign. Z: zero. Teaching flags are not extra Mano CPU registers.", "C: نقلی (در تفریق: بدون قرض). V: سرریز علامت‌دار. N: علامت. Z: صفر. این پرچم‌های آموزشی ثبات‌های اضافی مانو نیستند."))
+        self.stages.setColumnCount(6)
+        self.stages.setHorizontalHeaderLabels([self.t("Bit","بیت"),"A","B′ / B","Cin",self.t("Sum","جمع"),"Cout"])
         binary=op in ("ADD","ADC","SUB","AND","OR","XOR")
         conversion=op=="CONVERT"
         self.note.setVisible(not conversion)
@@ -145,6 +155,63 @@ class ArithmeticView(QWidget):
         self.stages.setRowCount(len(result.stages))
         for row,stage in enumerate(result.stages):
             for col,value in enumerate(stage):
+                item=QTableWidgetItem(str(value))
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.stages.setItem(row,col,item)
+
+    def refresh_algorithm(self,mode,width,base):
+        """Reuse the existing operand controls, word table and trace table."""
+        self.result=None
+        self.b.setEnabled(True)
+        self.cin.setEnabled(False)
+        self.note.show()
+        self.stages.show()
+        self.representation.setRowCount(2)
+        self.representation.clearContents()
+        self.stages.setRowCount(0)
+        self.flags.clear()
+        is_booth=mode=="booth"
+        if is_booth:
+            self.note.setText(self.t(
+                "Signed two's complement. Q0 Q−1: 01 adds M, 10 subtracts M; then arithmetic right shift. A is n+1 bits (shown signed). Product is 2n bits.",
+                "متمم دو علامت‌دار. زوج ۰۱ موجب جمع و ۱۰ موجب تفریق M است؛ سپس شیفت حسابی راست. A با n+1 بیت به‌صورت علامت‌دار و حاصل با 2n بیت نمایش داده می‌شود."))
+            headers=[self.t("Cycle","چرخه"),"Q0 Q−1",self.t("Action","عمل"),"A "+self.t("before shift","پیش از شیفت"),"A","Q","Q−1"]
+        else:
+            self.note.setText(self.t(
+                "Unsigned division. Shift (R,Q), subtract divisor, restore R if negative; append quotient bit. R < divisor after each cycle.",
+                "تقسیم بدون علامت. ابتدا (R,Q) شیفت داده می‌شود؛ مقسوم‌علیه کم می‌شود و در صورت منفی شدن R بازگردانی می‌شود؛ سپس بیت خارج‌قسمت تعیین می‌شود."))
+            headers=[self.t("Cycle","چرخه"),"R "+self.t("shifted","شیفت‌یافته"),"R − B",self.t("Restore?","بازگردانی؟"),"R","Q"]
+        self.stages.setColumnCount(len(headers))
+        self.stages.setHorizontalHeaderLabels(headers)
+        try:
+            a=parse_word(self.a.text(),base,width)
+            b=parse_word(self.b.text(),base,width)
+            if is_booth:
+                product,trace=booth(a,b,width)
+                self.flags.setText(f"{self.t('Product','حاصل‌ضرب')} = {product}   |   {product & ((1 << (2*width))-1):0{2*width}b}")
+                rows=[(r.cycle,r.pair,r.operation,r.accumulator_after_operation,r.accumulator,f"{r.multiplier:0{width}b}",r.previous_bit) for r in trace]
+            else:
+                if base==10 and (int(self.a.text())<0 or int(self.b.text())<0):
+                    raise ValueError("Unsigned operands required")
+                if b==0:
+                    self.status.setText(self.t("Division by zero","تقسیم بر صفر مجاز نیست."))
+                    return
+                q,r,trace=restoring_division(a,b,width)
+                self.flags.setText(f"{self.t('Quotient','خارج‌قسمت')} = {q}   |   {self.t('Remainder','باقی‌مانده')} = {r}")
+                rows=[(s.cycle,s.shifted_remainder,s.trial_remainder,self.t("Yes","بله") if s.restored else self.t("No","خیر"),s.remainder,f"{s.quotient:0{width}b}") for s in trace]
+        except ValueError:
+            self.status.setText(self.t("Invalid operand for selected base, width or signedness.","عدد ورودی با مبنا، طول کلمه یا علامت انتخاب‌شده سازگار نیست."))
+            return
+        self.status.clear()
+        self.result=trace
+        for row,(label,word) in enumerate((("A",a),("B",b))):
+            for col,value in enumerate([label]+list(representations(word,width).values())):
+                item=QTableWidgetItem(value)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.representation.setItem(row,col,item)
+        self.stages.setRowCount(len(rows))
+        for row,values in enumerate(rows):
+            for col,value in enumerate(values):
                 item=QTableWidgetItem(str(value))
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.stages.setItem(row,col,item)

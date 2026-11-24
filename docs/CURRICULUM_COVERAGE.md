@@ -40,3 +40,7 @@ Recorded actual T0–T6 timing groups in single CPU engine for 25 named instruct
 
 ## Live timing-group increment
 Single resumable CPU implementation now executes one actual timing group or entire instruction. Real partial register and memory states, previous timing via bounded deterministic replay, boundary breakpoint and I/O guards. R/SC and physical bus timing remain open; no certified hardware equivalence. Regression cases cover each named form, partial finish, interrupt and rollback. New CI and native visual acceptance pending.
+
+
+## Chapter 10: register arithmetic algorithms
+Added signed radix-2 Booth multiplication and unsigned restoring division to the existing Data & ALU inspector (4/8/12/16-bit operands). Pure `arithmetic_algorithms.py` models actual register transitions; Booth uses n+1 accumulator bits to handle the most negative signed input, n iterations, 2n-bit result. Division displays shift, trial subtraction, restore decision, remainder and quotient; zero divisor is rejected. Existing ALU and CPU instruction semantics unchanged; these are educational algorithms, not Mano ISA opcodes. References: https://csg.csail.mit.edu/6.175/archive/2016/labs/lab2-multipliers.html and https://ebooks.inflibnet.ac.in/csp2/chapter/81/ . Authored exhaustive 4/8-bit tests, 12/16-bit boundaries and invalid inputs. Exact-head CI and native UI review pending. Signed division, non-restoring division, floating point and decimal arithmetic remain open. No installer or release work.
