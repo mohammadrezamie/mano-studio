@@ -1,6 +1,8 @@
 name: Windows development installer
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
   push:
     branches: [feature/desktop-workspace]
 permissions:
@@ -37,6 +39,9 @@ jobs:
       - name: Install, run offline smoke test, uninstall
         shell: pwsh
         run: ./installer/smoke.ps1
+      - name: Record build dependency versions
+        shell: pwsh
+        run: python -m pip freeze | Set-Content -Encoding utf8 installer/output/build-dependencies.txt
       - name: Generate SHA256
         shell: pwsh
         run: |
