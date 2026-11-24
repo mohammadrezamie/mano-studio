@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
 import re
 from rtl_translator import translate
 from instruction_catalog import TEMPLATES, build_rtl
+from example_catalog import EXAMPLES, computer_source
 from ui.strings import FA, HELP, NAMES, EN_NAMES
 from ui.theme import PALETTES, stylesheet
 from ui.code_editor import CodeEditor
@@ -56,6 +57,7 @@ class Workspace(QMainWindow):
             self.theme = "dark"
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.path = None
+        self.active_example = None
         self.result = None
         self.translated_source = None
         self.labels = []
@@ -92,7 +94,7 @@ class Workspace(QMainWindow):
         toolbar_frame.setObjectName("glassBar")
         toolbar = QHBoxLayout(toolbar_frame)
         self.menu_actions = []
-        for name, entries in [("File", [("New", self.new_file), ("Open RTL", self.open_file), ("Save RTL", self.save_file)]),
+        for name, entries in [("File", [("New", self.new_file), ("Open RTL", self.open_file), ("Save RTL", self.save_file), ("Save RTL as", self.save_as)]),
                               ("Help", [("Instruction reference", self.open_instruction_reference), ("Source", self.show_source), ("About", self.about)])]:
             button = QPushButton(self.t(name))
             self.labels.append((button, name))
@@ -104,6 +106,16 @@ class Workspace(QMainWindow):
             button.setMenu(menu)
             toolbar.addWidget(button)
         toolbar.addWidget(self.button("Open RTL", self.open_file))
+        examples_button = QPushButton(self.t("Examples"))
+        self.labels.append((examples_button, "Examples"))
+        examples_menu = QMenu(examples_button)
+        self.example_actions = []
+        for example in EXAMPLES:
+            action = examples_menu.addAction(example.title[self.language == "fa"])
+            action.triggered.connect(lambda checked=False, item=example: self.load_example(item))
+            self.example_actions.append((action, example))
+        examples_button.setMenu(examples_menu)
+        toolbar.addWidget(examples_button)
         labs = QPushButton(self.t("Labs"))
         self.labels.append((labs, "Labs"))
         self.lab_menu = QMenu(labs)
@@ -163,6 +175,7 @@ class Workspace(QMainWindow):
         split.setSizes([560, 80 if self.tabs.currentIndex() == 0 else 260, 0])
         layout.addWidget(split, 1)
         self.editor.textChanged.connect(self.invalidate)
+        self.editor.document().modificationChanged.connect(self.update_document_title)
         self.mapping_active = False
         self.editor.cursorPositionChanged.connect(self.follow_source)
         self.output.cursorPositionChanged.connect(self.follow_output)
@@ -171,12 +184,13 @@ class Workspace(QMainWindow):
         self.reference_shortcut = QShortcut(QKeySequence("Ctrl+Space"), self)
         self.reference_shortcut.activated.connect(self.open_instruction_reference)
         self.file_shortcuts = []
-        for sequence, handler in [("Ctrl+O", self.open_file), ("Ctrl+S", self.save_file), ("Ctrl+N", self.new_file)]:
+        for sequence, handler in [("Ctrl+O", self.open_file), ("Ctrl+S", self.save_file), ("Ctrl+Shift+S", self.save_as), ("Ctrl+N", self.new_file)]:
             shortcut = QShortcut(QKeySequence(sequence), self)
             shortcut.activated.connect(handler)
             self.file_shortcuts.append(shortcut)
         self.relabel()
         self.statusBar().showMessage(self.t("Ready"))
+        self.update_document_title()
         geometry = settings.value("geometry")
         if geometry:
             self.restoreGeometry(geometry)
@@ -468,6 +482,8 @@ class Workspace(QMainWindow):
             widget.setText(self.t(key))
         for action, key in self.lab_actions + self.menu_actions:
             action.setText(self.t(key))
+        for action, example in self.example_actions:
+            action.setText(example.title[self.language == "fa"])
         for index, title in enumerate(("Editor", "Symbol pad", "Builder")):
             self.tabs.setTabText(index, self.t(title))
         for index, title in enumerate(("Light", "Dark", "Night")):
@@ -483,6 +499,7 @@ class Workspace(QMainWindow):
         self.settings.setValue("language", self.language)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.relabel()
+        self.update_document_title()
         self.statusBar().showMessage(self.t("Ready"))
 
     def change_theme(self):
@@ -510,50 +527,84 @@ class Workspace(QMainWindow):
             return self.save_file()
         return choice == QMessageBox.StandardButton.Discard
 
+    def update_document_title(self, *_):
+        name = self.path.name if self.path else self.t("Untitled")
+        if self.path is None and self.active_example:
+            name = self.active_example.title[self.language == "fa"]
+        dirty = " *" if self.editor.document().isModified() else ""
+        self.setWindowTitle(f"{name}{dirty} — Mano Studio")
+
+    def last_directory(self):
+        return str(self.path.parent) if self.path else self.settings.value("last_directory", "")
+
+    def replace_document(self, value, path=None, example=None):
+        self.path, self.active_example = path, example
+        self.editor.setPlainText(value)
+        self.editor.document().setModified(False)
+        # Even an identical or empty document must not inherit old output.
+        self.invalidate()
+        self.update_document_title()
+
+    def load_example(self, example):
+        if not self.confirm_discard():
+            return
+        self.replace_document(example.rtl, example=example)
+        self.run_translation()
+        self.statusBar().showMessage(example.description[self.language == "fa"])
+
     def new_file(self):
         if self.confirm_discard():
-            self.path = None
-            self.editor.clear()
-            self.editor.document().setModified(False)
+            self.replace_document("")
 
     def open_file(self):
         if not self.confirm_discard():
             return
-        name, _ = QFileDialog.getOpenFileName(self, self.t("Open RTL"), "", "RTL (*.rtl *.txt);;All files (*)")
+        name, _ = QFileDialog.getOpenFileName(self, self.t("Open RTL"), self.last_directory(), "RTL (*.rtl *.txt);;All files (*)")
         if not name:
             return
         try:
-            value = Path(name).read_text(encoding="utf-8-sig")
+            path = Path(name)
+            value = path.read_text(encoding="utf-8-sig")
         except (OSError, UnicodeError) as exc:
             QMessageBox.warning(self, self.t("File error"), str(exc))
             return
-        self.path = Path(name)
-        self.editor.setPlainText(value)
-        self.editor.document().setModified(False)
+        self.settings.setValue("last_directory", str(path.parent))
+        self.replace_document(value, path=path)
 
     def save_file(self):
-        path = self.path
-        if path is None:
-            name, _ = QFileDialog.getSaveFileName(self, self.t("Save RTL"), "", "RTL (*.rtl);;Text (*.txt)")
-            if not name:
-                return False
-            path = Path(name)
-            if not path.suffix:
-                path = path.with_suffix(".rtl")
+        if self.path is None:
+            return self.save_as()
+        return self.write_document(self.path)
+
+    def save_as(self):
+        suggested = str(self.path) if self.path else str(Path(self.last_directory()) / ((self.active_example.key if self.active_example else "untitled") + ".rtl"))
+        name, _ = QFileDialog.getSaveFileName(self, self.t("Save RTL as"), suggested, "RTL (*.rtl);;Text (*.txt)")
+        if not name:
+            return False
+        path = Path(name)
+        if not path.suffix:
+            path = path.with_suffix(".rtl")
+        return self.write_document(path)
+
+    def write_document(self, path):
         try:
             path.write_text(self.editor.toPlainText(), encoding="utf-8")
-        except OSError as exc:
+        except (OSError, UnicodeError) as exc:
             QMessageBox.warning(self, self.t("File error"), str(exc))
             return False
         self.path = path
+        self.settings.setValue("last_directory", str(path.parent))
         self.editor.document().setModified(False)
+        self.update_document_title()
+        self.statusBar().showMessage(self.t("RTL saved"))
         return True
 
     def export_file(self):
         if self.result is None or not self.result.ok or self.translated_source != self.editor.toPlainText():
             QMessageBox.warning(self, self.t("No valid output"), self.t("Translate the input successfully before exporting."))
             return
-        name, _ = QFileDialog.getSaveFileName(self, self.t("Export ASM"), "", "Assembly (*.asm)")
+        suggested = str(self.path.with_suffix(".asm")) if self.path else str(Path(self.last_directory()) / ((self.active_example.key if self.active_example else "untitled") + ".asm"))
+        name, _ = QFileDialog.getSaveFileName(self, self.t("Export ASM"), suggested, "Assembly (*.asm)")
         if not name:
             return
         path = Path(name)
@@ -561,10 +612,12 @@ class Workspace(QMainWindow):
             path = path.with_suffix(".asm")
         try:
             if self.path and path.resolve() == self.path.resolve():
-                raise OSError("Input and output must be different files")
+                raise OSError(self.t("Input and output must be different files"))
             path.write_text(self.result.assembly + ("\n" if self.result.instructions else ""), encoding="utf-8")
-        except OSError as exc:
+        except (OSError, UnicodeError) as exc:
             QMessageBox.warning(self, self.t("File error"), str(exc))
+            return
+        self.statusBar().showMessage(self.t("Assembly exported"))
 
     def show_source(self):
         import sys
@@ -601,7 +654,10 @@ class Workspace(QMainWindow):
         if not result.ok:
             self.run_translation()
             return
-        ProgramLab(self, result.assembly).exec()
+        assembly = result.assembly
+        if self.active_example and self.editor.toPlainText() == self.active_example.rtl:
+            assembly = computer_source(self.active_example, assembly)
+        ProgramLab(self, assembly).exec()
 
     def about(self):
         QMessageBox.about(self, "Mano Studio", "Mano Studio · 0.3.0-dev\n" + self.t("Academic project · Morris Mano Basic Computer") + "\nMIT · " + self.t("Open source") + "\nhttps://github.com/mohammadrezamie/mano-studio")
