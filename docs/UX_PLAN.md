@@ -26,3 +26,6 @@ Shared builder/reference panel implemented, separate reference dialog removed. R
 
 ## Non-negotiable academic boundary
 The actual RTL-to-ASM algorithm remains entirely in root rtl_translator.py, standalone Python standard library, readable and teachable; the UI and optional tools may evolve independently but must never replace, duplicate or hide it. Keep bilingual explanations and the standalone CLI. A copy of only this file must run without the repository or third-party packages. Mark the root file in README and the defense guide; no in-app source viewer.
+
+### Step 2 — examples and file workflow checkpoint
+Four integrated offline examples, Save As, document name/dirty state, remembered input directory, suggested ASM output filename and stale-output reset implemented. Removed unnecessary source viewer per owner request. The fixed Qt event-name collision passed 180 automated tests on Windows and Ubuntu (run 45395541255). New example/file changes await latest CI and visual review. Next: step 3 visual system refinement; keep translator independent and marked in README.
