@@ -1,12 +1,15 @@
 """Live schematic, binary input controls and truth tables from one netlist."""
+from pathlib import Path
 from PySide6.QtCore import Qt, QRectF
 from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton,
     QComboBox, QWidget, QGraphicsScene, QGraphicsView, QTableWidget,
-    QTableWidgetItem, QHeaderView, QAbstractItemView, QSplitter, QSpinBox,
+    QTableWidgetItem, QHeaderView, QAbstractItemView, QSplitter, QSpinBox, QStackedWidget, QFileDialog, QMessageBox,
 )
 from logic_engine import CIRCUITS, ARITY, basic
+from circuit_document import CircuitDocument
+from ui.circuit_editor import CircuitEditor
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES
 
@@ -120,6 +123,10 @@ class LogicLab(QDialog):
     def __init__(self,parent):
         super().__init__(parent)
         self.fa=parent.language=="fa"
+        self.history=[]
+        self.dirty=False
+        self.document=None
+        self.selected_key=None
         self.setWindowTitle("Mano Studio — Logic Lab")
         self.resize(1100,740)
         layout=QVBoxLayout(self)
@@ -130,6 +137,7 @@ class LogicLab(QDialog):
         self.selector=QComboBox()
         for key,circuit in CIRCUITS.items():
             self.selector.addItem(circuit.title[self.fa],key)
+        self.selector.addItem(self.t("Custom circuit","مدار دلخواه"),"custom")
         row.addWidget(self.selector,1)
         row.addWidget(QLabel(self.t("Gate inputs","تعداد ورودی گیت")))
         self.pin_count=QSpinBox()
@@ -143,6 +151,15 @@ class LogicLab(QDialog):
             button.clicked.connect(fn)
             row.addWidget(button)
         layout.addLayout(row)
+        actions=QHBoxLayout()
+        for en,fa,fn in [("Edit circuit","ویرایش مدار",self.edit_circuit),("Open circuit","باز کردن مدار",self.open_circuit),("Save circuit","ذخیره مدار",self.save_circuit),("Undo edit","واگرد ویرایش",self.undo_edit)]:
+            button=QPushButton(self.t(en,fa))
+            button.clicked.connect(fn)
+            actions.addWidget(button)
+            if en=="Undo edit":
+                self.undo_button=button
+        actions.addStretch()
+        layout.addLayout(actions)
         self.description=QLabel()
         self.description.setWordWrap(True)
         layout.addWidget(self.description)
@@ -164,7 +181,13 @@ class LogicLab(QDialog):
         self.table.cellClicked.connect(self.choose_row)
         split.addWidget(self.table)
         split.setSizes([400,220])
-        layout.addWidget(split,1)
+        self.stack=QStackedWidget()
+        self.stack.addWidget(split)
+        self.circuit_editor=CircuitEditor(self.fa)
+        self.stack.addWidget(self.circuit_editor)
+        self.circuit_editor.applied.connect(self.apply_document)
+        self.circuit_editor.cancelled.connect(lambda:self.stack.setCurrentIndex(0))
+        layout.addWidget(self.stack,1)
         self.selector.currentIndexChanged.connect(self.load)
         self.pin_count.valueChanged.connect(self.load)
         self.load()
@@ -174,9 +197,26 @@ class LogicLab(QDialog):
 
     def load(self):
         key=self.selector.currentData()
+        if key!=self.selected_key and self.dirty and not self.confirm_discard():
+            self.selector.blockSignals(True)
+            self.selector.setCurrentIndex(self.selector.findData(self.selected_key))
+            self.selector.blockSignals(False)
+            return
         variable=key.upper() in ARITY and key!="not"
         self.pin_count.setEnabled(variable)
-        self.circuit=basic(key.upper(),self.pin_count.value()) if variable else CIRCUITS[key]
+        self.selected_key=key
+        if key=="custom":
+            self.circuit=basic("AND")
+        else:
+            self.circuit=basic(key.upper(),self.pin_count.value()) if variable else CIRCUITS[key]
+        self.document=CircuitDocument.from_circuit(self.circuit)
+        self.history.clear()
+        self.dirty=False
+        self.show_circuit()
+
+    def show_circuit(self):
+        self.stack.setCurrentIndex(0)
+        self.undo_button.setEnabled(bool(self.history))
         self.inputs={name:0 for name in self.circuit.inputs}
         self.description.setText(self.circuit.explanation[self.fa]+"  |  "+self.t("Inputs / Outputs", "ورودی / خروجی")+f": {len(self.circuit.inputs)} / {len(self.circuit.outputs)}")
         while self.input_grid.count():
@@ -202,6 +242,83 @@ class LogicLab(QDialog):
                 self.table.setItem(i,j,item)
         self.refresh()
         self.diagram.fit()
+
+    def confirm_discard(self):
+        if not self.dirty:
+            return True
+        return QMessageBox.question(self,self.t("Unsaved circuit","مدار ذخیره‌نشده"),
+            self.t("Discard unsaved circuit changes?","تغییرات ذخیره‌نشده مدار حذف شوند؟"),
+            QMessageBox.StandardButton.Discard|QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel)==QMessageBox.StandardButton.Discard
+
+    def edit_circuit(self):
+        self.circuit_editor.load(self.document)
+        self.stack.setCurrentIndex(1)
+
+    def install_document(self,document,dirty):
+        circuit=document.compile()
+        self.document,self.circuit=document,circuit
+        self.dirty=dirty
+        self.selected_key="custom"
+        self.selector.blockSignals(True)
+        self.selector.setCurrentIndex(self.selector.findData("custom"))
+        self.selector.blockSignals(False)
+        self.pin_count.setEnabled(False)
+        self.show_circuit()
+
+    def apply_document(self,document):
+        if document!=self.document:
+            self.history.append((self.document,self.dirty))
+            self.history=self.history[-30:]
+            self.install_document(document,True)
+        else:
+            self.stack.setCurrentIndex(0)
+
+    def undo_edit(self):
+        if self.history:
+            document,dirty=self.history.pop()
+            self.install_document(document,dirty)
+
+    def open_circuit(self):
+        if not self.confirm_discard():
+            return
+        name,_=QFileDialog.getOpenFileName(self,self.t("Open circuit","باز کردن مدار"),"","Mano circuit (*.mano-logic.json);;JSON (*.json)")
+        if not name:
+            return
+        try:
+            path=Path(name)
+            if path.stat().st_size>200000:
+                raise ValueError("Circuit file too large.")
+            document=CircuitDocument.loads(path.read_text(encoding="utf-8"))
+        except (OSError,UnicodeError,ValueError) as exc:
+            QMessageBox.warning(self,self.t("Invalid circuit","مدار نامعتبر"),str(exc))
+            return
+        self.history.clear()
+        self.install_document(document,False)
+
+    def save_circuit(self):
+        if self.stack.currentIndex()==1:
+            QMessageBox.information(self,self.t("Apply first","ابتدا اعمال کنید"),
+                self.t("Apply or cancel the staged edit before saving.","پیش از ذخیره، ویرایش را اعمال یا لغو کنید."))
+            return
+        name,_=QFileDialog.getSaveFileName(self,self.t("Save circuit","ذخیره مدار"),"circuit.mano-logic.json","Mano circuit (*.mano-logic.json);;JSON (*.json)")
+        if not name:
+            return
+        path=Path(name)
+        if not path.suffix:
+            path=path.with_suffix(".mano-logic.json")
+        try:
+            path.write_text(self.document.dumps(),encoding="utf-8")
+        except (OSError,ValueError) as exc:
+            QMessageBox.warning(self,self.t("Cannot save","ذخیره ناموفق"),str(exc))
+            return
+        self.dirty=False
+        # Undo after saving changes the document relative to the saved file.
+        self.history=[(document,True) for document,_ in self.history]
+
+    def done(self,result):
+        if self.confirm_discard():
+            super().done(result)
 
     def change(self,name,value):
         self.inputs[name]=int(value)
