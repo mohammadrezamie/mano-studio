@@ -95,6 +95,7 @@ class Workspace(QMainWindow):
                            ("Save RTL", self.save_file), ("Export ASM", self.export_file),
                            ("Source", self.show_source), ("Live Lab", self.open_lab), ("About", self.about)]:
             toolbar.addWidget(self.button(name, slot))
+        toolbar.addWidget(self.button("Program Lab", self.open_program_lab))
         toolbar.addStretch()
         toolbar.addWidget(self.button("Translate", self.run_translation, True))
         layout.addWidget(toolbar_frame)
@@ -456,6 +457,14 @@ class Workspace(QMainWindow):
         copy.clicked.connect(lambda: QApplication.clipboard().setText(source))
         layout.addWidget(copy)
         dialog.exec()
+
+    def open_program_lab(self):
+        from ui.program_lab import ProgramLab
+        result = translate(self.editor.toPlainText())
+        if not result.ok:
+            self.run_translation()
+            return
+        ProgramLab(self, result.assembly).exec()
 
     def open_lab(self):
         from ui.live_lab import LabDialog
