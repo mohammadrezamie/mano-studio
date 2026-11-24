@@ -69,6 +69,12 @@ def main():
                 target=output/f"{language}-{theme}-computer.png"
                 if not computer.grab().save(str(target)):
                     raise RuntimeError(f"Could not save {target}")
+                for tab,suffix in ((2,"debugger"),(3,"alu")):
+                    computer.inspector.setCurrentIndex(tab)
+                    app.processEvents()
+                    target=output/f"{language}-{theme}-{suffix}.png"
+                    if not computer.grab().save(str(target)):
+                        raise RuntimeError(f"Could not save {target}")
                 computer.close()
         window.editor.document().setModified(False)
         window.close()

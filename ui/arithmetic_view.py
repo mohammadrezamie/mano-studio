@@ -20,6 +20,7 @@ class ArithmeticView(QWidget):
         self.base=QComboBox()
         for name,n in [("BIN",2),("OCT",8),("DEC",10),("HEX",16)]:self.base.addItem(name,n)
         self.base.setCurrentIndex(3)
+        self.previous_base=16
         row.addWidget(self.base)
         self.op=QComboBox()
         self.op.addItems(OPERATIONS)
@@ -64,8 +65,9 @@ class ArithmeticView(QWidget):
         self.status.setWordWrap(True)
         self.status.setProperty("state","error")
         layout.addWidget(self.status)
-        for control in (self.width,self.base,self.op):
+        for control in (self.width,self.op):
             control.currentIndexChanged.connect(self.refresh)
+        self.base.currentIndexChanged.connect(self.change_base)
         self.cin.toggled.connect(self.refresh)
         self.a.textChanged.connect(self.refresh)
         self.b.textChanged.connect(self.refresh)
@@ -74,10 +76,28 @@ class ArithmeticView(QWidget):
     def t(self,en,fa):
         return fa if self.fa else en
 
+    def change_base(self,*_):
+        new=self.base.currentData()
+        width=self.width.currentData()
+        keys={2:"BIN",8:"OCT",10:"Unsigned",16:"HEX"}
+        for edit in (self.a,self.b):
+            try:
+                word=parse_word(edit.text(),self.previous_base,width)
+            except ValueError:
+                continue
+            edit.blockSignals(True)
+            edit.setText(representations(word,width)[keys[new]])
+            edit.blockSignals(False)
+        self.previous_base=new
+        self.refresh()
+
     def set_operands(self,a,b,e=0):
         for edit in (self.a,self.b):edit.blockSignals(True)
         self.width.setCurrentIndex(self.width.findData(16))
+        self.base.blockSignals(True)
         self.base.setCurrentIndex(self.base.findData(16))
+        self.previous_base=16
+        self.base.blockSignals(False)
         self.a.setText(f"{a:04X}")
         self.b.setText(f"{b:04X}")
         self.cin.setChecked(bool(e))

@@ -37,6 +37,7 @@ class ProgramLab(QDialog):
         self.steps = 0
         self.history = None
         self.break_resume = None
+        self.visible_trace=[]
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.run_tick)
         layout = QVBoxLayout(self)
@@ -204,6 +205,7 @@ class ProgramLab(QDialog):
             self.pause()
             self.status.setText(self.t("Step limit reached. Reset to continue.","حد اجرای گام‌ها رسید؛ بازنشانی کنید."))
             return
+        self.break_resume=None
         try:
             event = self.history.step()
         except ValueError as error:
@@ -286,11 +288,23 @@ class ProgramLab(QDialog):
     def refresh_trace(self):
         self.back_button.setEnabled(bool(self.history and self.history.entries))
         rows=self.trace_rows()
-        self.trace.setRowCount(len(rows))
-        for i,row in enumerate(rows):
-            for j,value in enumerate(row):
-                self.trace.setItem(i,j,QTableWidgetItem(str(value)))
-        if rows:self.trace.scrollToBottom()
+        if rows!=self.visible_trace:
+            # In the common forward-step case, insert only the new row.
+            # At capacity, remove the oldest row before appending.
+            previous=self.visible_trace
+            if previous and len(rows)==len(previous) and rows[:-1]==previous[1:]:
+                self.trace.removeRow(0)
+                start=len(rows)-1
+            elif rows[:len(previous)]==previous:
+                start=len(previous)
+            else:
+                start=0
+            self.trace.setRowCount(len(rows))
+            for i in range(start,len(rows)):
+                for j,value in enumerate(rows[i]):
+                    self.trace.setItem(i,j,QTableWidgetItem(str(value)))
+            self.visible_trace=rows
+            if rows:self.trace.scrollToBottom()
         self.break_label.setText(self.t("Breakpoints: ","نقاط توقف: ")+
             (", ".join(f"{a:03X}" for a in sorted(self.history.breakpoints)) if self.history and self.history.breakpoints else "—"))
 

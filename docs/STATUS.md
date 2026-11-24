@@ -98,3 +98,6 @@ Added optional asm_to_rtl.py and File > Import ASM as RTL (canonical named instr
 
 ### CI recovery checkpoint
 No workflow runs or confirmed candidate binary at inspected newer heads since reusable-workflow change. Restored the last known working simple test matrix and manual-only Windows installer workflow (no reusable job). This is a recovery attempt, not evidence of root cause. Connector exposes no workflow dispatch action; exact-head runs need verification. Local container lacks PySide6 and GitHub DNS access. No public release.
+
+### Interaction refinement
+ALU base switching preserves valid operands rather than silently reinterpreting them; invalid text remains available for correction. Trace table incrementally appends and handles bounded rollover rather than recreating every cell each step. Extended screenshots to debugger/ALU in all languages and themes. Recovered original simple regression workflow; run 45402185504 in progress at inspection. New changes require new CI confirmation.

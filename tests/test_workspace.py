@@ -361,3 +361,17 @@ def test_optional_reverse_import(workspace,tmp_path,monkeypatch):
     assert workspace.path is None and workspace.editor.document().isModified()
     assert workspace.output.toPlainText()=="LDA 100 I\nHLT"
     assert path.read_text(encoding="utf-8")=="LDA 100 I\nHLT"
+
+
+def test_alu_base_switch_preserves_word(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.arithmetic
+    assert view.result.word==0x8000
+    view.base.setCurrentIndex(view.base.findData(10))
+    assert view.a.text()=="32767" and view.b.text()=="1"
+    assert view.result.word==0x8000
+    view.base.setCurrentIndex(view.base.findData(2))
+    assert view.a.text()=="0111111111111111"
+    assert view.result.word==0x8000
+    lab.close()
