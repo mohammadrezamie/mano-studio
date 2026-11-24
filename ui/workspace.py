@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QComboBox,
     QPlainTextEdit, QLineEdit, QCheckBox, QTabWidget, QSplitter, QVBoxLayout,
     QHBoxLayout, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView,
-    QFileDialog, QMessageBox, QDialog, QAbstractItemView, QScrollArea, QFrame,
+    QFileDialog, QMessageBox, QDialog, QAbstractItemView, QScrollArea, QFrame, QMenu,
 )
 import re
 from rtl_translator import translate
@@ -93,10 +93,18 @@ class Workspace(QMainWindow):
         toolbar = QHBoxLayout(toolbar_frame)
         for name, slot in [("New", self.new_file), ("Open RTL", self.open_file),
                            ("Save RTL", self.save_file), ("Export ASM", self.export_file),
-                           ("Source", self.show_source), ("Live Lab", self.open_lab), ("About", self.about)]:
+                           ("Source", self.show_source), ("About", self.about)]:
             toolbar.addWidget(self.button(name, slot))
-        toolbar.addWidget(self.button("Program Lab", self.open_program_lab))
-        toolbar.addWidget(self.button("Logic Lab", self.open_logic_lab))
+        labs = QPushButton(self.t("Labs"))
+        self.labels.append((labs, "Labs"))
+        self.lab_menu = QMenu(labs)
+        self.lab_actions = []
+        for key, slot in [("Live Lab", self.open_lab), ("Program Lab", self.open_program_lab), ("Logic Lab", self.open_logic_lab)]:
+            action = self.lab_menu.addAction(self.t(key))
+            action.triggered.connect(lambda checked=False, fn=slot: fn())
+            self.lab_actions.append((action, key))
+        labs.setMenu(self.lab_menu)
+        toolbar.addWidget(labs)
         toolbar.addStretch()
         toolbar.addWidget(self.button("Translate", self.run_translation, True))
         layout.addWidget(toolbar_frame)
@@ -340,6 +348,8 @@ class Workspace(QMainWindow):
     def relabel(self):
         for widget, key in self.labels:
             widget.setText(self.t(key))
+        for action, key in self.lab_actions:
+            action.setText(self.t(key))
         for index, title in enumerate(("Editor", "Symbol pad", "Builder")):
             self.tabs.setTabText(index, self.t(title))
         for index, title in enumerate(("Light", "Dark", "Night")):
