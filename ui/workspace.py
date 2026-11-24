@@ -121,6 +121,7 @@ class Workspace(QMainWindow):
         toolbar.addWidget(self.export_button)
         layout.addWidget(toolbar_frame)
         split = QSplitter(Qt.Orientation.Vertical)
+        self.workspace_split = split
         editors = QSplitter(Qt.Orientation.Horizontal)
         self.editor, self.output = code_editor(), code_editor(True)
         for title, editor in [("RTL input", self.editor), ("Assembly output", self.output)]:
@@ -142,9 +143,10 @@ class Workspace(QMainWindow):
         self.tabs.addTab(self.pad(), self.t("Symbol pad"))
         self.tabs.addTab(self.builder(), self.t("Builder"))
         self.tabs.setCurrentIndex(max(0, min(2, int(settings.value("input_mode", 0)))))
-        self.tabs.currentChanged.connect(lambda n: settings.setValue("input_mode", n))
+        self.tabs.currentChanged.connect(self.input_mode_changed)
         split.addWidget(self.tabs)
         diagnostics = QWidget()
+        self.diagnostics_panel = diagnostics
         dl = QVBoxLayout(diagnostics)
         dl.addWidget(self.label("Diagnostics", "section"))
         self.table = QTableWidget(0, 4)
@@ -154,7 +156,11 @@ class Workspace(QMainWindow):
         self.table.cellClicked.connect(self.jump_error)
         dl.addWidget(self.table)
         split.addWidget(diagnostics)
-        split.setSizes([320, 260, 130])
+        split.setStretchFactor(0, 1)
+        split.setStretchFactor(1, 0)
+        split.setStretchFactor(2, 0)
+        self.diagnostics_panel.hide()
+        split.setSizes([560, 80 if self.tabs.currentIndex() == 0 else 260, 0])
         layout.addWidget(split, 1)
         self.editor.textChanged.connect(self.invalidate)
         self.shortcut = QShortcut(QKeySequence("F5"), self)
@@ -171,6 +177,13 @@ class Workspace(QMainWindow):
         geometry = settings.value("geometry")
         if geometry:
             self.restoreGeometry(geometry)
+
+    def input_mode_changed(self, index):
+        self.settings.setValue("input_mode", index)
+        total = max(self.workspace_split.height(), 520)
+        diagnostic = 145 if not self.diagnostics_panel.isHidden() else 0
+        tools = 80 if index == 0 else 260
+        self.workspace_split.setSizes([max(180, total-tools-diagnostic), tools, diagnostic])
 
     def t(self, text):
         return FA.get(text, text) if self.language == "fa" else text
@@ -329,6 +342,7 @@ class Workspace(QMainWindow):
         self.export_button.setEnabled(False)
         self.table.setRowCount(0)
         self.editor.mark_errors(())
+        self.diagnostics_panel.hide()
         self.statusBar().showMessage(self.t("Input changed — translate again"))
 
     def run_translation(self):
@@ -343,6 +357,9 @@ class Workspace(QMainWindow):
     def render_errors(self):
         errors = self.result.diagnostics if self.result else ()
         self.table.setRowCount(len(errors))
+        self.diagnostics_panel.setVisible(bool(errors))
+        if errors:
+            self.input_mode_changed(self.tabs.currentIndex())
         self.editor.mark_errors(errors)
         for row, error in enumerate(errors):
             help_text = HELP.get(error.code, (error.message, error.message))[self.language == "fa"]
