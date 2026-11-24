@@ -1190,3 +1190,29 @@ def test_multiprocessor_route_and_live_grant(workspace):
     assert v.model.waited==[0,2,4,6]
     assert not v.canvas.grab().isNull()
     lab.close()
+
+
+def test_waveform_inspection_and_export(workspace,tmp_path):
+    from ui.logic_lab import LogicLab
+    lab=LogicLab(workspace)
+    lab.select_tool("sequential")
+    v=lab.sequential
+    v.selector.setCurrentIndex(v.selector.findData("D"))
+    v.buttons["D"].setChecked(True);v.pulse()
+    assert v.waveform.rows[-1].number==3 and v.cursor==3
+    v.waveform.choose(2)
+    assert not v.follow.isChecked() and "Q=1" in v.inspection.text()
+    before=(v.model.value,v.model.clock,tuple(v.model.history))
+    v.waveform.choose(0)
+    assert "Q=0" in v.inspection.text()
+    assert (v.model.value,v.model.clock,tuple(v.model.history))==before
+    v.follow.setChecked(True);assert v.cursor==3
+    for _ in range(40):v.pulse()
+    assert len(v.waveform.rows)==16 and v.position.maximum()>0
+    v.position.setValue(v.position.minimum())
+    assert not v.follow.isChecked()
+    assert not v.waveform.grab().isNull()
+    target=tmp_path/"trace.csv";v.write_history(target)
+    assert len(target.read_text().splitlines())==65
+    v.reset();assert v.cursor==0 and len(v.waveform.rows)==1
+    lab.close()

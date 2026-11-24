@@ -42,3 +42,7 @@ Integrated ideal RAM/ROM functional bus model, six organization choices, explici
 
 ## Memory & bus
 Existing memory device tab now groups chip, expansion, and register bus views. Bank table uses actual chip contents, decoded select and data slices; write is explicit and disabled memory returns Z. Register bus displays three registers with buffer/enable and destination controls; X marks conflicting bits, Z undriven, only exactly one enabled source can load destinations. Functional diagram, not hardware timing. Config changes reset demo data. No new dependencies.
+
+
+## Interactive waveform analyzer
+Replaced the existing static sampled trace with a live analysis viewport over the same ClockedCircuit model. Stable absolute event indices across the bounded 64-sample deque; 8/16/32/64 visible samples, scroll position, follow latest, mouse/keyboard cursor and actual historical values, rising-edge markers only where preceding sample is retained. CSV exports all retained actual samples, not just viewport; no electrical timestamps or inferred timing. Historical inspection never changes the live circuit. Theme-aware vector rendering, no idle animations or new dependencies. Pure analysis and GUI regressions authored; current CI pending. Native visual review and verified Windows artifact still outstanding. No academic translator or release changes.

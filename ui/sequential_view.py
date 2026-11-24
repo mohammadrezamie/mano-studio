@@ -1,9 +1,10 @@
 """Embedded clocked-component workbench with sample-based waveform view."""
-from PySide6.QtCore import Qt, QRectF, QPointF
+from PySide6.QtCore import Qt, QRectF, QPointF, Signal, QSignalBlocker
 from PySide6.QtGui import QColor,QPainter,QPen,QFont,QPainterPath
-from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QGridLayout,QComboBox,QLabel,QPushButton
+from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QGridLayout,QComboBox,QLabel,QPushButton,QSlider,QCheckBox,QFileDialog
 from sequential_logic import ClockedCircuit, MODELS, RULES
 from ui.theme import PALETTES
+from waveform_analysis import recorded,window,write_csv
 
 TITLES={
     "D":("D flip-flop","فلیپ‌فلاپ D"),
@@ -76,49 +77,95 @@ class ClockedDiagram(QWidget):
 
 
 class WaveformView(QWidget):
+    selected=Signal(int)
+
     def __init__(self, theme, fa=False):
         super().__init__()
-        self.theme=theme
-        self.model=None
-        self.setMinimumHeight(300)
+        self.theme=theme;self.model=None;self.rows=();self.names=();self.cursor=None
         self.fa=fa
+        self.setMinimumHeight(300)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setAccessibleName("تاریخچه نمودار زمانی" if fa else "Digital waveform history")
+        self.setToolTip("Click a sample or use Left/Right/Home/End" if not fa else "نمونه را انتخاب کنید یا از کلیدهای جهت، Home و End استفاده کنید")
+
+    def set_window(self,names,rows,cursor=None):
+        self.names,self.rows=names,rows
+        self.cursor=cursor if any(r.number==cursor for r in rows) else None
+        self.update()
+
+    def geometry_values(self):
+        left=76;right=max(left+1,self.width()-16)
+        return left,right,(right-left)/max(1,len(self.rows))
+
+    def choose(self,number):
+        if any(r.number==number for r in self.rows):
+            self.cursor=number;self.selected.emit(number);self.update()
+
+    def mousePressEvent(self,event):
+        left,right,spacing=self.geometry_values()
+        x=event.position().x()
+        if self.rows and left<=x<=right:
+            self.choose(self.rows[min(len(self.rows)-1,int((x-left)/spacing))].number)
+            self.setFocus()
+        super().mousePressEvent(event)
+
+    def keyPressEvent(self,event):
+        if self.rows and event.key() in (Qt.Key.Key_Left,Qt.Key.Key_Right,Qt.Key.Key_Home,Qt.Key.Key_End):
+            lo,hi=self.rows[0].number,self.rows[-1].number
+            current=self.cursor if self.cursor is not None else hi
+            number={Qt.Key.Key_Left:max(lo,current-1),Qt.Key.Key_Right:min(hi,current+1),
+                    Qt.Key.Key_Home:lo,Qt.Key.Key_End:hi}[event.key()]
+            self.choose(number);event.accept();return
+        super().keyPressEvent(event)
 
     def paintEvent(self,event):
         p=QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
         bg,panel,raised,fg,muted,accent,border=PALETTES[self.theme]
-        p.fillRect(self.rect(),QColor(panel))
-        if not self.model:
-            return
-        m=self.model
-        names=("CLK",)+m.pins+tuple("Q\u0305" if name=="Qbar" else name for name in m.outputs)
-        samples=[(s.clock,)+s.inputs+s.outputs for s in m.history]
-        left=68
-        right=max(left+1,self.width()-16)
-        top=16
-        pitch=max(15,(self.height()-top-25)/len(names))
-        spacing=(right-left)/max(1,len(samples))
-        p.setFont(QFont("Consolas",10))
+        p.fillRect(self.rect(),QColor(bg))
+        names,rows=self.names,self.rows
+        if not rows or not names:p.end();return
+        left,right,spacing=self.geometry_values()
+        top=25
+        pitch=max(12,(self.height()-top-27)/len(names))
+        bottom=top+len(names)*pitch
+        p.setFont(QFont("Consolas",9))
+        # Highlight recorded rising edges, not inferred physical timing.
+        for j,r in enumerate(rows):
+            x=left+j*spacing
+            if r.number==self.cursor:
+                shade=QColor(accent);shade.setAlpha(30)
+                p.fillRect(QRectF(x,top,spacing,bottom-top),shade)
+            p.setPen(QPen(QColor(accent if r.rising else border),1,Qt.PenStyle.DashLine if r.rising else Qt.PenStyle.SolidLine))
+            p.drawLine(QPointF(x,top),QPointF(x,bottom))
+            if j==0 or j==len(rows)-1 or (spacing>=27 and j%2==0):
+                p.setPen(QColor(muted))
+                p.drawText(QRectF(x,3,max(spacing,22),18),Qt.AlignmentFlag.AlignLeft,str(r.number))
         for i,name in enumerate(names):
             y=top+i*pitch
+            p.fillRect(QRectF(4,y,left-8,pitch-2),QColor(panel if i%2==0 else raised))
             p.setPen(QColor(fg))
-            p.drawText(QRectF(8,y,56,pitch),Qt.AlignmentFlag.AlignVCenter,name)
+            p.drawText(QRectF(10,y,left-15,pitch),Qt.AlignmentFlag.AlignVCenter,"Q\u0305" if name=="Qbar" else name)
             p.setPen(QPen(QColor(border),1))
             p.drawLine(QPointF(left,y+pitch-1),QPointF(right,y+pitch-1))
-            if not samples:
-                continue
-            height=min(13,pitch*.46)
-            def level(value):
-                return y+pitch*.73-height*value
-            path=QPainterPath(QPointF(left,level(samples[0][i])))
-            for j,sample in enumerate(samples):
+            height=min(14,pitch*.49)
+            def level(value):return y+pitch*.76-height*value
+            path=QPainterPath(QPointF(left,level(rows[0].values[i])))
+            for j,sample in enumerate(rows):
                 x=left+j*spacing
-                path.lineTo(x,level(sample[i]))
-                path.lineTo(x+spacing,level(sample[i]))
-            p.setPen(QPen(QColor(accent if i==0 else fg),1.65))
+                path.lineTo(x,level(sample.values[i]))
+                path.lineTo(x+spacing,level(sample.values[i]))
+            p.setPen(QPen(QColor(accent if i==0 else fg),1.8))
             p.drawPath(path)
+        if self.cursor is not None:
+            x=left+(self.cursor-rows[0].number+.5)*spacing
+            p.setPen(QPen(QColor(accent),1.6))
+            p.drawLine(QPointF(x,top),QPointF(x,bottom))
+        if self.hasFocus():
+            p.setBrush(Qt.BrushStyle.NoBrush);p.setPen(QPen(QColor(accent),1))
+            p.drawRect(self.rect().adjusted(1,1,-2,-2))
         p.setPen(QColor(muted))
-        p.drawText(QRectF(left,self.height()-20,right-left,18),Qt.AlignmentFlag.AlignRight,"ترتیب رویدادها" if self.fa else "Event samples  →")
+        p.drawText(QRectF(left,self.height()-21,right-left,18),Qt.AlignmentFlag.AlignRight,"ترتیب رویدادها" if self.fa else "Event index · not physical time")
         p.end()
 
 
@@ -158,7 +205,22 @@ class SequentialView(QWidget):
         layout.addWidget(self.summary)
         self.waveform=WaveformView(theme,self.fa)
         self.waveform.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        controls=QHBoxLayout()
+        self.zoom=QComboBox()
+        for length in (8,16,32,64):self.zoom.addItem(str(length),length)
+        self.zoom.setCurrentIndex(1)
+        controls.addWidget(QLabel(self.t("Visible samples","نمونه‌های قابل مشاهده")));controls.addWidget(self.zoom)
+        self.follow=QCheckBox(self.t("Follow latest","دنبال‌کردن آخرین نمونه"));self.follow.setChecked(True);controls.addWidget(self.follow)
+        self.position=QSlider(Qt.Orientation.Horizontal);self.position.setAccessibleName(self.t("History position","موقعیت تاریخچه"));controls.addWidget(self.position,1)
+        export=QPushButton(self.t("Export CSV","خروجی CSV"));export.clicked.connect(self.export_history);controls.addWidget(export)
+        layout.addLayout(controls)
         layout.addWidget(self.waveform,3)
+        self.inspection=QLabel();self.inspection.setWordWrap(True);self.inspection.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        layout.addWidget(self.inspection)
+        self.zoom.currentIndexChanged.connect(self.update_waveform)
+        self.follow.toggled.connect(self.update_waveform)
+        self.position.valueChanged.connect(self.seek)
+        self.waveform.selected.connect(self.inspect)
         self.rule=QLabel()
         self.rule.setWordWrap(True)
         self.rule.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
@@ -186,6 +248,8 @@ class SequentialView(QWidget):
             self.buttons[name]=button
             self.input_layout.addWidget(button,i//6,i%6)
         self.diagram.model=self.waveform.model=self.model
+        self.cursor=None
+        with QSignalBlocker(self.follow):self.follow.setChecked(True)
         formula,en,fa=RULES[self.model.kind]
         self.note.setText(self.t(en,fa)+"\n"+self.t("Rising-edge model; event order, not physical delay.","مدل لبه بالارونده؛ ترتیب رویدادها، نه تأخیر فیزیکی."))
         self.diagram.setMinimumHeight(max(155,60+18*(len(self.model.pins)+1)))
@@ -195,6 +259,8 @@ class SequentialView(QWidget):
 
     def reset(self):
         self.model.reset()
+        self.cursor=None
+        with QSignalBlocker(self.follow):self.follow.setChecked(True)
         self.status.clear()
         self.refresh()
 
@@ -236,4 +302,42 @@ class SequentialView(QWidget):
             next_value=self.t("Invalid","نامعتبر")
         self.rule.setText(formula+"\n"+self.t("Next rising edge: ","لبه بالارونده بعدی: ")+next_value)
         self.diagram.update()
-        self.waveform.update()
+        self.update_waveform()
+
+    def seek(self,*_):
+        with QSignalBlocker(self.follow):self.follow.setChecked(False)
+        self.update_waveform()
+
+    def update_waveform(self,*_):
+        names,rows=recorded(self.model)
+        length=self.zoom.currentData()
+        lo=rows[0].number;hi=rows[-min(length,len(rows))].number
+        with QSignalBlocker(self.position):
+            self.position.setRange(lo,hi)
+            self.position.setValue(hi if self.follow.isChecked() else max(lo,min(hi,self.position.value())))
+        visible=window(rows,length,self.position.value())
+        if self.follow.isChecked():self.cursor=visible[-1].number
+        elif not any(row.number==self.cursor for row in visible):self.cursor=visible[0].number
+        self.waveform.set_window(names,visible,self.cursor)
+        self.describe(names,visible)
+
+    def inspect(self,number):
+        with QSignalBlocker(self.follow):self.follow.setChecked(False)
+        self.cursor=number
+        self.describe(self.waveform.names,self.waveform.rows)
+
+    def describe(self,names,rows):
+        sample=next((row for row in rows if row.number==self.cursor),None)
+        if sample:
+            edge="  |  "+self.t("Rising edge","لبه بالارونده") if sample.rising else ""
+            self.inspection.setText(f"#{sample.number}"+edge+"  |  "+"  ·  ".join(f"{n}={v}" for n,v in zip(names,sample.values)))
+        else:self.inspection.clear()
+
+    def export_history(self):
+        path,_=QFileDialog.getSaveFileName(self,self.t("Export retained event samples","ذخیره نمونه‌های رویداد"),"waveform.csv","CSV (*.csv)")
+        if path:
+            try:self.write_history(path)
+            except OSError:self.status.setText(self.t("Could not write file.","ذخیره فایل ممکن نبود."))
+
+    def write_history(self,path):
+        write_csv(self.model,path)

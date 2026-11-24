@@ -46,12 +46,14 @@ class ClockedCircuit:
         item=Sample(self.clock,tuple(self.inputs.values()),tuple(self.outputs.values()))
         if not self.history or self.history[-1]!=item:
             self.history.append(item)
+            self.sample_count+=1
 
     def reset(self):
         self.value=1 if self.kind=="RING4" else 0
         self.clock=0
         self.inputs=dict.fromkeys(self.pins,0)
         self.history=deque(maxlen=64)
+        self.sample_count=0
         self.sample()
 
     def set_input(self,name,bit):

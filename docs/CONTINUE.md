@@ -10,7 +10,7 @@ When the owner says "continue" in a fresh chat, resume this repository, not a ne
 
 ## Next work (in order)
 1. Verify latest exact-head CI on Windows/Ubuntu and fix regressions; gather actual automated visual evidence where available. Do not present conceptual images as screenshots.
-2. Improve digital logic canvas and waveform interaction using real model data; reuse existing graphics components.
+2. Verify waveform analyzer (absolute event cursor, zoom, follow, CSV) and refine digital logic canvas using real model data; reuse existing graphics components.
 3. Verify first chapter 13 model; extend interconnection, synchronization and coherence, then serial framing, cache, associative/virtual memory and remaining chapter gaps. Register routes in learning_catalog.py.
 4. Beta preview convergence per BETA_PREVIEW.md; no publication or build dispatch without explicit owner approval.
 5. Update this checkpoint, STATUS, relevant docs, issue #13 (coverage), #10/#12 (design/UX), and PR #9 after each coherent commit. Record exact SHA and actual CI evidence in issue comments. Do not claim full textbook coverage or stable readiness.
@@ -18,3 +18,5 @@ When the owner says "continue" in a fresh chat, resume this repository, not a ne
 Source of truth is the live repository and tests, not old chat summaries.
 
 Latest verified evidence: motion f02f517 runs 45478369514 and 45478353916 success; navigation 66d1a14 run 45479351841 success. Later canvas, brand and multiprocessor exact-head CI pending. Owner forbids generic letter-M branding; maintain non-letter symbol or improve it, not a monogram.
+
+Current increment: interactive waveform analyzer; exact-head CI pending, earlier motion runs green as above. Next: cache/serial and circuit visualization; no release changes.
