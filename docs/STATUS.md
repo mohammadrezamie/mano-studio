@@ -149,3 +149,6 @@ Verified previous combinational expansion on run 45407504795: test (windows-late
 
 ### Sequential expansion checkpoint
 11 clocked models, pure shared next-state transition, explicit state equations and preview, scalable diagram/waveform. Exhaustive shift/universal/up-down transition tests, ring/Johnson cycle tests, GUI test authored. Prior combinational head confirmed 290 tests each OS, latest CI pending. Issue #11/#13 updated separately; no release or changes to academic translator.
+
+## Memory and representation increment
+Previous clocked expansion verified run 45408365820: test (ubuntu-latest): 2026-11-24T13:55:59.2298259Z 297 passed, 1 warning in 34.22s; test (windows-latest): 2026-11-24T13:56:15.1741873Z 297 passed, 1 warning in 32.51s. Next: ideal RAM/ROM memory chip with explicit active-low select/read/write controls, Z on inactive outputs, addressed cells, event-driven operations and functional bus diagram; independent data code conversions (BCD, Gray, ASCII, Hamming). Integrate in existing Logic Lab/Computer inspector. Reference memory concepts https://www.allaboutcircuits.com/textbook/digital/chpt-15/digital-memory-terms-concepts/ and BCD valid digits https://www.allaboutcircuits.com/textbook/digital/chpt-8/dont-care-cells-karnaugh-map/. No physical timing claims, no new runtime dependencies or public release. Preserve academic translator.
