@@ -2,11 +2,12 @@
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QPlainTextEdit, QTableWidget, QTableWidgetItem, QHeaderView,
-    QAbstractItemView, QSplitter, QSpinBox, QLineEdit)
+    QAbstractItemView, QSplitter, QSpinBox, QLineEdit, QTabWidget)
 from PySide6.QtCore import Qt
 from assembler import assemble
 from simulator import CPU
 from ui.workspace import code_editor
+from ui.datapath_view import DatapathView
 
 EXAMPLE = """ORG 000
 LDA A
@@ -23,7 +24,7 @@ class ProgramLab(QDialog):
     def __init__(self, parent, assembly=""):
         super().__init__(parent)
         self.fa = parent.language == "fa"
-        self.setWindowTitle("Mano Studio — " + self.t("Program Lab", "آزمایشگاه برنامه"))
+        self.setWindowTitle("Mano Studio — " + self.t("Computer", "کامپیوتر"))
         self.resize(1060, 700)
         self.cpu = None
         self.program = None
@@ -67,7 +68,11 @@ class ProgramLab(QDialog):
             table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
             lower.addWidget(table)
-        layout.addWidget(lower, 2)
+        self.inspector=QTabWidget()
+        self.datapath=DatapathView(parent.theme, parent.settings.value("reduced_motion", False, type=bool) or not parent.settings.value("lab_motion", True, type=bool))
+        self.inspector.addTab(self.datapath,self.t("Live view","نمای زنده"))
+        self.inspector.addTab(lower,self.t("Registers & memory","ثبات‌ها و حافظه"))
+        layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
         self.input = QLineEdit()
         self.input.setPlaceholderText(self.t("Input byte (00–FF)","بایت ورودی (00–FF)"))
@@ -92,6 +97,7 @@ class ProgramLab(QDialog):
         self.pause()
         self.cpu = self.program = None
         self.machine.clear()
+        self.datapath.set_state(None)
         self.registers.setRowCount(0)
         self.memory.setRowCount(0)
         self.status.setText(self.t("Source changed. Assemble again.","کد تغییر کرد؛ دوباره اسمبل کنید."))
@@ -106,6 +112,7 @@ class ProgramLab(QDialog):
         self.cpu = None
         self.steps = 0
         if not self.program.ok:
+            self.datapath.set_state(None)
             self.machine.setPlainText("\n".join(f"{e.line}: {e.message}" for e in self.program.errors))
             self.status.setText(self.t("Assembly failed.","اسمبل ناموفق بود."))
             self.registers.setRowCount(0)
@@ -118,6 +125,7 @@ class ProgramLab(QDialog):
         self.status.setText(self.t("Ready.","آماده."))
 
     def refresh(self,event=None):
+        self.datapath.set_state(self.cpu,event)
         values = self.cpu.registers()
         self.registers.setRowCount(len(values))
         for row,(name,value) in enumerate(values.items()):
@@ -167,6 +175,8 @@ class ProgramLab(QDialog):
 
     def pause(self):
         self.timer.stop()
+        if hasattr(self, "datapath"):
+            self.datapath.stop()
 
     def send_input(self):
         if self.cpu:
