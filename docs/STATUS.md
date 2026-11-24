@@ -143,3 +143,6 @@ Owner requests full-book mathematical and visual coverage with continuously upda
 
 ### Combinational expansion
 23 presets total; added eight gate-level components (enabled decoders, mux4, priority encoder, comparators, full subtractor, parity). Added netlist-derived equations beside truth table in same Logic Lab. Independent exhaustive truth-table tests and GUI test authored. Prior notation verified 281 each OS; new CI pending. Issue #13 curriculum / #11 logic. Academic core unchanged; no public release.
+
+## Next sequential increment
+Verified previous combinational expansion on run 45407504795: test (windows-latest) 2026-11-24T13:51:28.4699929Z 290 passed, 1 warning in 50.22s; test (ubuntu-latest) 2026-11-24T13:50:43.8024044Z 290 passed, 1 warning in 25.66s. Expand clocked models in the existing Sequential tab: serial and universal shift, synchronous clear/load up/down counter, ring and Johnson counters. Add explicit next-state equations, pure preview, pin-count-aware diagrams/waveforms, exhaustive transition tests. Reference functional behavior from Nexperia 74HC194 overview and All About Circuits ring counter chapter; educational abstractions, not physical IC models. No public release or change to RTL assignment.
