@@ -3,6 +3,7 @@ FA = {
     "Offline": "آفلاین",
     "Awaiting translation": "در انتظار ترجمه",
     "instructions": "دستور",
+    "instruction": "دستور",
     "Examples": "مثال‌ها",
     "Untitled": "بدون عنوان",
     "Save RTL as": "ذخیره RTL با نام جدید",
