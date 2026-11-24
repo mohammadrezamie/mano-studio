@@ -1,0 +1,44 @@
+"""Centralized UI text; code tokens always remain untranslated."""
+FA = {
+    "Build. Translate. Learn.": "بسازید. ترجمه کنید. یاد بگیرید.",
+    "New": "جدید", "Open RTL": "باز کردن RTL", "Save RTL": "ذخیره RTL",
+    "Export ASM": "خروجی اسمبلی", "Translate": "ترجمه", "About": "درباره",
+    "Source": "سورس مترجم", "Editor": "ویرایشگر", "Symbol pad": "صفحه‌کلید نمادها",
+    "Builder": "سازنده بصری", "RTL input": "ورودی RTL", "Assembly output": "خروجی اسمبلی",
+    "Diagnostics": "خطاها و راهنما", "Line": "خط", "Column": "ستون", "Code": "کد",
+    "Help": "راهنما", "Ready": "آماده", "Address (HEX)": "آدرس (هگزادسیمال)",
+    "Indirect": "غیرمستقیم", "Insert instruction": "درج دستور",
+    "Replace line": "جایگزینی خط", "Delete line": "حذف خط", "Move up": "انتقال به بالا",
+    "Move down": "انتقال به پایین", "Space": "فاصله", "Enter": "خط بعد",
+    "Backspace": "حذف", "Undo": "واگرد", "Redo": "انجام مجدد",
+    "Light": "روشن", "Dark": "تیره", "Night": "شب",
+    "Unsaved changes": "تغییرات ذخیره‌نشده",
+    "Save your changes before continuing?": "تغییرات را پیش از ادامه ذخیره می‌کنید؟",
+    "File error": "خطای فایل", "No valid output": "خروجی معتبر وجود ندارد",
+    "Translate the input successfully before exporting.": "ابتدا ورودی را بدون خطا ترجمه کنید.",
+    "Input changed — translate again": "ورودی تغییر کرده؛ دوباره ترجمه کنید",
+    "Translation failed": "ترجمه ناموفق", "Translation successful": "ترجمه موفق",
+    "Loading workspace…": "در حال آماده‌سازی محیط کار…",
+    "Academic project · Morris Mano Basic Computer": "پروژه آموزشی · کامپیوتر پایه موریس مانو",
+    "Inspired by the course project assigned by instructor Siavash Eshaghi.": "با الهام از پروژه درسی استاد ارجمند سیاوش اسحقی و با سپاس از ایشان.",
+    "Initializing…": "در حال راه‌اندازی…", "Instruction": "دستور",
+    "Invalid address": "آدرس نامعتبر", "Choose 000–FFF.": "آدرس بین ۰۰۰ تا FFF انتخاب کنید.",
+    "Preview": "پیش‌نمایش", "Open source": "متن‌باز", "Copy": "کپی",
+    "No instructions": "دستوری وجود ندارد",
+}
+HELP = {
+    "ADDRESS_RANGE": (
+        "Address must contain 1–3 hexadecimal digits (000–FFF). Example: AC ← M[FFF].",
+        "آدرس باید ۱ تا ۳ رقم هگزادسیمال (000 تا FFF) داشته باشد. نمونه: AC ← M[FFF]."),
+    "UNSUPPORTED_RTL": (
+        "Syntax is invalid or this transfer has no supported Mano instruction. Try AC ← M[100] or use Builder. Internal transfers such as AR ← PC are not standalone assembly instructions.",
+        "نحو نامعتبر است یا این انتقال دستور اسمبلی پشتیبانی‌شده ندارد. از AC ← M[100] یا سازنده بصری استفاده کنید. انتقال داخلی مانند AR ← PC دستور مستقل اسمبلی نیست."),
+}
+NAMES = dict(zip(
+    "AND ADD LDA STA BUN BSA ISZ CLA CLE CMA CME CIR CIL INC SPA SNA SZA SZE HLT INP OUT SKI SKO ION IOF".split(),
+    ["و منطقی", "جمع", "بارگذاری انباره", "ذخیره انباره", "پرش", "فراخوانی زیرروال", "افزایش و پرش شرطی",
+     "صفر کردن AC", "صفر کردن E", "متمم AC", "متمم E", "چرخش راست", "چرخش چپ", "افزایش AC",
+     "پرش اگر بیت علامت صفر", "پرش اگر منفی", "پرش اگر AC صفر", "پرش اگر E صفر", "توقف",
+     "ورودی", "خروجی", "پرش اگر ورودی آماده", "پرش اگر خروجی آماده", "فعال کردن وقفه", "غیرفعال کردن وقفه"]
+))
+EN_NAMES = dict(zip(NAMES, ["Logical AND", "Add", "Load accumulator", "Store accumulator", "Branch", "Branch and save return", "Increment and skip if zero", "Clear AC", "Clear E", "Complement AC", "Complement E", "Rotate right", "Rotate left", "Increment AC", "Skip if nonnegative", "Skip if negative", "Skip if AC zero", "Skip if E zero", "Halt", "Input", "Output", "Skip if input ready", "Skip if output ready", "Enable interrupt", "Disable interrupt"]))
