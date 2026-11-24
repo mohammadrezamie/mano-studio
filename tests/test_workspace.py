@@ -242,7 +242,7 @@ def test_visual_status_and_theme(workspace):
     workspace.editor.setPlainText("AC ← M[100]")
     workspace.run_translation()
     assert workspace.output_state.property("state")=="success"
-    assert workspace.output_state.text()=="1 instructions"
+    assert workspace.output_state.text()=="1 instruction"
     workspace.editor.setPlainText("AR ← PC")
     workspace.run_translation()
     assert workspace.output_state.property("state")=="error"
