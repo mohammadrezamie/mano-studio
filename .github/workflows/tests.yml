@@ -24,3 +24,10 @@ jobs:
       - run: python -m pip install -r requirements.txt -r requirements-dev.txt
       - run: python -c "import PySide6"
       - run: python -m pytest -q
+      - name: Capture actual desktop previews
+        run: python capture_workspace.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-previews-${{ matrix.os }}
+          path: screenshots/
+          if-no-files-found: error
