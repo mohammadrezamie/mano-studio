@@ -292,11 +292,25 @@ class LogicLab(QDialog):
             self.document_buttons.append(button)
             if en=="Undo edit":
                 self.undo_button=button
+        self.canvas_edit=QPushButton(self.t("Edit on canvas","ویرایش روی نقشه"))
+        self.canvas_edit.setCheckable(True)
+        self.canvas_edit.toggled.connect(self.toggle_canvas_edit)
+        self.document_buttons.append(self.canvas_edit)
+        actions.addWidget(self.canvas_edit)
+        reset=QPushButton(self.t("Auto layout","چیدمان خودکار"))
+        reset.clicked.connect(self.reset_layout)
+        self.document_buttons.append(reset)
+        actions.addWidget(reset)
         actions.addStretch()
         layout.addLayout(actions)
         self.description=QLabel()
         self.description.setWordWrap(True)
         layout.addWidget(self.description)
+        self.canvas_hint=QLabel()
+        self.canvas_hint.setWordWrap(True)
+        self.canvas_hint.setObjectName("muted")
+        self.canvas_hint.hide()
+        layout.addWidget(self.canvas_hint)
         self.input_widget=QWidget()
         self.input_grid=QGridLayout(self.input_widget)
         layout.addWidget(self.input_widget)
@@ -306,6 +320,9 @@ class LogicLab(QDialog):
         layout.addWidget(self.summary)
         split=QSplitter(Qt.Orientation.Vertical)
         self.diagram=LogicDiagram(parent.theme)
+        self.diagram.rewire.connect(self.rewire_pin)
+        self.diagram.moved.connect(self.move_component)
+        self.diagram.hint.connect(self.set_canvas_hint)
         split.addWidget(self.diagram)
         self.table=QTableWidget()
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -348,10 +365,11 @@ class LogicLab(QDialog):
         self.dirty=False
         self.show_circuit()
 
-    def show_circuit(self):
+    def show_circuit(self, preserve=False, fit=True):
+        old_inputs=getattr(self,"inputs",{}) if preserve else {}
         self.cancel_edit()
         self.undo_button.setEnabled(bool(self.history))
-        self.inputs={name:0 for name in self.circuit.inputs}
+        self.inputs={name:old_inputs.get(name,0) for name in self.circuit.inputs}
         self.description.setText(self.circuit.explanation[self.fa]+"  |  "+self.t("Inputs / Outputs", "ورودی / خروجی")+f": {len(self.circuit.inputs)} / {len(self.circuit.outputs)}")
         while self.input_grid.count():
             item=self.input_grid.takeAt(0)
@@ -361,6 +379,7 @@ class LogicLab(QDialog):
         for i,name in enumerate(self.inputs):
             button=QPushButton()
             button.setCheckable(True)
+            button.setChecked(bool(self.inputs[name]))
             button.toggled.connect(lambda checked,n=name:self.change(n,checked))
             self.buttons[name]=button
             self.input_grid.addWidget(button,i//6,i%6)
@@ -375,6 +394,54 @@ class LogicLab(QDialog):
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.table.setItem(i,j,item)
         self.refresh()
+        if fit:
+            self.diagram.fit()
+
+    def set_canvas_hint(self, key):
+        hints={
+            "ready":self.t("Click a source pin, then a receiving pin. Drag a component to move it; Esc cancels.","روی پایه مبدأ و سپس پایه مقصد کلیک کنید. اجزا را بکشید؛ Esc لغو می‌کند."),
+            "source":self.t("Choose a receiving pin to replace its connection.","برای جایگزینی اتصال، پایه مقصد را انتخاب کنید."),
+            "overlap":self.t("Components cannot overlap.","اجزا نباید روی هم قرار بگیرند."),
+        }
+        self.canvas_hint.setText(hints.get(key,key))
+
+    def toggle_canvas_edit(self,enabled):
+        self.diagram.set_editing(enabled)
+        self.canvas_hint.setVisible(enabled)
+        self.set_canvas_hint("ready")
+        self.refresh()
+
+    def commit_canvas(self,document):
+        if document==self.document:
+            self.set_canvas_hint("ready")
+            return
+        self.history.append((self.document,self.dirty))
+        self.history=self.history[-30:]
+        self.install_document(document,True,preserve=True,fit=False)
+        self.set_canvas_hint("ready")
+
+    def rewire_pin(self,source,target,pin):
+        try:
+            document=self.document.reconnect(source,target,pin)
+        except ValueError as exc:
+            self.set_canvas_hint(str(exc))
+            return
+        self.commit_canvas(document)
+
+    def move_component(self,name,x,y):
+        positions=dict(self.diagram.positions)
+        if name not in positions:
+            return
+        positions[name]=(x,y)
+        try:
+            document=self.document.with_positions(positions)
+        except ValueError as exc:
+            self.set_canvas_hint(str(exc))
+            return
+        self.commit_canvas(document)
+
+    def reset_layout(self):
+        self.commit_canvas(self.document.with_positions({}))
         self.diagram.fit()
 
     def confirm_discard(self):
@@ -386,6 +453,7 @@ class LogicLab(QDialog):
             QMessageBox.StandardButton.Cancel)==QMessageBox.StandardButton.Discard
 
     def edit_circuit(self):
+        self.canvas_edit.setChecked(False)
         self.circuit_editor.load(self.document)
         self.stack.setCurrentIndex(1)
         self.selector.setEnabled(False)
@@ -404,7 +472,7 @@ class LogicLab(QDialog):
             button.setEnabled(True)
         self.undo_button.setEnabled(bool(self.history))
 
-    def install_document(self,document,dirty):
+    def install_document(self,document,dirty,preserve=False,fit=True):
         circuit=document.compile()
         self.document,self.circuit=document,circuit
         self.dirty=dirty
@@ -413,20 +481,23 @@ class LogicLab(QDialog):
         self.selector.setCurrentIndex(self.selector.findData("custom"))
         self.selector.blockSignals(False)
         self.pin_count.setEnabled(False)
-        self.show_circuit()
+        self.show_circuit(preserve=preserve,fit=fit)
 
     def apply_document(self,document):
+        names=set(document.inputs)|{g.output for g in document.gates}|{"@"+n for n,_ in document.outputs}
+        # Retain manual placement for surviving components, without adding stale coordinates.
+        document=document.with_positions({n:(x,y) for n,x,y in self.document.positions if n in names})
         if document!=self.document:
             self.history.append((self.document,self.dirty))
             self.history=self.history[-30:]
-            self.install_document(document,True)
+            self.install_document(document,True,preserve=True)
         else:
             self.cancel_edit()
 
     def undo_edit(self):
         if self.history:
             document,dirty=self.history.pop()
-            self.install_document(document,dirty)
+            self.install_document(document,dirty,preserve=True)
 
     def open_circuit(self):
         if not self.confirm_discard():
@@ -489,7 +560,7 @@ class LogicLab(QDialog):
             button.setText(f"{name} = {self.inputs[name]}")
         values=self.circuit.evaluate(self.inputs)
         self.summary.setText("   |   ".join(f"{name} = {values[signal]}" for name,signal in self.circuit.outputs))
-        self.diagram.draw(self.circuit,values)
+        self.diagram.draw(self.circuit,values,self.document.positions)
         bits=tuple(self.inputs.values())
         row=next(i for i,(inputs,_) in enumerate(self.rows) if inputs==bits)
         self.table.selectRow(row)
