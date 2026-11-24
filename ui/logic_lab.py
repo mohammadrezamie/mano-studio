@@ -6,13 +6,14 @@ from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton,
     QComboBox, QWidget, QGraphicsScene, QGraphicsView, QTableWidget,
-    QTableWidgetItem, QHeaderView, QAbstractItemView, QSplitter, QSpinBox, QStackedWidget, QFileDialog, QMessageBox, QMenu,
+    QTableWidgetItem, QHeaderView, QAbstractItemView, QSplitter, QSpinBox, QStackedWidget, QFileDialog, QMessageBox, QMenu, QTabWidget,
 )
 from PySide6.QtSvg import QSvgGenerator
 from logic_engine import CIRCUITS, ARITY, basic
 from circuit_document import CircuitDocument
 from schematic_routing import wire_route
 from ui.circuit_editor import CircuitEditor
+from ui.sequential_view import SequentialView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES
 
@@ -285,7 +286,14 @@ class LogicLab(QDialog):
         self.selected_key=None
         self.setWindowTitle("Mano Studio — Logic Lab")
         self.resize(1100,740)
-        layout=QVBoxLayout(self)
+        outer=QVBoxLayout(self)
+        self.mode_tabs=QTabWidget()
+        outer.addWidget(self.mode_tabs)
+        combinational=QWidget()
+        self.mode_tabs.addTab(combinational,self.t("Combinational","مدارهای ترکیبی"))
+        self.sequential=SequentialView(parent.theme,self.fa)
+        self.mode_tabs.addTab(self.sequential,self.t("Sequential","مدارهای ترتیبی"))
+        layout=QVBoxLayout(combinational)
         title=QLabel(self.t("Logic Lab · Digital circuits","آزمایشگاه مدار منطقی"))
         title.setObjectName("brand")
         layout.addWidget(title)

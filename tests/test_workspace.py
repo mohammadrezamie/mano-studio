@@ -308,3 +308,19 @@ def test_canvas_rewire_and_export(workspace,tmp_path):
     assert "<svg" in svg.read_text(encoding="utf-8")
     lab.dirty=False
     lab.close()
+
+
+def test_integrated_sequential_view(workspace):
+    from ui.logic_lab import LogicLab
+    lab=LogicLab(workspace)
+    lab.mode_tabs.setCurrentIndex(1)
+    view=lab.sequential
+    view.buttons["D"].setChecked(True)
+    assert view.model.value==0
+    view.pulse()
+    assert view.model.value==1 and "Q = 1" in view.summary.text()
+    view.selector.setCurrentIndex(view.selector.findData("COUNT4"))
+    view.buttons["EN"].setChecked(True)
+    view.pulse()
+    assert view.model.value==1
+    lab.close()
