@@ -131,3 +131,6 @@ Owner requests a polished, usable Windows desktop app for the next classroom wee
 
 ## Current work — schematic notation and connectivity review
 Owner requires internationally recognizable components. Consulted Logisim documentation, KiCad wire/junction conventions and TI product reference (SCHEMATIC_STANDARD.md). Plan: original distinctive symbols, explicit parity labels, net-aware junction/ambiguity rendering and complementary output notation. No physical IC package claims, no external code or asset reuse, no new runtime dependency. Windows-first; academic translator unchanged.
+
+### Schematic implementation checkpoint
+Added net-aware wire notation and cached junction/ambiguity geometry, actual schematic warning markers, explicit multi-input parity labels and complemented Q display. Six pure regression cases authored. No copied code/assets; references in SCHEMATIC_STANDARD.md. Dense routing and visual acceptance still open; CI pending. No change to academic translator or release scope.

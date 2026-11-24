@@ -12,11 +12,12 @@ from PySide6.QtSvg import QSvgGenerator
 from logic_engine import CIRCUITS, ARITY, basic
 from circuit_document import CircuitDocument
 from schematic_routing import wire_route
+from wire_notation import analyze_wires
 from ui.circuit_editor import CircuitEditor
 from ui.localization import error_text
 from ui.sequential_view import SequentialView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
-from ui.theme import PALETTES
+from ui.theme import PALETTES, STATUS
 
 
 class LogicDiagram(QGraphicsView):
@@ -40,6 +41,9 @@ class LogicDiagram(QGraphicsView):
         self.route_cache={}
         self.route_key=None
         self.unrouted=0
+        self.notation_key=None
+        self.notation=((),())
+        self.ambiguous=0
         self.ports=[]
         self.pending=None
         self.drag_node=None
@@ -105,12 +109,14 @@ class LogicDiagram(QGraphicsView):
             fanout.setdefault(src,[]).append((dst,i,count))
         lane_counts = {}
         long_index = 0
+        routes=[]
         for src,targets in fanout.items():
             sx,sy = output_point(*positions[src])
             pen = QPen(QColor(accent if values[src] else muted),2 if values[src] else 1.1)
             trunk = sx + 8
             if not placement:
                 scene.addLine(sx,sy,trunk,sy,pen).setZValue(-1)
+                routes.append((src,((sx,sy),(trunk,sy))))
             for dst,index,count in targets:
                 ex,ey = input_point(*positions[dst],index,count)
                 if placement:
@@ -121,6 +127,7 @@ class LogicDiagram(QGraphicsView):
                     if key not in self.route_cache:
                         self.route_cache[key]=wire_route((sx,sy),(ex,ey),obstacles,long_index)
                     route,clear=self.route_cache[key]
+                    routes.append((src,tuple(route)))
                     long_index+=1
                     path=QPainterPath(QPointF(*route[0]))
                     for point in route[1:]:
@@ -136,21 +143,32 @@ class LogicDiagram(QGraphicsView):
                 lane_counts[gap] = lane+1
                 # Adjacent gap is wide enough for a range of separate tracks.
                 middle = ex-12-(lane%12)*7
-                path = QPainterPath()
-                path.moveTo(trunk,sy)
+                points=[(trunk,sy)]
                 if depths[dst]-depths[src]>1:
                     route_y = 14+long_index*9
                     long_index += 1
-                    path.lineTo(trunk,route_y)
-                    path.lineTo(middle,route_y)
-                    path.lineTo(middle,ey)
+                    points.extend(((trunk,route_y),(middle,route_y),(middle,ey)))
                 else:
-                    path.lineTo(middle,sy)
-                    path.lineTo(middle,ey)
-                path.lineTo(ex,ey)
+                    points.extend(((middle,sy),(middle,ey)))
+                points.append((ex,ey))
+                routes.append((src,tuple(points)))
+                path=QPainterPath(QPointF(*points[0]))
+                for point in points[1:]:path.lineTo(*point)
                 scene.addPath(path,pen).setZValue(-1)
-            if len(targets)>1 and not placement:
-                scene.addEllipse(QRectF(trunk-3,sy-3,6,6),pen,QBrush(pen.color()))
+        notation_key=tuple(routes)
+        if notation_key!=self.notation_key:
+            self.notation=analyze_wires(routes)
+            self.notation_key=notation_key
+        junctions,conflicts=self.notation
+        self.ambiguous=len(conflicts)
+        for net,x,y in junctions:
+            color=QColor(accent if values[net] else muted)
+            scene.addEllipse(QRectF(x-3,y-3,6,6),QPen(color),QBrush(color)).setZValue(-0.5)
+        for x,y in conflicts:
+            color=QColor(STATUS[self.theme][1])
+            item=scene.addEllipse(QRectF(x-5,y-5,10,10),QPen(color,1.4))
+            item.setZValue(2)
+            item.setToolTip("ابهام مسیر سیم؛ اتصال الکتریکی نیست" if self.fa else "Ambiguous wire contact; not an electrical connection")
         gate_names={gate.output:gate for gate in circuit.gates}
         output_signals=dict(circuit.outputs)
         def text_at(text,x,y,color,size=11):
@@ -165,7 +183,10 @@ class LogicDiagram(QGraphicsView):
             if name in gate_names:
                 gate=gate_names[name]
                 draw_gate(scene,gate.op,x,y,tuple(values[i] for i in gate.inputs),value,PALETTES[self.theme])
-                text_at(gate.op,x+25,y+HEIGHT+3,fg,10)
+                label=gate.op
+                if len(gate.inputs)>2 and gate.op in ("XOR","XNOR"):
+                    label="ODD" if gate.op=="XOR" else "EVEN"
+                text_at(label,x+25,y+HEIGHT+3,fg,10)
                 text_at(name,x+25,y-17,muted,9)
             else:
                 title=name[1:] if output else name
@@ -175,8 +196,9 @@ class LogicDiagram(QGraphicsView):
                 body=QPainterPath()
                 body.addRoundedRect(QRectF(x+22,y+CENTER-21,64,42),6,6)
                 scene.addPath(body,QPen(QColor(color),1.5),QBrush(QColor(panel)))
-                text_at(title,x+25,y+CENTER-19,fg,10)
-                text_at(str(value),x+69,y+CENTER, color,12)
+                label=text_at(title,x+25,y+CENTER-20,fg,10)
+                label.setToolTip(title)
+                text_at(str(value),x+46,y+CENTER-1,color,12)
                 scene.addEllipse(QRectF(pin_x-2,y+CENTER-2,4,4),QPen(QColor(color)),QBrush(QColor(color)))
         if self.editing:
             for name,pin,(x,y) in self.ports:
@@ -359,7 +381,7 @@ class LogicLab(QDialog):
         self.summary.setWordWrap(True)
         self.summary.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         layout.addWidget(self.summary)
-        self.route_warning=QLabel(self.t("Dashed wires need clearer routing; move components or use Auto layout.","سیم‌های خط‌چین مسیر آزاد ندارند؛ اجزا را جابه‌جا کنید یا چیدمان خودکار را بزنید."))
+        self.route_warning=QLabel(self.t("Dashed wires or outlined contacts need clearer routing; move components or use Auto layout. Different-net crossings do not connect.","سیم‌های خط‌چین یا تماس‌های حلقه‌دار نیاز به اصلاح مسیر دارند؛ تقاطع سیگنال‌های متفاوت اتصال نیست."))
         self.route_warning.setWordWrap(True)
         self.route_warning.setProperty("state","error")
         self.route_warning.hide()
@@ -656,7 +678,7 @@ class LogicLab(QDialog):
         values=self.circuit.evaluate(self.inputs)
         self.summary.setText("   |   ".join(f"{name} = {values[signal]}" for name,signal in self.circuit.outputs))
         self.diagram.draw(self.circuit,values,self.document.positions)
-        self.route_warning.setVisible(bool(self.diagram.unrouted))
+        self.route_warning.setVisible(bool(self.diagram.unrouted or self.diagram.ambiguous))
         bits=tuple(self.inputs.values())
         row=next(i for i,(inputs,_) in enumerate(self.rows) if inputs==bits)
         self.table.selectRow(row)

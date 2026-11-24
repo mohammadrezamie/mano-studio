@@ -58,6 +58,7 @@ class ClockedDiagram(QWidget):
                 p.setPen(QColor(fg))
                 p.drawText(QRectF(265,y-10,55,20),Qt.AlignmentFlag.AlignLeft,name)
         for i,(name,value) in enumerate(outputs):
+            name = "Q\u0305" if name=="Qbar" else name
             y=51+i*32
             color=QColor(accent if value else muted)
             p.setPen(QPen(color,2 if value else 1))
@@ -84,7 +85,7 @@ class WaveformView(QWidget):
         if not self.model:
             return
         m=self.model
-        names=("CLK",)+m.pins+tuple(m.outputs)
+        names=("CLK",)+m.pins+tuple("Q\u0305" if name=="Qbar" else name for name in m.outputs)
         samples=[(s.clock,)+s.inputs+s.outputs for s in m.history]
         left=68
         right=max(left+1,self.width()-16)

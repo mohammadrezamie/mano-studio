@@ -27,3 +27,6 @@ The same Logic Lab canvas now offers Edit on canvas mode: click a source termina
 
 ## Sequential components
 Existing Logic Lab now has Combinational and Sequential tabs. sequential_logic.py models ideal rising-edge D/JK/T/SR, 4-bit enabled register and enabled modulo-16 up counter. Toggle each input, change clock or pulse it, reset, view actual pins and bounded 64-event waveform. SR 11 rejects rising edge. Event order, not elapsed electrical time; no arbitrary sequential wiring or gate-delay model. No separate lab or dependency. New core and GUI tests authored, candidate CI pending.
+
+## Net-aware notation
+See SCHEMATIC_STANDARD.md. Original distinctive shapes and exact pin counts retained. Routed net identity drives filled junction dots; different-net crossings do not connect, ambiguous contact/overlap receives an outlined warning and routing guidance. Explicit multi-input parity labels and complementary flip-flop output notation. This is functional teaching notation, not device-specific IC pinout or formal certification. Latest CI pending.

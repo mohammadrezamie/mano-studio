@@ -18,3 +18,6 @@ Owner requirement, 2026-11-24: internationally recognizable engineering notation
 
 ## Current work
 Audit existing symbol geometry, improve terminal labeling, compute junction and ambiguity marks from routed net identity, clarify sequential complementary output and parity. Add pure geometry and Qt regression tests. Preserve academic translator and Windows-first priorities.
+
+## Implementation checkpoint
+Added wire_notation.py: derives junctions and ambiguous contacts from routed segments grouped by actual net identity, not color. Same-net branching receives filled dots; simple bends and different-net interior crossings do not. Distinct-net collinear overlap and endpoint contacts are marked with outlined warning rings; a foreign crossing at a same-net junction suppresses the dot. Geometry is cached until routes change. Multi-input parity gates explicitly labeled ODD/EVEN; sequential Qbar displayed as Q with overbar in diagram/waveform while internal signal identifier unchanged. Existing functional port labels improved. Six pure geometry tests authored. Remaining: routing itself can still overlap, and markers do not solve all dense layouts; actual screenshot review and formal standards compliance not established.
