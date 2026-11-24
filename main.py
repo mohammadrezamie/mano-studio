@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QApplication, QSplashScreen
 from ui.theme import PALETTES, apply_theme
 from ui.strings import FA
 from ui.glass import paint_backdrop
-from ui.icons import icon
+from ui.brand import brand_icon, render_mark
 from ui.credits import THANKS, COPYRIGHT
 
 from update_service import VERSION
@@ -83,7 +83,6 @@ def main():
     app = QApplication(sys.argv)
     app.setOrganizationName("ManoStudio")
     app.setApplicationName("ManoStudio")
-    app.setWindowIcon(icon("brand", "#8bcff2", 32))
     settings = QSettings()
     language = settings.value("language", "en")
     theme = settings.value("theme", "dark")
@@ -93,6 +92,7 @@ def main():
     app.setStyle("Fusion")
     glass_enabled = settings.value("glass_enabled", True, type=bool)
     apply_theme(app, theme, glass_enabled)
+    app.setWindowIcon(brand_icon(theme,glass_enabled))
     bg, panel, raised, fg, muted, accent, border = PALETTES[theme]
     pix = QPixmap(640, 310)
     pix.fill(QColor(bg))
@@ -101,7 +101,9 @@ def main():
     paint_backdrop(painter, pix.rect(), theme, glass_enabled)
     painter.setPen(QColor(accent))
     painter.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
-    painter.drawText(35, 85, "MANO STUDIO")
+    render_mark(painter,QRect(35,28,84,84),theme,glass_enabled)
+    painter.setPen(QColor(accent))
+    painter.drawText(135, 85, "MANO STUDIO")
     painter.setPen(QColor(fg))
     painter.setFont(QFont("Segoe UI", 13))
     painter.drawText(35, 125, FA["Build. Translate. Learn."] if language == "fa" else "Build. Translate. Learn.")

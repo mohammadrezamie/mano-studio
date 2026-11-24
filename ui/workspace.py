@@ -18,6 +18,7 @@ from example_catalog import EXAMPLES, computer_source
 from ui.strings import FA, HELP, NAMES, EN_NAMES
 from ui.theme import PALETTES, SYNTAX, apply_theme
 from ui.icons import icon
+from ui.brand import BrandMark, brand_icon
 from ui.credits import COPYRIGHT, REPOSITORY, THANKS, PURPOSE, LICENSE_NOTE
 from ui.localization import error_text
 from ui.code_editor import CodeEditor
@@ -87,7 +88,7 @@ class Workspace(QMainWindow):
         header = QHBoxLayout(header_frame)
         brand = QLabel("MANO STUDIO")
         brand.setObjectName("brand")
-        self.brand_mark = QLabel()
+        self.brand_mark = BrandMark(self.theme)
         header.addWidget(self.brand_mark)
         header.addWidget(brand)
         header.addWidget(self.label("Build. Translate. Learn.", "subtitle"))
@@ -520,6 +521,7 @@ class Workspace(QMainWindow):
         self.update_output_state()
         self.render_errors()
         self.statusBar().showMessage(self.t("Translation successful" if self.result.ok else "Translation failed"))
+        self.brand_mark.feedback(self.result.ok)
 
     def update_output_state(self):
         if self.result is None:
@@ -634,7 +636,8 @@ class Workspace(QMainWindow):
         apply_theme(QApplication.instance(), self.theme, enabled)
         set_reduced_motion(QApplication.instance(), self.settings.value("reduced_motion", False, type=bool))
         bg, panel, raised, fg, muted, accent, border = PALETTES[self.theme]
-        self.brand_mark.setPixmap(icon("brand",accent,28).pixmap(QSize(28,28)))
+        self.brand_mark.set_appearance(self.theme,enabled,self.settings.value("reduced_motion",False,type=bool))
+        self.setWindowIcon(brand_icon(self.theme,enabled))
         for button,name in self.icon_buttons:
             color = ("#ffffff" if self.theme=="light" else bg) if button.objectName()=="primary" else fg
             button.setIcon(icon(name,color))

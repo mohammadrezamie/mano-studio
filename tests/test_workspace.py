@@ -1146,3 +1146,30 @@ def test_live_architecture_canvas(workspace,app):
     lab.microstep()
     assert v.group.timing==0 and v.last_step==lab.cpu.pending_event
     lab.close()
+
+
+def test_procedural_brand_feedback(workspace,app):
+    from ui.brand import brand_icon
+    from ui.preferences import Preferences
+    from PySide6.QtCore import QAbstractAnimation
+    assert not brand_icon().isNull()
+    workspace.show();app.processEvents()
+    mark=workspace.brand_mark
+    prefs=Preferences(workspace)
+    prefs.change("reduced_motion",True)
+    workspace.editor.setPlainText("AC ← M[100]")
+    workspace.run_translation()
+    assert mark.state=="success" and mark.progress is None
+    assert mark.animation.state()==QAbstractAnimation.State.Stopped
+    workspace.editor.setPlainText("AR ← PC")
+    workspace.run_translation()
+    assert mark.state=="error"
+    prefs.change("glass_enabled",False)
+    assert not mark.glass and not mark.grab().isNull()
+    prefs.change("reduced_motion",False)
+    workspace.editor.setPlainText("AC ← M[100]")
+    workspace.run_translation()
+    assert mark.state=="success"
+    prefs.change("reduced_motion",True)
+    assert mark.progress is None and mark.animation.state()==QAbstractAnimation.State.Stopped
+    prefs.close()

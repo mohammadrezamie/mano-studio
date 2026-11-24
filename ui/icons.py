@@ -26,11 +26,13 @@ PATHS = {
     "pipeline": "M3 4h5v5H3zM10 10h5v5h-5zM17 16h4v5h-4zM8 7h4v3m3 3h4v3",
     "io": "M3 7h17m-4-4 4 4-4 4M21 17H4m4-4-4 4 4 4",
     "logic": "M3 7h5m-5 10h5M8 4v16h3a8 8 0 0 0 0-16zM19 12h3",
-    "brand": "M4 20V4l8 9 8-9v16M8 20v-6m8 6v-6",
 }
 
 
 def icon(name, color, size=18):
+    if name=="brand":
+        from ui.brand import brand_icon
+        return brand_icon()
     path = PATHS.get(name)
     if not path:
         return QIcon()

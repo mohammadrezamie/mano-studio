@@ -30,6 +30,8 @@ python -m pytest -q
 See [translator guide](docs/TRANSLATOR.md) and [supported RTL](docs/RTL.md).
 
 ## Development / continuation
+**Resume from [CONTINUE.md](docs/CONTINUE.md)** in a fresh chat. The current [beta preview gates](docs/BETA_PREVIEW.md) and [procedural brand system](docs/BRAND_SYSTEM.md) are tracked in the repository.
+
 Start with [AGENTS.md](AGENTS.md), [current status](docs/STATUS.md), [project specification](docs/PROJECT.md), [RTL dialect](docs/RTL.md), [roadmap](docs/ROADMAP.md), [references](docs/REFERENCES.md), [UI design](docs/UI_DESIGN.md), and [maintenance plan](docs/MAINTAINABILITY.md). Inspect open issues and PRs before making changes. Keep the translator independent of the GUI and update STATUS.md each time.
 
 ## فارسی
