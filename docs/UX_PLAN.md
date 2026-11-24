@@ -35,3 +35,6 @@ Implemented shared visual tokens/QPalette, original vector action icons, editor 
 
 ### Step 4 progress
 Step 3 previous revision verified 184 tests on Windows and Ubuntu (45396606423); visual signoff remains pending. Step 4 started with shared editable circuit documents, embedded pin editor, apply/cancel/undo and local JSON save/open. All custom/preset circuits use the same Circuit evaluation and standard gate symbols. No new lab window or dependencies. Next: graphical connection and placement interaction and sequential views; verify new CI first.
+
+### Step 4 — graphical editing checkpoint
+Previous pin-editor revision verified 192 tests on each platform (45397436379). Added canvas source/receiving pin selection, drag placement, undo, backward-compatible coordinate persistence, obstacle-aware routing and SVG/CSV export in the same Logic Lab; table editor remains advanced component creation surface. Screenshot coverage extended to Logic and Computer. Latest tests and visual signoff pending. Next: verify new CI and address graphical issues before adding sequential clock/waveform views.
