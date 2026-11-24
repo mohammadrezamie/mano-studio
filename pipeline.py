@@ -1,7 +1,7 @@
 """Five-stage in-order educational pipeline, separate from Mano Basic Computer.
 
 IF/ID/EX/MEM/WB, word-addressed data memory, R0 hardwired zero.
-Separate instruction/data memory, single-cycle ALU and data memory,
+Optional shared instruction/data port, single-cycle ALU and data memory,
 WB writes before ID/EX reads. Branches resolve in EX; no delay slot.
 """
 from dataclasses import dataclass, replace
@@ -77,6 +77,8 @@ class Slot:
     ins:Instruction
     value:int=0
     address:int=0
+    predicted_next:int=0
+    predicted_taken:bool=False
 
 
 @dataclass(frozen=True)
@@ -89,13 +91,21 @@ class Cycle:
     retired:int | None
     registers:tuple
     writes:tuple
+    structural:bool=False
+    prediction:tuple | None=None
 
 
 class Pipeline:
-    def __init__(self,program,forwarding=True,memory=None):
+    def __init__(self,program,forwarding=True,memory=None,shared_port=False,predictor="not_taken"):
         self.program=tuple(program)
         if not self.program:raise ValueError("Empty program")
         self.forwarding=forwarding
+        if predictor not in ("not_taken","taken","two_bit"):
+            raise ValueError("Invalid branch predictor")
+        self.shared_port=shared_port
+        self.predictor=predictor
+        self.counters={}
+        self.branches=self.mispredictions=self.structural_stalls=0
         self.registers=[0]*8
         self.memory=dict(memory or {})
         if any(not 0<=a<=65535 or not 0<=v<=65535 for a,v in self.memory.items()):
@@ -106,8 +116,12 @@ class Pipeline:
 
     def fetch(self):
         if self.pc>=len(self.program):return None
-        slot=Slot(self.pc,self.program[self.pc]);self.pc+=1
-        return slot
+        pc=self.pc
+        ins=self.program[pc]
+        taken=ins.op=="BEQ" and (self.predictor=="taken" or
+                  (self.predictor=="two_bit" and self.counters.get(pc,1)>=2))
+        self.pc=ins.target if taken else pc+1
+        return Slot(pc,ins,predicted_next=self.pc,predicted_taken=taken)
 
     @property
     def done(self):return not any(self.stages)
@@ -135,7 +149,7 @@ class Pipeline:
             if reg and self.forwarding and w and w.ins.dest==reg:
                 forwarded.append((reg,w.pc,"WB"))
             return self.registers[reg]
-        next_m=e;branch=None
+        next_m=e;branch=None;prediction=None
         if e:
             ins=e.ins
             values=tuple(operand(r) for r in ins.sources)
@@ -143,8 +157,18 @@ class Pipeline:
             elif ins.op=="ADDI":next_m=replace(e,value=(values[0]+ins.immediate)&65535)
             elif ins.op=="LD":next_m=replace(e,address=(values[0]+ins.immediate)&65535)
             elif ins.op=="ST":next_m=replace(e,value=values[0],address=(values[1]+ins.immediate)&65535)
-            elif ins.op=="BEQ" and values[0]==values[1]:branch=ins.target
-        stall=False
+            elif ins.op=="BEQ":
+                taken=values[0]==values[1]
+                actual=ins.target if taken else e.pc+1
+                wrong=actual!=e.predicted_next
+                prediction=(e.pc,e.predicted_taken,taken,wrong)
+                self.branches+=1
+                if self.predictor=="two_bit":
+                    self.counters[e.pc]=max(0,min(3,self.counters.get(e.pc,1)+(1 if taken else -1)))
+                if wrong:
+                    self.mispredictions+=1
+                    branch=actual
+        stall=False;structural=False
         if branch is not None:
             flushed=tuple(slot.pc for slot in (d,f) if slot)
             self.flushes+=len(flushed)
@@ -157,10 +181,16 @@ class Pipeline:
             if stall:
                 self.stalls+=1
                 next_f,next_d,next_e=f,d,None
+            elif self.shared_port and m and m.ins.op in ("LD","ST") and f:
+                # The IF slot represents the pending fetch, not a committed
+                # instruction. MEM owns the port, so IF remains pending.
+                structural=True
+                self.structural_stalls+=1
+                next_f,next_d,next_e=f,None,d
             else:next_f,next_d,next_e=self.fetch(),f,d
         self.stages=[next_f,next_d,next_e,next_m,next_w]
         return Cycle(self.cycles,tuple(slot.pc if slot else None for slot in (f,d,e,m,w)),
-                     stall,flushed,tuple(forwarded),w.pc if w else None,tuple(self.registers),tuple(writes))
+                     stall,flushed,tuple(forwarded),w.pc if w else None,tuple(self.registers),tuple(writes),structural,prediction)
 
     def run(self):
         rows=[]

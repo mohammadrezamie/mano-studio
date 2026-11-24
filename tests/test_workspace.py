@@ -864,3 +864,17 @@ def test_pipeline_view(workspace):
     view.load();view.run()
     assert view.model.done and view.model.registers[5]==5 and view.model.stalls>0
     lab.close()
+
+
+def test_pipeline_predictor_controls(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.pipeline
+    view.shared.setChecked(True)
+    view.predictor.setCurrentIndex(view.predictor.findData("taken"))
+    assert view.model is None
+    view.load();view.run()
+    assert view.model.done and view.model.registers[5]==5
+    assert view.model.branches==1 and view.model.mispredictions==0
+    assert view.model.shared_port
+    lab.close()
