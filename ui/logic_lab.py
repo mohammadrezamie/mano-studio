@@ -1,12 +1,14 @@
 """Live schematic, binary input controls and truth tables from one netlist."""
 from pathlib import Path
-from PySide6.QtCore import Qt, QRectF, QPointF, Signal
+import csv
+from PySide6.QtCore import Qt, QRectF, QPointF, Signal, QSize
 from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton,
     QComboBox, QWidget, QGraphicsScene, QGraphicsView, QTableWidget,
-    QTableWidgetItem, QHeaderView, QAbstractItemView, QSplitter, QSpinBox, QStackedWidget, QFileDialog, QMessageBox,
+    QTableWidgetItem, QHeaderView, QAbstractItemView, QSplitter, QSpinBox, QStackedWidget, QFileDialog, QMessageBox, QMenu,
 )
+from PySide6.QtSvg import QSvgGenerator
 from logic_engine import CIRCUITS, ARITY, basic
 from circuit_document import CircuitDocument
 from schematic_routing import wire_route
@@ -323,6 +325,13 @@ class LogicLab(QDialog):
         reset.clicked.connect(self.reset_layout)
         self.document_buttons.append(reset)
         actions.addWidget(reset)
+        export_button=QPushButton(self.t("Export","خروجی"))
+        export_menu=QMenu(export_button)
+        export_menu.addAction(self.t("Schematic (SVG)","شماتیک (SVG)"),self.export_schematic)
+        export_menu.addAction(self.t("Truth table (CSV)","جدول درستی (CSV)"),self.export_truth_table)
+        export_button.setMenu(export_menu)
+        self.document_buttons.append(export_button)
+        actions.addWidget(export_button)
         actions.addStretch()
         layout.addLayout(actions)
         self.description=QLabel()
@@ -564,6 +573,53 @@ class LogicLab(QDialog):
         self.dirty=False
         # Undo after saving changes the document relative to the saved file.
         self.history=[(document,True) for document,_ in self.history]
+
+    def write_truth_table(self,path):
+        with Path(path).open("w",encoding="utf-8-sig",newline="") as stream:
+            writer=csv.writer(stream)
+            writer.writerow(list(self.circuit.inputs)+[n for n,_ in self.circuit.outputs])
+            writer.writerows(bits+outputs for bits,outputs in self.rows)
+
+    def export_truth_table(self):
+        name,_=QFileDialog.getSaveFileName(self,self.t("Export truth table","خروجی جدول درستی"),"truth-table.csv","CSV (*.csv)")
+        if name:
+            try:
+                self.write_truth_table(Path(name) if Path(name).suffix else Path(name).with_suffix(".csv"))
+            except OSError as exc:
+                QMessageBox.warning(self,self.t("Export failed","خروجی ناموفق"),str(exc))
+
+    def write_schematic(self,path):
+        # Exclude temporary editing handles and previews from the exported diagram.
+        was_editing=self.diagram.editing
+        self.diagram.set_editing(False)
+        try:
+            self.refresh()
+            bounds=self.diagram.graph.sceneRect()
+            if bounds.width()>70000 or bounds.height()>70000:
+                raise ValueError("Schematic export dimensions too large.")
+            generator=QSvgGenerator()
+            generator.setFileName(str(path))
+            generator.setSize(QSize(max(1,int(bounds.width())),max(1,int(bounds.height()))))
+            generator.setViewBox(bounds)
+            generator.setTitle("Mano Studio — digital schematic")
+            painter=QPainter()
+            if not painter.begin(generator):
+                raise OSError("Cannot create SVG file.")
+            try:
+                self.diagram.graph.render(painter,bounds,bounds)
+            finally:
+                painter.end()
+        finally:
+            self.diagram.set_editing(was_editing)
+            self.refresh()
+
+    def export_schematic(self):
+        name,_=QFileDialog.getSaveFileName(self,self.t("Export schematic","خروجی شماتیک"),"circuit.svg","SVG (*.svg)")
+        if name:
+            try:
+                self.write_schematic(Path(name) if Path(name).suffix else Path(name).with_suffix(".svg"))
+            except (OSError,ValueError) as exc:
+                QMessageBox.warning(self,self.t("Export failed","خروجی ناموفق"),str(exc))
 
     def done(self,result):
         if self.stack.currentIndex()==1 and QMessageBox.question(self,self.t("Unapplied edits","ویرایش اعمال‌نشده"),self.t("Discard staged edits?","ویرایش‌های اعمال‌نشده حذف شوند؟"),QMessageBox.StandardButton.Discard|QMessageBox.StandardButton.Cancel,QMessageBox.StandardButton.Cancel)!=QMessageBox.StandardButton.Discard:
