@@ -688,3 +688,19 @@ def test_control_registers_in_cycle_view(workspace):
     lab.back()
     assert lab.cpu.r==1
     lab.close()
+
+
+def test_selected_common_bus_view(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace,"LDA 100\nHLT\nORG 100\nHEX ABCD\nEND")
+    lab.step()
+    lab.cycles.select(4)
+    assert lab.cycles.bus.control.source=="M"
+    assert lab.cycles.bus.control.value==0xABCD
+    assert "DR.LD" in lab.cycles.controls.text()
+    lab.cycles.select(5)
+    assert lab.cycles.bus.control.select==0
+    assert "ALU.DR" in lab.cycles.controls.text()
+    lab.back()
+    assert lab.cycles.bus.control is None
+    lab.close()

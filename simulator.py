@@ -7,6 +7,7 @@ accepted only at instruction boundaries. No electrical timing is modeled.
 from dataclasses import dataclass
 from mano_isa import FIXED_BY_CODE, MEMORY_BY_CODE
 from word_arithmetic import alu
+from control_trace import ControlTrace, capture_control
 
 
 @dataclass(frozen=True)
@@ -19,6 +20,7 @@ class MicroEvent:
     reads: tuple
     writes: tuple
     final: bool = False
+    control: ControlTrace | None = None
 
 
 @dataclass(frozen=True)
@@ -97,20 +99,25 @@ class CPU:
             writes.append((a,self.memory[a],v))
             self.memory[a]=v
 
-        def mark(timing,phase,rtl):
+        def mark(timing,phase,rtl,source=None,signals=()):
             nonlocal prior,wi,ri
             # Sample control inputs from the state BEFORE this clock edge.
             # Thus ION does not set R on the same edge, but IOF can latch
             # a request that was already enabled on entry to T3.
             final = timing == last_timing
+            signals = list(signals)
             if timing >= 3 and phase != "interrupt" and prior["IEN"] and (prior["FGI"] or prior["FGO"]):
                 self.r = 1
+                signals.append("R.SET")
                 if not prior["R"]:
                     rtl += "; R ← 1"
             self.sc = 0 if final else (timing+1)&15
             rtl = rtl.strip("; ") + ("; " if rtl.strip("; ") else "") + ("SC ← 0" if final else "SC ← SC + 1")
             after=self.registers()
-            event=MicroEvent(timing,phase,rtl,prior,after,tuple(reads[ri:]),tuple(writes[wi:]),timing==last_timing)
+            group_reads=tuple(reads[ri:])
+            signals.append("SC.CLR" if final else "SC.INR")
+            control=capture_control(prior,timing,phase,source,signals,group_reads)
+            event=MicroEvent(timing,phase,rtl,prior,after,group_reads,tuple(writes[wi:]),final,control)
             groups.append(event)
             prior=after
             wi,ri=len(writes),len(reads)
@@ -124,12 +131,12 @@ class CPU:
             self._context=(address,0,"INT")
             self.tr=self.pc
             self.ar=0
-            yield mark(0,"interrupt","AR ← 0, TR ← PC")
+            yield mark(0,"interrupt","AR ← 0, TR ← PC","PC",("AR.CLR","TR.LD"))
             store(0,self.tr)
             self.pc=0
-            yield mark(1,"interrupt","M[AR] ← TR, PC ← 0")
+            yield mark(1,"interrupt","M[AR] ← TR, PC ← 0","TR",("M.WRITE","PC.CLR"))
             self.pc,self.ien,self.r=1,0,0
-            yield mark(2,"interrupt","PC ← PC + 1, IEN ← 0, R ← 0")
+            yield mark(2,"interrupt","PC ← PC + 1, IEN ← 0, R ← 0",signals=("PC.INR","IEN.CLR","R.CLR"))
             return finish(0,"INT",0)
 
         # Preflight instruction validity without recording an architectural read.
@@ -141,75 +148,78 @@ class CPU:
         last_timing=6 if op=="ISZ" else 5 if op in ("AND","ADD","LDA","BSA") else 4 if opcode<7 else 3
         self._context=(address,word,op)
         self.ar=self.pc
-        yield mark(0,"fetch","AR ← PC")
+        yield mark(0,"fetch","AR ← PC","PC",("AR.LD",))
         self.ir=read(self.ar)
         self.pc=(self.pc+1)&0xFFF
-        yield mark(1,"fetch","IR ← M[AR], PC ← PC + 1")
+        yield mark(1,"fetch","IR ← M[AR], PC ← PC + 1","M",("M.READ","IR.LD","PC.INR"))
         self.ar=self.ir&0xFFF
         self.i=(self.ir>>15)&1
-        yield mark(2,"decode","AR ← IR(0–11), I ← IR(15), decode opcode")
+        yield mark(2,"decode","AR ← IR(0–11), I ← IR(15), decode opcode","IR",("AR.LD","I.LD"))
         effective=None
         if opcode<7:
             if word&0x8000:
                 self.ar=read(self.ar)&0xFFF
-                yield mark(3,"indirect","AR ← M[AR](0–11)")
+                yield mark(3,"indirect","AR ← M[AR](0–11)","M",("M.READ","AR.LD"))
             else:
                 yield mark(3,"direct","")
             effective=a=self.ar
             if op in ("AND","ADD","LDA","ISZ"):
                 self.dr=read(a)
-                yield mark(4,"execute","DR ← M[AR]")
+                yield mark(4,"execute","DR ← M[AR]","M",("M.READ","DR.LD"))
             if op=="AND":
                 self.ac=alu("AND",self.ac,self.dr).word
-                yield mark(5,"execute","AC ← AC ∧ DR")
+                yield mark(5,"execute","AC ← AC ∧ DR",signals=("ALU.AND","AC.LD"))
             elif op=="ADD":
                 result=alu("ADD",self.ac,self.dr)
                 self.ac,self.e=result.word,result.carry
-                yield mark(5,"execute","AC ← AC + DR, E ← Cout")
+                yield mark(5,"execute","AC ← AC + DR, E ← Cout",signals=("ALU.ADD","AC.LD","E.LD"))
             elif op=="LDA":
                 self.ac=self.dr
-                yield mark(5,"execute","AC ← DR")
+                yield mark(5,"execute","AC ← DR",signals=("ALU.DR","AC.LD"))
             elif op=="STA":
                 store(a,self.ac)
-                yield mark(4,"execute","M[AR] ← AC")
+                yield mark(4,"execute","M[AR] ← AC","AC",("M.WRITE",))
             elif op=="BUN":
                 self.pc=a
-                yield mark(4,"execute","PC ← AR")
+                yield mark(4,"execute","PC ← AR","AR",("PC.LD",))
             elif op=="BSA":
                 store(a,self.pc)
                 self.ar=(a+1)&0xFFF
-                yield mark(4,"execute","M[AR] ← PC, AR ← AR + 1")
+                yield mark(4,"execute","M[AR] ← PC, AR ← AR + 1","PC",("M.WRITE","AR.INR"))
                 self.pc=self.ar
-                yield mark(5,"execute","PC ← AR")
+                yield mark(5,"execute","PC ← AR","AR",("PC.LD",))
             elif op=="ISZ":
                 self.dr=(self.dr+1)&0xFFFF
-                yield mark(5,"execute","DR ← DR + 1")
+                yield mark(5,"execute","DR ← DR + 1",signals=("DR.INR",))
                 store(a,self.dr)
                 if not self.dr:self.pc=(self.pc+1)&0xFFF
-                yield mark(6,"execute","M[AR] ← DR; if DR = 0: PC ← PC + 1")
+                yield mark(6,"execute","M[AR] ← DR; if DR = 0: PC ← PC + 1","DR",("M.WRITE",)+(("PC.INR",) if not self.dr else ()))
         else:
             rtl=""
-            if op=="CLA":self.ac=0;rtl="AC ← 0"
-            elif op=="CLE":self.e=0;rtl="E ← 0"
-            elif op=="CMA":self.ac=alu("NOT",self.ac).word;rtl="AC ← ¬AC"
-            elif op=="CME":self.e^=1;rtl="E ← ¬E"
+            source=None
+            signals=()
+            if op=="CLA":self.ac=0;rtl="AC ← 0";signals=("AC.CLR",)
+            elif op=="CLE":self.e=0;rtl="E ← 0";signals=("E.CLR",)
+            elif op=="CMA":self.ac=alu("NOT",self.ac).word;rtl="AC ← ¬AC";signals=("ALU.NOT","AC.LD")
+            elif op=="CME":self.e^=1;rtl="E ← ¬E";signals=("E.COM",)
             elif op in ("CIR","CIL"):
                 result=alu(op,self.ac,carry_in=self.e)
                 self.ac,self.e=result.word,result.carry
                 rtl="(E, AC) ← "+op+"(E, AC)"
-            elif op=="INC":self.ac=alu("INC",self.ac).word;rtl="AC ← AC + 1"
+                signals=("ALU."+op,"AC.LD","E.LD")
+            elif op=="INC":self.ac=alu("INC",self.ac).word;rtl="AC ← AC + 1";signals=("AC.INR",)
             elif op in ("SPA","SNA","SZA","SZE","SKI","SKO"):
                 conditions={"SPA":("AC(15) = 0",not self.ac&0x8000),"SNA":("AC(15) = 1",bool(self.ac&0x8000)),
                     "SZA":("AC = 0",self.ac==0),"SZE":("E = 0",self.e==0),"SKI":("FGI = 1",self.fgi==1),"SKO":("FGO = 1",self.fgo==1)}
                 condition,taken=conditions[op]
-                if taken:self.pc=(self.pc+1)&0xFFF
+                if taken:self.pc=(self.pc+1)&0xFFF;signals=("PC.INR",)
                 rtl="if "+condition+": PC ← PC + 1"
-            elif op=="HLT":self.halted=True;rtl="S ← 0"
-            elif op=="INP":self.ac,self.fgi=(self.ac&0xFF00)|self.inpr,0;rtl="AC(0–7) ← INPR, FGI ← 0"
-            elif op=="OUT":self.outr,self.fgo=self.ac&0xFF,0;rtl="OUTR ← AC(0–7), FGO ← 0"
-            elif op=="ION":self.ien=1;rtl="IEN ← 1"
-            elif op=="IOF":self.ien=0;rtl="IEN ← 0"
-            yield mark(3,"io" if word&0x8000 else "register",rtl)
+            elif op=="HLT":self.halted=True;rtl="S ← 0";signals=("S.CLR",)
+            elif op=="INP":self.ac,self.fgi=(self.ac&0xFF00)|self.inpr,0;rtl="AC(0–7) ← INPR, FGI ← 0";signals=("ALU.INPR","AC.LD8","FGI.CLR")
+            elif op=="OUT":self.outr,self.fgo=self.ac&0xFF,0;rtl="OUTR ← AC(0–7), FGO ← 0";source="AC";signals=("OUTR.LD","FGO.CLR")
+            elif op=="ION":self.ien=1;rtl="IEN ← 1";signals=("IEN.SET",)
+            elif op=="IOF":self.ien=0;rtl="IEN ← 0";signals=("IEN.CLR",)
+            yield mark(3,"io" if word&0x8000 else "register",rtl,source,signals)
         return finish(word,op,effective)
 
 

@@ -2,6 +2,8 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QSplitter,QPushButton
 
+from ui.control_bus_view import ControlBusView
+
 class CycleView(QWidget):
     def __init__(self,fa=False,forward=None,backward=None):
         super().__init__()
@@ -32,13 +34,15 @@ class CycleView(QWidget):
             table.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
             split.addWidget(table)
         split.setSizes([530,300]);layout.addWidget(split,1)
+        self.bus=ControlBusView(fa);layout.addWidget(self.bus)
+        self.controls=QLabel();self.controls.setWordWrap(True);layout.addWidget(self.controls)
         self.memory=QLabel();self.memory.setWordWrap(True);layout.addWidget(self.memory)
         self.groups.currentCellChanged.connect(lambda row,*_:self.select(row))
         self.show_event(None)
     def t(self,en,fa):return fa if self.fa else en
     def show_event(self,event,partial=False):
         self.current_trace=event
-        self.groups.setRowCount(0);self.detail.setRowCount(0);self.memory.clear()
+        self.groups.setRowCount(0);self.detail.setRowCount(0);self.memory.clear();self.controls.clear();self.bus.set_control(None)
         if event is None:
             self.title.setText(self.t("Execute an instruction or select a debugger row.","یک دستور اجرا کنید یا ردیفی از اشکال‌زدا انتخاب کنید."));return
         self.title.setText(f"{event.address:03X} · {event.mnemonic} · "+self.t("Timing groups: ","گروه‌های زمانی: ")+str(len(event.microevents)) + (" · "+self.t("In progress","در حال اجرا") if partial else ""))
@@ -52,9 +56,13 @@ class CycleView(QWidget):
             row=len(event.microevents)-1 if partial else 0
             self.groups.setCurrentCell(row,0);self.select(row)
     def select(self,row):
-        self.detail.setRowCount(0);self.memory.clear()
+        self.detail.setRowCount(0);self.memory.clear();self.controls.clear();self.bus.set_control(None)
         if self.current_trace is None or not 0<=row<len(self.current_trace.microevents):return
         g=self.current_trace.microevents[row]
+        self.bus.set_control(g.control)
+        if g.control:
+            c=g.control
+            self.controls.setText(self.t("Raw IR decode: ","رمزگشایی خام IR: ")+f"D{c.decoder} | "+self.t("Active controls: ","کنترل‌های فعال: ")+", ".join(c.signals))
         names=list(g.before)
         self.detail.setRowCount(len(names))
         for i,name in enumerate(names):
