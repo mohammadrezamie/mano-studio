@@ -1,19 +1,19 @@
 """Preferences and a user-triggered, nonblocking release check."""
-from PySide6.QtCore import QObject, QThread, Signal, Slot, Qt
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton
-from update_service import check_updates, RELEASES_PAGE
+from PySide6.QtCore import QObject, QThread, Signal, Slot, Qt, QUrl
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton, QPlainTextEdit
+from update_service import release_info, RELEASES_PAGE, VERSION
 
 
 class UpdateWorker(QObject):
-    finished = Signal(str, str)
+    finished = Signal(object, str)
 
     @Slot()
     def run(self):
         try:
-            tag = check_updates(explicit=True)
-            self.finished.emit(tag or "", "")
+            self.finished.emit(release_info(explicit=True), "")
         except Exception as exc:
-            self.finished.emit("", str(exc))
+            self.finished.emit(None, str(exc))
 
 
 class Preferences(QDialog):
@@ -24,7 +24,7 @@ class Preferences(QDialog):
         self.fa = workspace.language == "fa"
         self.thread = None
         self.setWindowTitle(self.text("Settings", "تنظیمات"))
-        self.resize(440, 320)
+        self.resize(500, 400)
         layout = QVBoxLayout(self)
         title = QLabel(self.text("Appearance", "ظاهر"))
         title.setObjectName("section")
@@ -45,12 +45,23 @@ class Preferences(QDialog):
             "تمام ابزارها آفلاین هستند. فقط با انتخاب بررسی به‌روزرسانی به گیت‌هاب متصل می‌شوید. بدون دانلود خودکار یا ارسال داده."))
         note.setWordWrap(True)
         layout.addWidget(note)
+        layout.addWidget(QLabel(self.text("Installed version: ", "نسخه نصب‌شده: ")+VERSION))
         self.check = QPushButton(self.text("Check for updates", "بررسی به‌روزرسانی"))
         self.check.clicked.connect(self.start_check)
         layout.addWidget(self.check)
         self.status = QLabel()
         self.status.setWordWrap(True)
+        self.status.setTextFormat(Qt.TextFormat.PlainText)
         layout.addWidget(self.status)
+        self.notes = QPlainTextEdit()
+        self.notes.setReadOnly(True)
+        self.notes.setAccessibleName(self.text("Release notes", "توضیحات نسخه"))
+        self.notes.hide()
+        layout.addWidget(self.notes)
+        self.releases = QPushButton(self.text("Open official releases", "مشاهده نسخه‌های رسمی"))
+        self.releases.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(RELEASES_PAGE)))
+        self.releases.hide()
+        layout.addWidget(self.releases)
         layout.addStretch()
         close = QPushButton(self.text("Close", "بستن"))
         close.clicked.connect(self.accept)
@@ -68,6 +79,9 @@ class Preferences(QDialog):
         if self.thread is not None:
             return
         self.check.setEnabled(False)
+        self.notes.clear()
+        self.notes.hide()
+        self.releases.hide()
         self.status.setText(self.text("Checking GitHub…", "در حال بررسی گیت‌هاب…"))
         self.thread = QThread(self)
         self.worker = UpdateWorker()
@@ -79,13 +93,19 @@ class Preferences(QDialog):
         self.thread.finished.connect(self.cleanup)
         self.thread.start()
 
-    @Slot(str, str)
-    def show_result(self, tag, error):
+    @Slot(object, str)
+    def show_result(self, release, error):
         if error:
             self.status.setText(self.text("Update check failed. Offline tools remain available.", "بررسی به‌روزرسانی ناموفق بود. ابزارهای آفلاین همچنان در دسترس هستند."))
-        elif tag:
-            self.status.setText(self.text("New version: ", "نسخه جدید: ") + tag + "\n" + RELEASES_PAGE)
-            self.status.setTextInteractionFlags(self.status.textInteractionFlags() | Qt.TextInteractionFlag.TextSelectableByMouse)
+        elif release:
+            status = self.text("New version: ", "نسخه جدید: ") + release.tag
+            if release.installer_size is not None:
+                status += "\n" + self.text("Approximate setup size: ", "حجم تقریبی نصب‌کننده: ") + f"{release.installer_size / 1048576:.1f} MiB"
+            status += "\n" + self.text("Automatic installation is not enabled in this build.", "نصب خودکار در این نسخه فعال نیست.")
+            self.status.setText(status)
+            self.notes.setPlainText(release.notes or self.text("No release notes provided.", "توضیحی برای نسخه ارائه نشده است."))
+            self.notes.show()
+            self.releases.show()
         else:
             self.status.setText(self.text("No newer published version found.", "نسخه منتشرشده جدیدتری یافت نشد."))
 

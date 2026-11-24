@@ -122,3 +122,6 @@ Owner rejects current visual quality as provisional; prioritize genuinely usable
 
 ### Localization verification handoff
 Confirmed prior bidirectional/number-conversion head 41193fdf88c841c848b44d453ce6b68ecce8eaa4, run 45403522479: 269 tests passed on both Windows and Ubuntu. Added localization/credit regressions and corrected diagram locale initialization and splash text geometry. New localization/visual changes not yet verified in CI. Update installation is a planned opt-in feature; current code still checks GitHub only. No verified installer or signing identity. Remaining: full bilingual audit incl. Qt standard controls, stronger visual redesign, real Windows capture and safe updater build/signing/upgrade validation. No public release.
+
+### Update UI checkpoint
+Added bounded release metadata check with version, plain-text release notes and optional indicative setup size. Bilingual Settings displays installed/new version and opens only the fixed official releases page upon explicit user interaction. Existing check_updates API retained. No download or execution of installers; signing trust and upgrade/rollback smoke remain prerequisites. Added offline-injected regression cases. Prior localization CI run 45404520469 in progress at inspection. No release or academic core change.
