@@ -74,3 +74,6 @@ Owner requests a first working development build in GitHub Actions and authorize
 
 ## First development candidate — build requested
 Prior exact-head run 45398375394: 201 passed each Windows/Ubuntu. TakinTech skills inspected read-only (REFERENCES.md), no writes or copied code. Added integrated sequential tab, six clocked models and real sampled waveforms, regression tests; source capture extended. Version 0.3.0-dev.1, expanded frozen smoke, one candidate-marker-triggered Windows portable and installer workflow, no public release/tag. Candidate commit contains BUILD_CANDIDATE.md. Actual build, latest test and screenshot review pending. Keep academic translator unchanged, manual acceptance by owner. Inspect Actions for exact-head outcomes.
+
+## Candidate CI orchestration
+Intermediate sequential revision 1d8df6893acbb99d9b4a092f792179ddeda478c0 verified 208 passed on each OS (45398887634). Candidate 054cbc995f88f5cb07a6406e38c97922dbb48235 had Tests in progress but no separate packaging run visible. Switched to reusable Windows build invoked by Tests after successful matrix for deliberate `build: candidate` push; no duplicate auto-trigger workflow. Exact final candidate build/visual result not yet confirmed. Source unchanged.

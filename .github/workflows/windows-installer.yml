@@ -1,9 +1,7 @@
 name: Windows development installer
 on:
   workflow_dispatch:
-  push:
-    branches: [feature/desktop-workspace]
-    paths: ['docs/BUILD_CANDIDATE.md']
+  workflow_call:
 permissions:
   contents: read
 concurrency:
