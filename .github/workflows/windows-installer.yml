@@ -1,0 +1,65 @@
+name: Windows development installer
+on:
+  workflow_dispatch:
+  push:
+    branches: [feature/desktop-workspace]
+    paths:
+      - 'installer/**'
+      - 'ui/**'
+      - 'main.py'
+      - 'requirements*.txt'
+      - '.github/workflows/windows-installer.yml'
+permissions:
+  contents: read
+concurrency:
+  group: windows-installer-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  installer:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
+      - name: Run regression and Qt tests
+        run: python -m pytest -q
+      - name: Ensure Inno Setup is installed
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup -y --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
+          }
+      - name: Build development installer
+        shell: pwsh
+        run: ./installer/build.ps1
+      - name: Install, run offline smoke test, uninstall
+        shell: pwsh
+        run: ./installer/smoke.ps1
+      - name: Generate SHA256
+        shell: pwsh
+        run: |
+          Get-ChildItem installer/output/*.exe | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)" | Set-Content -Encoding ascii "$($_.FullName).sha256"
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ManoStudio-Windows-x64-development
+          path: installer/output/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload smoke report even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: installed-smoke-report
+          path: ${{ runner.temp }}/mano-smoke.txt
+          if-no-files-found: ignore
