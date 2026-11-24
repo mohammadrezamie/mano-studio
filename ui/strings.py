@@ -1,5 +1,7 @@
 """Centralized UI text; code tokens always remain untranslated."""
 FA = {
+    "File": "فایل",
+    "Help": "راهنما",
     "Computer": "کامپیوتر",
     "Instruction reference": "راهنمای دستورات",
     "Labs": "آزمایشگاه‌ها",
