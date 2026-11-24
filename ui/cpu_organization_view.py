@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QLabel,QComboBox,
     QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QPushButton,QTabWidget,QPlainTextEdit)
 from cpu_organization import RegisterFile,RegisterControl,RegisterStack,MemoryStack,OPR,ADDRESS_MODES,resolve_address
 from microprogram import parse_image
+from ui.expression_view import ExpressionView
 
 
 def word_input():
@@ -64,6 +65,8 @@ class OrganizationView(QWidget):
         self.stack_mode.currentIndexChanged.connect(self.reset_stack)
         self.refresh_stack()
         tabs.addTab(self.address_page(),self.t("Addressing modes","حالت‌های آدرس‌دهی"))
+        self.expression_view=ExpressionView(self.fa)
+        tabs.addTab(self.expression_view,self.t("Instruction formats","قالب دستورها"))
 
     def t(self,en,fa):return fa if self.fa else en
 

@@ -834,3 +834,18 @@ def test_memory_stack_and_addressing_view(workspace):
     view.address_memory.setPlainText("FFFF:10000");view.evaluate_address()
     assert view.last_address is None and view.address_reads.rowCount()==0
     lab.close()
+
+
+def test_expression_formats_view(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.organization.expression_view
+    assert view.result.word==56 and view.trace.rowCount()==8
+    view.format.setCurrentIndex(view.format.findData(3))
+    assert view.result is None and view.trace.rowCount()==0
+    view.evaluate()
+    assert view.result.word==56 and view.trace.rowCount()==4
+    view.expression.setText("A/(B-B)")
+    view.evaluate()
+    assert view.result is None and view.trace.rowCount()==0 and view.summary.text()
+    lab.close()
