@@ -10,3 +10,6 @@ PR #9 remains active. Initial CI run 45388211041 failed before collection on Ubu
 
 ## Mano Glass checkpoint
 Continue active PR #9 (`feature/desktop-workspace`). Previous screenshot/test workflow 45388500498 succeeded. New glass-inspired Qt design and animated four-instruction educational CPU demonstration committed on branch, with tests; new CI and visual review pending. Read branch docs/STATUS.md and docs/UI_DESIGN.md before resuming. Full simulator and native refraction are not implemented. Preserve P0 installer priority.
+
+## Owner decision: beta-only and calm UI
+See docs/RELEASE_POLICY.md. Target classroom review next week (2026-11-30 to 2026-12-06), not stable release. Add persisted reduced-motion, glass effects off and offline mode toggles. Core remains offline; optional network access must be explicitly enabled and gated. Current implementation of these new global controls is pending. Continue PR #9; verify latest CI, review UI and prioritize Windows setup. No stable release until owner explicitly approves after class.
