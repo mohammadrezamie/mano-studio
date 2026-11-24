@@ -2,6 +2,7 @@
 import re
 
 EXACT = {
+    "Finish or rewind the current instruction before I/O":"پیش از ورودی یا خروجی، دستور جاری را کامل یا واگرد کنید.",
     "Content after END":"پس از END نباید دستور دیگری باشد.",
     "Label outside memory":"برچسب خارج از حافظه است.",
     "ORG requires an unlabeled 12-bit hexadecimal address":"ORG به آدرس هگزادسیمال ۱۲ بیتی بدون برچسب نیاز دارد.",

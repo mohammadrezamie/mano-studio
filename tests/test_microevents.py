@@ -53,3 +53,53 @@ def test_invalid_preflight():
     before=c.registers()
     with pytest.raises(ValueError):c.step()
     assert c.registers()==before
+
+
+@pytest.mark.parametrize("op,word",list(FIXED.items())+[(op,(code<<12)|0x100) for op,code in MEMORY.items()]+[(op,0x8000|(code<<12)|0x100) for op,code in MEMORY.items()])
+def test_live_groups_match_complete_instruction(op,word):
+    image={0:word,0x100:0x200,0x200:0xFFFF}
+    a,b=CPU(image),CPU(image)
+    for c in (a,b):c.ac=0xAAAA;c.e=1
+    full=a.step()
+    history=ExecutionHistory(b)
+    for expected in full.microevents:
+        actual=history.microstep()
+        assert actual==expected and b.registers()==expected.after
+        assert history.steps==int(expected.final)
+        for address,_,new in expected.writes:assert b.memory[address]==new
+    assert b.memory==a.memory and history.entries[-1].event==full
+    for expected in reversed(full.microevents):
+        assert history.microback()==expected
+        assert b.registers()==expected.before
+        for address,old,_ in expected.writes:assert b.memory[address]==old
+    assert not b.in_progress and history.steps==0 and b.memory==CPU(image).memory
+
+def test_finish_partial_and_io_guard():
+    c=CPU({0:0x3100})
+    c.ac=0xABCD
+    h=ExecutionHistory(c)
+    h.toggle_breakpoint(1)
+    h.microstep();h.microstep()
+    assert c.pc==1 and c.in_progress and not h.should_break()
+    with pytest.raises(ValueError):c.input_byte(7)
+    with pytest.raises(ValueError):c.output_byte()
+    with pytest.raises(ValueError):h.barrier()
+    e=h.step()
+    assert e.mnemonic=="STA" and c.memory[0x100]==0xABCD and h.steps==1
+    assert h.should_break()
+    h.microback()
+    assert c.in_progress and c.memory[0x100]==0
+    h.back()
+    assert not c.in_progress and c.pc==0 and h.steps==0
+
+def test_interrupt_live_reversal():
+    c=CPU(entry=0x100);c.ien=1
+    h=ExecutionHistory(c)
+    for _ in range(3):h.microstep()
+    assert c.memory[0]==0x100 and h.steps==1
+    h.microback()
+    assert c.in_progress and c.pc==0 and c.memory[0]==0x100
+    h.microback()
+    assert c.memory[0]==0
+    h.microback()
+    assert c.pc==0x100 and c.ien==1 and not c.in_progress

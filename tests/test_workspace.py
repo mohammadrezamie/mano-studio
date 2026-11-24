@@ -557,3 +557,22 @@ def test_cycle_inspector_and_reverse(workspace):
     lab.back()
     assert lab.cycles.groups.rowCount()==0
     lab.close()
+
+
+def test_live_timing_controls(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace,"STA 100\nHLT\nORG 100\nHEX 0000\nEND")
+    lab.cpu.ac=0xCAFE
+    lab.microstep()
+    assert lab.cpu.in_progress and lab.steps==0 and lab.cycles.groups.rowCount()==1
+    lab.microstep()
+    assert lab.cpu.pc==1 and lab.cycles.groups.rowCount()==2
+    lab.microback()
+    assert lab.cpu.pc==0 and lab.cycles.groups.rowCount()==1
+    lab.step()
+    assert lab.steps==1 and lab.cpu.memory[0x100]==0xCAFE
+    lab.microback()
+    assert lab.steps==0 and lab.cpu.memory[0x100]==0 and lab.cpu.in_progress
+    lab.back()
+    assert lab.cpu.pc==0 and not lab.cpu.in_progress
+    lab.close()

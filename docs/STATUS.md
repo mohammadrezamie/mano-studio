@@ -173,3 +173,6 @@ Actual CPU assignments recorded as timing-group snapshots for all named instruct
 
 ### Blocking regression repair
 Run 45443855329 failed on both platforms: CycleView.event shadowed QWidget.event, causing Qt layout initialization to fail. Renamed the stored trace to current_trace throughout code/tests. Do not claim previous cycle revision passed. Exact-head CI still required before acceptance. Next: real live timing groups using a single resumable CPU engine, rollback/replay of bounded partial instruction and I/O boundary guards.
+
+### Live timing engine checkpoint
+Refactored CPU timing trace into single resumable execution path, integrated Next/Previous timing controls and partial trace, atomic completion/history, partial cancel and bounded replay reversal. I/O guarded at instruction boundaries; breakpoints ignore partial PC. Added 35 core/GUI regression cases. Previous Qt construction failure fixed in ecc7b59; neither fix nor new engine yet confirmed by exact-head CI. No physical timing/SC/R claim, no release, translator unchanged.

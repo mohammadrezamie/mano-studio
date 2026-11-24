@@ -17,6 +17,7 @@ class MicroEvent:
     after: dict
     reads: tuple
     writes: tuple
+    final: bool = False
 
 
 @dataclass(frozen=True)
@@ -45,12 +46,18 @@ class CPU:
         self.inpr = self.outr = self.fgi = self.ien = 0
         self.fgo = 1
         self.halted = False
+        self._cycle = None
+        self._groups = []
+        self._context = None
+        self.completed_event = None
 
     def registers(self):
         return {name.upper(): getattr(self, name) for name in
                 ("pc","ac","e","ir","ar","dr","tr","inpr","outr","fgi","fgo","ien","halted")}
 
     def input_byte(self, value):
+        if self.in_progress:
+            raise ValueError("Finish or rewind the current instruction before I/O")
         if not 0 <= value <= 255:
             raise ValueError("Input must be an 8-bit value")
         if self.fgi:
@@ -58,13 +65,15 @@ class CPU:
         self.inpr, self.fgi = value, 1
 
     def output_byte(self):
+        if self.in_progress:
+            raise ValueError("Finish or rewind the current instruction before I/O")
         if self.fgo:
             return None
         self.fgo = 1
         return self.outr
 
-    def step(self):
-        """Complete one instruction atomically at the public boundary.
+    def _instruction(self):
+        """Resumable single execution path for instruction and timing-group stepping.
 
         Each recorded group is produced by the actual assignments below,
         not by replaying a second simulator. Invalid opcodes leave state intact.
@@ -89,22 +98,26 @@ class CPU:
         def mark(timing,phase,rtl):
             nonlocal prior,wi,ri
             after=self.registers()
-            groups.append(MicroEvent(timing,phase,rtl,prior,after,tuple(reads[ri:]),tuple(writes[wi:])))
+            event=MicroEvent(timing,phase,rtl,prior,after,tuple(reads[ri:]),tuple(writes[wi:]),timing==last_timing)
+            groups.append(event)
             prior=after
             wi,ri=len(writes),len(reads)
+            return event
 
         def finish(word,op,effective):
             return StepEvent(address,word,op,effective,before,self.registers(),tuple(writes),tuple(groups))
 
         if self.ien and (self.fgi or self.fgo):
+            last_timing=2
+            self._context=(address,0,"INT")
             self.tr=self.pc
             self.ar=0
-            mark(0,"interrupt","AR ← 0, TR ← PC")
+            yield mark(0,"interrupt","AR ← 0, TR ← PC")
             store(0,self.tr)
             self.pc=0
-            mark(1,"interrupt","M[AR] ← TR, PC ← 0")
+            yield mark(1,"interrupt","M[AR] ← TR, PC ← 0")
             self.pc,self.ien=1,0
-            mark(2,"interrupt","PC ← PC + 1, IEN ← 0")
+            yield mark(2,"interrupt","PC ← PC + 1, IEN ← 0")
             return finish(0,"INT",0)
 
         # Preflight instruction validity without recording an architectural read.
@@ -113,52 +126,54 @@ class CPU:
         op=MEMORY_BY_CODE[opcode] if opcode<7 else FIXED_BY_CODE.get(word)
         if op is None:
             raise ValueError(f"Unsupported instruction {word:04X} at {address:03X}")
+        last_timing=6 if op=="ISZ" else 5 if op in ("AND","ADD","LDA","BSA") else 4 if opcode<7 else 3
+        self._context=(address,word,op)
         self.ar=self.pc
-        mark(0,"fetch","AR ← PC")
+        yield mark(0,"fetch","AR ← PC")
         self.ir=read(self.ar)
         self.pc=(self.pc+1)&0xFFF
-        mark(1,"fetch","IR ← M[AR], PC ← PC + 1")
+        yield mark(1,"fetch","IR ← M[AR], PC ← PC + 1")
         self.ar=self.ir&0xFFF
-        mark(2,"decode","AR ← IR(0–11), decode opcode and I")
+        yield mark(2,"decode","AR ← IR(0–11), decode opcode and I")
         effective=None
         if opcode<7:
             if word&0x8000:
                 self.ar=read(self.ar)&0xFFF
-                mark(3,"indirect","AR ← M[AR](0–11)")
+                yield mark(3,"indirect","AR ← M[AR](0–11)")
             else:
-                mark(3,"direct","Direct address — no register transfer")
+                yield mark(3,"direct","Direct address — no register transfer")
             effective=a=self.ar
             if op in ("AND","ADD","LDA","ISZ"):
                 self.dr=read(a)
-                mark(4,"execute","DR ← M[AR]")
+                yield mark(4,"execute","DR ← M[AR]")
             if op=="AND":
                 self.ac=alu("AND",self.ac,self.dr).word
-                mark(5,"execute","AC ← AC ∧ DR")
+                yield mark(5,"execute","AC ← AC ∧ DR")
             elif op=="ADD":
                 result=alu("ADD",self.ac,self.dr)
                 self.ac,self.e=result.word,result.carry
-                mark(5,"execute","AC ← AC + DR, E ← Cout")
+                yield mark(5,"execute","AC ← AC + DR, E ← Cout")
             elif op=="LDA":
                 self.ac=self.dr
-                mark(5,"execute","AC ← DR")
+                yield mark(5,"execute","AC ← DR")
             elif op=="STA":
                 store(a,self.ac)
-                mark(4,"execute","M[AR] ← AC")
+                yield mark(4,"execute","M[AR] ← AC")
             elif op=="BUN":
                 self.pc=a
-                mark(4,"execute","PC ← AR")
+                yield mark(4,"execute","PC ← AR")
             elif op=="BSA":
                 store(a,self.pc)
                 self.ar=(a+1)&0xFFF
-                mark(4,"execute","M[AR] ← PC, AR ← AR + 1")
+                yield mark(4,"execute","M[AR] ← PC, AR ← AR + 1")
                 self.pc=self.ar
-                mark(5,"execute","PC ← AR")
+                yield mark(5,"execute","PC ← AR")
             elif op=="ISZ":
                 self.dr=(self.dr+1)&0xFFFF
-                mark(5,"execute","DR ← DR + 1")
+                yield mark(5,"execute","DR ← DR + 1")
                 store(a,self.dr)
                 if not self.dr:self.pc=(self.pc+1)&0xFFF
-                mark(6,"execute","M[AR] ← DR; if DR = 0: PC ← PC + 1")
+                yield mark(6,"execute","M[AR] ← DR; if DR = 0: PC ← PC + 1")
         else:
             rtl=""
             if op=="CLA":self.ac=0;rtl="AC ← 0"
@@ -181,5 +196,78 @@ class CPU:
             elif op=="OUT":self.outr,self.fgo=self.ac&0xFF,0;rtl="OUTR ← AC(0–7), FGO ← 0"
             elif op=="ION":self.ien=1;rtl="IEN ← 1"
             elif op=="IOF":self.ien=0;rtl="IEN ← 0"
-            mark(3,"io" if word&0x8000 else "register",rtl)
+            yield mark(3,"io" if word&0x8000 else "register",rtl)
         return finish(word,op,effective)
+
+
+    @property
+    def in_progress(self):
+        return self._cycle is not None
+
+    @property
+    def pending_event(self):
+        if not self.in_progress or not self._groups:
+            return None
+        address,word,op=self._context
+        groups=tuple(self._groups)
+        effective=0 if op=="INT" else None
+        if op in MEMORY_BY_CODE.values() and len(groups)>=4:
+            effective=groups[3].after["AR"]
+        return StepEvent(address,word,op,effective,groups[0].before,
+                         groups[-1].after,tuple(w for g in groups for w in g.writes),groups)
+
+    def microstep(self):
+        """Execute exactly one timing group. A final group publishes StepEvent."""
+        self.completed_event=None
+        if self._cycle is None:
+            if self.halted:return None
+            self._groups=[]
+            self._cycle=self._instruction()
+        try:
+            group=next(self._cycle)
+        except Exception:
+            self.cancel_pending()
+            raise
+        self._groups.append(group)
+        if group.final:
+            try:
+                next(self._cycle)
+            except StopIteration as stop:
+                self.completed_event=stop.value
+            else:
+                raise RuntimeError("Unexpected group after final timing")
+            self._cycle=None
+            self._groups=[]
+            self._context=None
+        return group
+
+    def step(self):
+        """Complete current or next instruction through the same timing engine."""
+        while True:
+            group=self.microstep()
+            if group is None:return None
+            if group.final:return self.completed_event
+
+    def cancel_pending(self):
+        """Restore only the register snapshot and written cells of a partial instruction."""
+        pending=self.pending_event
+        if pending:
+            for address,old,_ in reversed(pending.writes):self.memory[address]=old
+            for name,value in pending.before.items():setattr(self,name.lower(),value)
+        if self._cycle is not None:self._cycle.close()
+        self._cycle=None
+        self._groups=[]
+        self._context=None
+        self.completed_event=None
+        return pending
+
+    def rewind_group(self):
+        """Undo one partial group using bounded replay from the instruction boundary.
+
+        External I/O is prohibited mid-instruction, so replay is deterministic.
+        No copied memory image or second execution engine.
+        """
+        pending=self.cancel_pending()
+        if pending is None:return None
+        for _ in range(len(pending.microevents)-1):self.microstep()
+        return pending.microevents[-1]

@@ -17,14 +17,29 @@ class ExecutionHistory:
         self.steps=0
         self.breakpoints=set()
 
-    def step(self):
-        event=self.cpu.step()
+    def _record(self,event):
         if event is not None:
             self.steps+=1
             self.entries.append(TraceEntry(self.steps,event))
         return event
 
+    def step(self):
+        return self._record(self.cpu.step())
+
+    def microstep(self):
+        group=self.cpu.microstep()
+        if group is not None and group.final:self._record(self.cpu.completed_event)
+        return group
+
+    def microback(self):
+        if self.cpu.in_progress:return self.cpu.rewind_group()
+        event=self.back()
+        if event is None:return None
+        for _ in range(len(event.microevents)-1):self.cpu.microstep()
+        return event.microevents[-1]
+
     def back(self):
+        if self.cpu.in_progress:return self.cpu.cancel_pending()
         if not self.entries:
             return None
         entry=self.entries.pop()
@@ -38,6 +53,7 @@ class ExecutionHistory:
 
     def barrier(self):
         """External input/output or memory edits start a new reversible segment."""
+        if self.cpu.in_progress:raise ValueError("Finish or rewind the current instruction before I/O")
         self.entries.clear()
 
     def toggle_breakpoint(self,address):
@@ -52,4 +68,4 @@ class ExecutionHistory:
     def should_break(self):
         # Interrupt service may replace the next instruction; do not claim a
         # hardware microcycle breakpoint. PC address is the pre-step boundary.
-        return self.cpu.pc in self.breakpoints and not self.cpu.halted
+        return not self.cpu.in_progress and self.cpu.pc in self.breakpoints and not self.cpu.halted

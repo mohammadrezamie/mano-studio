@@ -119,7 +119,7 @@ class ProgramLab(QDialog):
         self.inspector.addTab(alu_page,self.t("Data & ALU","داده و ALU"))
         self.codes=DataCodesView(self.fa)
         self.inspector.addTab(self.codes,self.t("Data codes","کدهای داده"))
-        self.cycles=CycleView(self.fa)
+        self.cycles=CycleView(self.fa,self.microstep,self.microback)
         self.inspector.addTab(self.cycles,self.t("Instruction cycle","چرخه دستور"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
@@ -182,7 +182,7 @@ class ProgramLab(QDialog):
         self.status.setText(self.t("Ready.","آماده."))
 
     def refresh(self,event=None):
-        self.datapath.set_state(self.cpu,event)
+        self.datapath.set_state(self.cpu,None if self.cpu.in_progress else event)
         self.refresh_trace()
         values = self.cpu.registers()
         self.registers.setRowCount(len(values))
@@ -195,6 +195,7 @@ class ProgramLab(QDialog):
                 item.setBackground(QColor(80,145,185,70))
             self.registers.setItem(row,1,item)
         if event:
+            self.addresses.update(a for g in event.microevents for a,_ in g.reads)
             self.addresses.update(a for a,old,new in event.writes)
             if event.effective_address is not None:
                 self.addresses.add(event.effective_address)
@@ -229,6 +230,33 @@ class ProgramLab(QDialog):
         if self.cpu.halted:
             self.pause()
 
+    def microstep(self):
+        self.pause()
+        if self.cpu is None or self.steps>=10000:return
+        self.break_resume=None
+        try:group=self.history.microstep()
+        except ValueError as error:
+            self.status.setText(error_text(error,self.fa));return
+        if group is None:return
+        self.steps=self.history.steps
+        event=self.cpu.pending_event or self.cpu.completed_event
+        self.refresh(event)
+        self.select_address(event.address)
+        self.cycles.groups.setCurrentCell(len(event.microevents)-1,0)
+        self.status.setText(f"{event.mnemonic} · T{group.timing} · AC={self.cpu.ac:04X} · PC={self.cpu.pc:03X}")
+
+    def microback(self):
+        self.pause()
+        if self.history is None:return
+        group=self.history.microback()
+        if group is None:return
+        self.steps=self.history.steps
+        self.break_resume=None
+        pending=self.cpu.pending_event
+        self.refresh(pending)
+        self.select_address(pending.address if pending else self.cpu.pc)
+        self.status.setText(self.t("Timing group reversed.","یک گروه زمانی واگرد شد."))
+
     def run(self):
         if self.cpu and not self.cpu.halted:
             self.timer.start(self.speed.value())
@@ -261,7 +289,9 @@ class ProgramLab(QDialog):
     def read_output(self):
         if self.cpu:
             self.pause()
-            byte = self.cpu.output_byte()
+            try:byte = self.cpu.output_byte()
+            except ValueError as error:
+                self.status.setText(error_text(error,self.fa));return
             if byte is not None:self.history.barrier()
             self.refresh()
             self.status.setText(self.t("No output pending.","خروجی آماده نیست.") if byte is None else f"OUT: {byte:02X}")
@@ -293,9 +323,13 @@ class ProgramLab(QDialog):
                 for entry in self.history.entries for e in (entry.event,)]
 
     def refresh_trace(self):
-        latest=self.history.entries[-1].event if self.history and self.history.entries else None
-        if self.cycles.current_trace is not latest:self.cycles.show_event(latest)
-        self.back_button.setEnabled(bool(self.history and self.history.entries))
+        partial=self.cpu.pending_event if self.cpu else None
+        latest=partial or (self.history.entries[-1].event if self.history and self.history.entries else None)
+        if self.cycles.current_trace != latest:self.cycles.show_event(latest,partial is not None)
+        can_back=bool(self.history and (self.history.entries or self.cpu.in_progress))
+        self.back_button.setEnabled(can_back)
+        self.cycles.back_button.setEnabled(can_back)
+        self.cycles.step_button.setEnabled(bool(self.cpu and not self.cpu.halted and self.steps<10000))
         rows=self.trace_rows()
         if rows!=self.visible_trace:
             # In the common forward-step case, insert only the new row.

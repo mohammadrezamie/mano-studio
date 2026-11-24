@@ -37,3 +37,6 @@ Added ideal word-addressed MemoryArray composed of actual MemoryChip instances, 
 
 ## Basic Computer timing increment
 Recorded actual T0–T6 timing groups in single CPU engine for 25 named instructions (32 forms), with before/after state, memory accesses and selectable bilingual inspection; interrupt service boundary approximation preserved. Not a live clock-level emulator: SC/R/control bus signals and arbitrary combined bits remain unmodeled. Independent tests for actual snapshot chains, ISZ, BSA wrap, interrupt and reversal. Reference https://open-book-project.github.io/courses/csa_course/timing-control-and-the-instruction-cycle.html . CI/visual verification pending.
+
+## Live timing-group increment
+Single resumable CPU implementation now executes one actual timing group or entire instruction. Real partial register and memory states, previous timing via bounded deterministic replay, boundary breakpoint and I/O guards. R/SC and physical bus timing remain open; no certified hardware equivalence. Regression cases cover each named form, partial finish, interrupt and rollback. New CI and native visual acceptance pending.
