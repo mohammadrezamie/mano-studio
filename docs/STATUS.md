@@ -13,3 +13,6 @@ Continue active PR #9 (`feature/desktop-workspace`). Previous screenshot/test wo
 
 ## Owner decision: beta-only and calm UI
 See docs/RELEASE_POLICY.md. Target classroom review next week (2026-11-30 to 2026-12-06), not stable release. Add persisted reduced-motion, glass effects off and offline mode toggles. Core remains offline; optional network access must be explicitly enabled and gated. Current implementation of these new global controls is pending. Continue PR #9; verify latest CI, review UI and prioritize Windows setup. No stable release until owner explicitly approves after class.
+
+## Latest owner clarification
+Core always offline, only explicit manual update check may access GitHub. Supersedes prior online-mode toggle plan. PR #9 now contains update_service.py, settings UI and global glass/reduced-motion controls with tests. Continue branch, inspect current CI and visual artifacts, then beta installer. See RELEASE_POLICY.md. No stable release.
