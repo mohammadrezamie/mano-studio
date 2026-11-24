@@ -14,6 +14,7 @@ from ui.data_codes_view import DataCodesView
 from ui.cycle_view import CycleView
 from ui.microprogram_view import MicroprogramView
 from ui.cpu_organization_view import OrganizationView
+from ui.pipeline_view import PipelineView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
@@ -127,6 +128,8 @@ class ProgramLab(QDialog):
         self.inspector.addTab(self.microprogram,self.t("Microprogram","ریزبرنامه"))
         self.organization=OrganizationView(self.fa)
         self.inspector.addTab(self.organization,self.t("CPU organization","سازمان CPU"))
+        self.pipeline=PipelineView(self.fa)
+        self.inspector.addTab(self.pipeline,self.t("Pipeline","خط لوله"))
         layout.addWidget(self.inspector, 2)
         io = QHBoxLayout()
         self.input = QLineEdit()

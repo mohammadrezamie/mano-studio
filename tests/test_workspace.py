@@ -849,3 +849,18 @@ def test_expression_formats_view(workspace):
     view.evaluate()
     assert view.result is None and view.trace.rowCount()==0 and view.summary.text()
     lab.close()
+
+
+def test_pipeline_view(workspace):
+    from ui.program_lab import ProgramLab
+    lab=ProgramLab(workspace)
+    view=lab.pipeline
+    view.step()
+    assert view.timeline.rowCount()==1
+    view.run()
+    assert view.model.done and view.model.registers[5]==5
+    view.forward.setChecked(False)
+    assert view.model is None and view.timeline.rowCount()==0
+    view.load();view.run()
+    assert view.model.done and view.model.registers[5]==5 and view.model.stalls>0
+    lab.close()

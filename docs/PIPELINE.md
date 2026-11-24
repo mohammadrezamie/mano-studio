@@ -1,0 +1,7 @@
+# Chapter 9 pipeline lab
+
+
+## Chapter 9 five-stage pipeline first increment
+Independent functional IF/ID/EX/MEM/WB pipeline with actual 16-bit register and word-memory effects, separate instruction/data memory, R0 zero, pre-edge stage snapshots, RAW interlock, optional EX/MEM-to-EX and WB forwarding, one-cycle load-use stall, EX-resolved taken BEQ flushing younger slots, cycle limit 512. Original limited symbolic teaching ISA ADD/SUB/AND/OR/XOR/ADDI/LD/ST/BEQ/NOP; not chapter 5 CPU or encoded machine ISA. Bilingual Computer inspector timeline, next-cycle/run, committed state, actual stall/flush counters and completed-run speedup vs five equal cycles per retired instruction. Authored timing, RAW, load-use, newest producer, zero register, branch, store/load, wrap and UI tests. No branch prediction, structural conflicts, variable stage latency or vector execution yet. Reference Mano chapter 9 pipeline processing; five-stage RISC-style teaching configuration explicitly chosen. Earlier guided-builder CI green; chapter 8 and current exact-head CI pending at inspection. Native visual review pending. No translator, installer or release edits.
+
+Syntax: ADD R1,R2,R3; ADDI R1,R2,5; LD R1,R2,offset; ST R1,R2,offset; BEQ R1,R2,label; NOP. Labels prefix instructions with colon. Offsets are signed decimal 16-bit words. The timeline shows stages active during each cycle, then committed register and memory state. The forwarding switch requires reset. No separate external memory editor yet.
