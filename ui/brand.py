@@ -12,8 +12,6 @@ from ui.theme import PALETTES,STATUS
 from ui.motion import motion_allowed
 
 MARK_POINTS=((19,44),(19,20),(32,34),(45,20),(45,44))
-LOWER_POINTS=tuple((64-x,64-y) for x,y in MARK_POINTS)
-LOWER_PATH="M"+" L".join(f"{x} {y}" for x,y in LOWER_POINTS)
 MARK_PATH="M"+" L".join(f"{x} {y}" for x,y in MARK_POINTS)
 
 
@@ -33,10 +31,11 @@ def brand_svg(theme="dark",glass=True,progress=None,state="neutral",compact=Fals
     signal={"neutral":accent,"success":good,"error":bad}.get(state,accent)
     parts=['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">']
     if glass and not compact:
-        parts.append(f'<defs><linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a45b9"/><stop offset="1" stop-color="{bg}"/></linearGradient><linearGradient id="mark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{fg}"/><stop offset="1" stop-color="#8ee9ff"/></linearGradient></defs>')
+        parts.append(f'<defs><linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a45b9"/><stop offset="1" stop-color="{bg}"/></linearGradient><linearGradient id="mark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#a4edff"/></linearGradient><linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ecb1ff"/><stop offset=".55" stop-color="#6b7dff"/><stop offset="1" stop-color="#75efff"/></linearGradient></defs>')
         fill,stroke="url(#tile)","url(#mark)"
     else:fill,stroke=panel,accent
-    parts.append(f'<rect x="3" y="3" width="58" height="58" rx="15" fill="{fill}" stroke="{border}" stroke-width="1.5"/>')
+    rim = "url(#rim)" if glass and not compact else border
+    parts.append(f'<rect x="3" y="3" width="58" height="58" rx="15" fill="{fill}" stroke="{rim}" stroke-width="1.5"/>')
     if not compact:
         parts.append(f'<path d="M8 23 V18 Q8 8 18 8 H37" fill="none" stroke="{fg}" stroke-opacity=".18" stroke-width="1.5" stroke-linecap="round"/>')
     # Friendly M-chip silhouette; pins are decorative brand geometry.
@@ -74,6 +73,7 @@ class BrandMark(QWidget):
     """Single 360-ms feedback pulse after an actual translation result."""
     def __init__(self,theme="dark",parent=None):
         super().__init__(parent)
+        self.setProperty("manoMotionSurface", True)
         self.theme=theme;self.glass=True;self.reduced=False
         self.progress=None;self.state="neutral"
         self.setFixedSize(44,44)
