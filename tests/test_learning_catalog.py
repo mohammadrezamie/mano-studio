@@ -34,3 +34,8 @@ def test_omega_search():
     assert BY_ID["omega"].route == "omega"
     assert any(t.id=="omega" for t in search_tools("perfect shuffle",13))
     assert any(t.id=="omega" for t in search_tools("امگا",13))
+
+
+def test_boolean_law_search():
+    for query in ("De Morgan","duality","دمورگان","دوگانگی"):
+        assert any(t.id=="karnaugh" for t in search_tools(query,1))
