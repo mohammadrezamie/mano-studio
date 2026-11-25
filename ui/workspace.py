@@ -806,7 +806,11 @@ class Workspace(QMainWindow):
         lab.exec()
 
     def about(self):
-        self.about_dialog().exec()
+        dialog = self.about_dialog()
+        try:
+            dialog.exec()
+        finally:
+            dialog.deleteLater()
 
     def about_dialog(self):
         """Build the same real About dialog for use and visual verification."""
