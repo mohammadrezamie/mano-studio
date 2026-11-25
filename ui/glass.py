@@ -34,6 +34,7 @@ class GlassRoot(QWidget):
         self.theme = theme
         self.enabled = enabled
         self.setObjectName("glassRoot")
+        self.setProperty("manoMotionSurface", True)
         self.pulse = 0.0
         self.animation = QVariantAnimation(self)
         self.animation.setDuration(420)
