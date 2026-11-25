@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QComboBox,
     QPlainTextEdit, QLineEdit, QCheckBox, QTabWidget, QSplitter, QVBoxLayout,
     QHBoxLayout, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView,
-    QFileDialog, QMessageBox, QAbstractItemView, QScrollArea, QFrame, QMenu,
+    QFileDialog, QMessageBox, QAbstractItemView, QScrollArea, QFrame, QMenu, QDialog, QDialogButtonBox,
 )
 import re
 from rtl_translator import translate
@@ -19,7 +19,7 @@ from ui.strings import FA, HELP, NAMES, EN_NAMES
 from ui.theme import PALETTES, SYNTAX, apply_theme
 from ui.icons import icon
 from ui.brand import BrandMark, brand_icon
-from ui.credits import COPYRIGHT, REPOSITORY, THANKS, PURPOSE, LICENSE_NOTE
+from ui.credits import COPYRIGHT, REPOSITORY, THANKS, PURPOSE, LICENSE_NOTE, ACADEMIC_ACKNOWLEDGMENT, COURSE, INSTITUTION, REFERENCE
 from ui.localization import error_text
 from ui.code_editor import CodeEditor
 from ui.glass import GlassRoot
@@ -522,6 +522,8 @@ class Workspace(QMainWindow):
         self.render_errors()
         self.statusBar().showMessage(self.t("Translation successful" if self.result.ok else "Translation failed"))
         self.brand_mark.feedback(self.result.ok)
+        if self.result.ok:
+            self.centralWidget().feedback()
 
     def update_output_state(self):
         if self.result is None:
@@ -648,6 +650,7 @@ class Workspace(QMainWindow):
             editor.gutter.update()
         self.centralWidget().theme = self.theme
         self.centralWidget().enabled = enabled
+        self.centralWidget().snap()
         self.centralWidget().update()
 
     def open_preferences(self):
@@ -803,8 +806,54 @@ class Workspace(QMainWindow):
         lab.exec()
 
     def about(self):
-        fa=self.language=="fa"
-        QMessageBox.about(self, self.t("About")+" — Mano Studio", "\n\n".join((f"Mano Studio · {VERSION}",PURPOSE[fa],THANKS[fa],COPYRIGHT,LICENSE_NOTE[fa],REPOSITORY)))
+        fa = self.language == "fa"
+        dialog = QDialog(self)
+        dialog.setWindowTitle(self.t("About") + " — Mano Studio")
+        dialog.setLayoutDirection(Qt.LayoutDirection.RightToLeft if fa else LTR)
+        dialog.setMinimumWidth(460)
+        dialog.resize(580, 540)
+        outer = QVBoxLayout(dialog)
+        scroll = QScrollArea(dialog)
+        scroll.setWidgetResizable(True)
+        content = QWidget()
+        body = QVBoxLayout(content)
+        header = QHBoxLayout()
+        mark = BrandMark(self.theme, content)
+        mark.setFixedSize(64, 64)
+        mark.set_appearance(self.theme, self.settings.value("glass_enabled", True, type=bool), True)
+        header.addWidget(mark)
+        title = QLabel("Mano Studio · " + VERSION)
+        title.setObjectName("hero")
+        title.setWordWrap(True)
+        header.addWidget(title, 1)
+        body.addLayout(header)
+
+        def section(heading, lines):
+            card = QFrame()
+            card.setObjectName("editorPanel")
+            layout = QVBoxLayout(card)
+            label = QLabel(heading)
+            label.setObjectName("section")
+            layout.addWidget(label)
+            for line in lines:
+                label = QLabel(line)
+                label.setTextFormat(Qt.TextFormat.PlainText)
+                label.setWordWrap(True)
+                label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+                layout.addWidget(label)
+            body.addWidget(card)
+
+        section("تقدیر و تشکر" if fa else "Academic acknowledgment", [ACADEMIC_ACKNOWLEDGMENT[fa]])
+        section("درباره پروژه و درس" if fa else "Project and course", [PURPOSE[fa], COURSE[fa], INSTITUTION[fa], REFERENCE[fa]])
+        section("مجوز و مخزن" if fa else "License and repository", [COPYRIGHT, LICENSE_NOTE[fa], REPOSITORY])
+        body.addStretch()
+        scroll.setWidget(content)
+        outer.addWidget(scroll)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.button(QDialogButtonBox.StandardButton.Close).setText("بستن" if fa else "Close")
+        buttons.rejected.connect(dialog.reject)
+        outer.addWidget(buttons)
+        dialog.exec()
 
     def closeEvent(self, event):
         if not self.confirm_discard():
