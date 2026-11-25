@@ -476,3 +476,7 @@ Owner explicitly requests public first beta and ongoing development in parallel.
 
 ## Dual-track checkpoint — README and Omega model (2026-11-25)
 Main documentation-only merge #21 (2aeb3863) publishes the new README, M-chip logo and documentation policy. Active release #19 source head remains be11875a; installer and cross-platform verification are not complete. Next-beta: new Omega network core and tests, 19 local passes, exact GitHub model/test hashes verified; 5,460 unique source/destination paths and 400 seeded arbitration rounds. No integrated UI or 44th learning route yet. See OMEGA_NETWORK.md, README and CONTINUE. No academic translator or runtime release changes.
+
+
+## Omega interface and textbook audit checkpoint — 2026-11-25
+Bilingual Omega canvas and request controls connected to Computer and Learning Center (44 unique entries). Source includes two locale UI regression cases and four required state captures, not yet executed. Prior core test result remains historical. New TEXTBOOK_AUDIT.md records 104 initial topic families across 13 chapters, all awaiting item-level evidence; exact instructor edition and page/figure/exercise reconciliation remain open. README, Omega guide and curriculum ledger updated. Next: verify Qt and audit Chapter 1 in detail, preserve independent beta PR #19 and translator.
