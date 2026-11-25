@@ -19,7 +19,7 @@
   <a href="#quick-start">Quick start</a> · <a href="#academic-assignment">Academic core</a> · <a href="#visual-preview">Visual preview</a> · <a href="#development-status">Status</a> · <a href="#documentation">Docs</a>
 </p>
 
-**You are viewing the next-generation branch.** Its MSI cache-coherence lesson is implemented in source, with 44 learning entries; GUI execution and visual evidence are pending. See [the MSI lesson](docs/CACHE_COHERENCE.md). The new [Omega interconnection model](docs/OMEGA_NETWORK.md) supports 2–64 ports, with 19 local regression tests passed; its bilingual interactive UI and catalog route are implemented; Qt execution is pending. This is not the first beta release candidate.
+**You are viewing the next-generation branch.** Its MSI cache-coherence lesson is implemented in source, with 44 learning entries; GUI execution and visual evidence are pending. See [the MSI lesson](docs/CACHE_COHERENCE.md). The new [Omega interconnection model](docs/OMEGA_NETWORK.md) supports 2–64 ports, with 19 local regression tests passed; its bilingual interactive UI and catalog route are implemented; Qt execution is pending. The existing Karnaugh lab now supports [NAND-only and NOR-only synthesis](docs/UNIVERSAL_GATES.md) with a full truth-table equivalence guard; integrated tests remain pending. This is not the first beta release candidate.
 
 ## What you can do
 
@@ -27,7 +27,7 @@
 | --- | --- |
 | **RTL editor** | Translate RTL to assembly using typing, an on-screen symbol pad, or a guided builder; export plain text. |
 | **Computer** | Assemble programs, step through the Basic Computer, inspect registers and memory, reverse execution, explore arithmetic, microprogramming, pipelines and I/O. |
-| **Digital Logic** | Edit circuits, inspect truth tables and Boolean equations, study sequential components, Karnaugh maps, FSM synthesis/reduction and memory. |
+| **Digital Logic** | Edit circuits, inspect truth tables and Boolean equations, study sequential components, Karnaugh maps (including NAND/NOR-only build on next-beta), FSM synthesis/reduction and memory. |
 | **Learning Center** | Search bilingual interactive exercises across all 13 indexed chapters; keep local practice progress. |
 
 Designed for English and Persian, with persistent language preferences, Light/Dark/Night themes and optional glass effects and motion. Core features work offline; only an explicit update check may contact GitHub.
