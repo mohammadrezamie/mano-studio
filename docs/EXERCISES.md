@@ -16,3 +16,5 @@ These examples use the versioned JSON format and the existing Logic Lab pages. O
 Format v1: `format=mano-exercise`, `version=1`; `kind=karnaugh` contains values in binary minterm order and SOP/POS; `kind=state-design` contains bits, mode, flipflop and complete rows [next state, output] in Q then X order. Maximum accepted file size 32 KiB; strict validation before replacement. No saved simulation histories, imported signal aliases, or physical netlists. Save physical combinational circuits through existing circuit-document actions instead.
 
 Keyboard / صفحه‌کلید: arrow keys move focus across the visible Karnaugh map; Space cycles the focused value. / کلیدهای جهت‌دار برای حرکت بین سلول‌ها و Space برای تغییر مقدار سلول انتخاب‌شده است.
+
+Developer visual QA: the shipped POS and Moore-reduction files are also used in model-asserted screenshot scenarios for Verify, Analysis and Reduction (both languages, three themes). These are not screenshots of manual acceptance.

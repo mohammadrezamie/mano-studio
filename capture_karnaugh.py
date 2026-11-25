@@ -1,5 +1,9 @@
 """Developer-only, asserted Karnaugh map and synthesized circuit evidence."""
+from pathlib import Path
 from boolean_synthesis import synthesize
+from logic_exercise import read_exercise
+
+EXAMPLES = Path(__file__).resolve().parent / "examples"
 
 
 def capture_karnaugh(app, lab, output, language, theme):
@@ -44,6 +48,41 @@ def capture_karnaugh(app, lab, output, language, theme):
         raise RuntimeError("Expected executed FSM clock transition")
     app.processEvents()
     _save(lab, output / f"{language}-{theme}-state-design-clock.png")
+
+    # Load shipped fixtures through the same validated file reader as the UI.
+    lab.select_tool("karnaugh")
+    exercise = read_exercise(EXAMPLES / "karnaugh-dont-care.mano-exercise.json", "karnaugh")
+    view.apply_exercise(exercise)
+    view.results.setCurrentWidget(view.proof)
+    app.processEvents()
+    if view.exercise() != exercise or view.proof.rowCount() != len(exercise.values):
+        raise RuntimeError("Expected imported POS exercise")
+    for i, value in enumerate(exercise.values):
+        expected = "X" if value is None else str(value)
+        cover = str(view.solution.evaluate(i))
+        actual = tuple(view.proof.item(i, c).text() for c in range(4))
+        if actual != (str(i), expected, cover, cover) or (value is not None and cover != expected):
+            raise RuntimeError("Karnaugh verification table disagrees with exercise")
+    _save(lab, output / f"{language}-{theme}-karnaugh-verify.png")
+
+    lab.select_tool("state-design")
+    exercise = read_exercise(EXAMPLES / "fsm-moore-reduction.mano-exercise.json", "state-design")
+    state.apply_exercise(exercise)
+    state.views.setCurrentWidget(state.analysis_text)
+    app.processEvents()
+    if (state.exercise() != exercise or state.analysis.paths != ((0,""),(1,"1"))
+            or state.analysis.unreachable != (2,3) or state.analysis.classes != ((0,1),(2,3))):
+        raise RuntimeError("Unexpected FSM analysis for shipped exercise")
+    _save(lab, output / f"{language}-{theme}-state-design-analysis.png")
+
+    state.views.setCurrentWidget(state.reduction_text)
+    app.processEvents()
+    if (state.reduction.groups != ((0,1),) or state.reduction.bits != 0
+            or state.encoding.codes != (0,) or state.encoding.unused != (1,)
+            or any(state.encoding.design.step(1,x) != (0,0) for x in (0,1))
+            or state.trace or state.state != 0 or state.exercise() != exercise):
+        raise RuntimeError("Expected behavior-preserving reduced implementation")
+    _save(lab, output / f"{language}-{theme}-state-design-reduction.png")
 
 
 def _save(lab, target):
