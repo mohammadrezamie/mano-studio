@@ -3,7 +3,7 @@ import argparse
 import ast
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import struct
 import zipfile
@@ -15,6 +15,30 @@ def digest(path):
         for block in iter(lambda: stream.read(1024 * 1024), b""):
             result.update(block)
     return result.hexdigest()
+
+
+def digest_member(archive, name):
+    result = hashlib.sha256()
+    with archive.open(name) as stream:
+        for block in iter(lambda: stream.read(1024 * 1024), b""):
+            result.update(block)
+    return result.hexdigest()
+
+
+def safe_relative(value):
+    path = PurePosixPath(str(value).replace("\\", "/"))
+    if path.is_absolute() or not path.parts or any(p in (".", "..") or ":" in p for p in path.parts):
+        raise ValueError("Unsafe packaged path")
+    return path.as_posix()
+
+
+def packaged_member(names, relative):
+    relative = safe_relative(relative)
+    candidates = ("ManoStudio/" + relative, "ManoStudio/_internal/" + relative)
+    matches = [name for name in candidates if name in names]
+    if len(matches) != 1:
+        raise ValueError(f"Expected exactly one packaged file: {relative}")
+    return matches[0]
 
 
 def machine(stream):
@@ -56,6 +80,77 @@ def asset(path):
     return {"name": path.name, "size": path.stat().st_size, "sha256": value}
 
 
+def verify_distribution_payload(root, archive):
+    names = set(archive.namelist())
+    source = packaged_member(names, "rtl_translator.py")
+    if archive.read(source) != (root / "rtl_translator.py").read_bytes():
+        raise ValueError("Bundled academic source differs from checkout")
+
+    for relative, local in (
+        ("LICENSE", root / "LICENSE"),
+        ("examples/add.rtl", root / "examples" / "add.rtl"),
+        ("docs/TRANSLATOR.md", root / "docs" / "TRANSLATOR.md"),
+    ):
+        member = packaged_member(names, relative)
+        if archive.read(member) != local.read_bytes():
+            raise ValueError(f"Packaged file differs from checkout: {relative}")
+
+    inventory_name = packaged_member(names, "third-party-notices/inventory.json")
+    inventory = json.loads(archive.read(inventory_name))
+    if (not isinstance(inventory, dict) or inventory.get("kind") != "build-license-evidence"
+            or inventory.get("review_complete") is not False
+            or not isinstance(inventory.get("warnings"), list)
+            or not isinstance(inventory.get("packages"), list)
+            or not isinstance(inventory.get("binaries"), list)):
+        raise ValueError("Missing or invalid third-party license evidence inventory")
+
+    prefix = inventory_name.rsplit("/", 1)[0]
+    seen_binaries = set()
+    for item in inventory["binaries"]:
+        relative = safe_relative(item["path"])
+        if relative in seen_binaries:
+            raise ValueError("Duplicate binary inventory path")
+        seen_binaries.add(relative)
+        member = "ManoStudio/" + relative
+        if member not in names:
+            raise ValueError("Bundled binary missing from portable archive: " + relative)
+        info = archive.getinfo(member)
+        if info.file_size != item["size"] or digest_member(archive, member) != item["sha256"]:
+            raise ValueError("Bundled binary hash/size differs from inventory: " + relative)
+
+    notice_count = 0
+    for package in inventory["packages"]:
+        name = package.get("name", "")
+        if not re.fullmatch(r"[A-Za-z0-9_.-]+", name):
+            raise ValueError("Invalid package name in license inventory")
+        metadata = f"{prefix}/{name}/METADATA.txt"
+        if metadata not in names:
+            raise ValueError("Package metadata missing from notices: " + name)
+        for notice in package.get("notices", []):
+            relative = safe_relative(notice["path"])
+            member = prefix + "/" + relative
+            if member not in names or digest_member(archive, member) != notice["sha256"]:
+                raise ValueError("Packaged license notice missing or changed: " + relative)
+            notice_count += 1
+
+    python_license = inventory.get("python_license")
+    if python_license:
+        relative = safe_relative(python_license["path"])
+        member = prefix + "/" + relative
+        if member not in names or digest_member(archive, member) != python_license["sha256"]:
+            raise ValueError("Python runtime license missing or changed")
+
+    return {
+        "inventory": inventory_name,
+        "review_complete": False,
+        "warnings": len(inventory["warnings"]),
+        "packages": len(inventory["packages"]),
+        "notices": notice_count,
+        "binaries": len(inventory["binaries"]),
+        "python_license_present": bool(python_license),
+    }
+
+
 def validate(root, sha):
     if not re.fullmatch(r"[a-f0-9]{40}", sha):
         raise ValueError("Invalid source commit")
@@ -74,21 +169,20 @@ def validate(root, sha):
     with zipfile.ZipFile(z) as archive:
         if archive.testzip() is not None:
             raise ValueError("Corrupt portable archive")
-        names = archive.namelist()
-        if len(names) != len(set(names)):
+        if len(archive.namelist()) != len(set(archive.namelist())):
             raise ValueError("Duplicate portable entries")
-        with archive.open("ManoStudio/ManoStudio.exe") as program:
+        app = packaged_member(set(archive.namelist()), "ManoStudio.exe")
+        with archive.open(app) as program:
             if machine(program) != 0x8664:
                 raise ValueError("Portable executable is not AMD64")
-        source = [n for n in names if n in ("ManoStudio/rtl_translator.py", "ManoStudio/_internal/rtl_translator.py")]
-        if len(source) != 1 or archive.read(source[0]) != (root / "rtl_translator.py").read_bytes():
-            raise ValueError("Bundled academic source differs from checkout")
+        license_evidence = verify_distribution_payload(root, archive)
     with exe.open("rb") as stream:
         # Inno Setup may use a 32-bit bootstrap for a 64-bit application.
         machine(stream)
     return {"kind": "internal-development-candidate", "version": version, "source_sha": sha,
             "platform": "Windows x64", "portable_smoke": "PASS", "installed_smoke": "PASS",
             "academic_source_sha256": digest(root / "rtl_translator.py"), "assets": assets,
+            "license_evidence": license_evidence,
             "native_acceptance": False, "public_release": False}
 
 
