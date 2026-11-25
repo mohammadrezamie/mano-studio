@@ -45,3 +45,10 @@ Owner rejects M monogram as generic. Brand must be distinctive, non-letter, code
 Owner reconfirmed bilingual parity: new user-facing labels, explanations, errors and accessibility text must ship in English and Persian together; persist language, RTL shell/LTR technical data. Include regression in both locales; native visual review remains separate.
 
 Post-merge 2026-11-25 override: PR #9 is closed and merged; never resume its old branch. Inspect main and current open PRs, continue separate focused branches. Main 9eb19971 verified 928 tests each Windows/Ubuntu and both screenshot artifacts. Continue quality/beta-visual-review while open. No implicit authorization for another merge or publication.
+
+
+## Current owner override — permanent dual track and living README (2026-11-25)
+
+Supersedes the historic development-only, closed PR #9 and rejected-M instructions above. Owner now requests an early Windows beta while future development continues independently. Inspect the active release issue #4 / PR #19 and curriculum issue #13 / develop/next-beta; do not inject unverified future features into the frozen release candidate. Retain beta-only publication gates and exact-head verification. Use the approved candidate M-chip identity (see release branch brand system), not the retired mark.
+
+Read docs/DOCUMENTATION_POLICY.md before any work. Keep README.md live: every meaningful change must update README and affected documentation in the same work cycle, not at the end of the project. Maintain branch-aware release/feature claims, current verified evidence, minimal truthful images and English-first presentation with concise Persian academic guidance. Update STATUS, CONTINUE, issues and relevant guides; record a no-impact rationale only for internal changes that do not affect README claims. No fabricated screenshots, no stale links, no gratuitous release CI restart.
