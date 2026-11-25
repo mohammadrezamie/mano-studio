@@ -77,6 +77,14 @@ def candidate(tmp_path):
         archive.writestr("ManoStudio/third-party-notices/Python-LICENSE.txt", python_license)
         archive.writestr("ManoStudio/third-party-notices/PySide6/METADATA.txt", "Name: PySide6\n")
         archive.writestr("ManoStudio/third-party-notices/PySide6/LICENSE.txt", notice)
+    with zipfile.ZipFile(z) as archive:
+        payload = {n.split("/", 1)[1]: {"size": len(archive.read(n)),
+                   "sha256": hashlib.sha256(archive.read(n)).hexdigest()} for n in archive.namelist()}
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    (setup / "installed-payload.json").write_text(json.dumps({
+        "kind": "installed-payload-comparison", "result": "PASS", "files": len(payload),
+        "payload_sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest(), "native_acceptance": False,
+    }))
     exe = setup / "ManoStudio-Setup-v0.3.0-dev.1-x64.exe"
     exe.write_bytes(pe(0x14c))
     checksum(z)
@@ -87,6 +95,7 @@ def candidate(tmp_path):
 def test_candidate_evidence(candidate):
     root, z, exe = candidate
     record = validate(root, SHA)
+    assert record["installed_payload"]["result"] == "PASS"
     assert record["source_sha"] == SHA
     assert record["portable_smoke"] == record["installed_smoke"] == "PASS"
     assert not record["public_release"] and not record["native_acceptance"]
@@ -165,4 +174,46 @@ def test_reject_unsafe_inventory_binary_path(candidate):
             archive.writestr(path, data)
     checksum(z)
     with pytest.raises(ValueError, match="Unsafe"):
+        validate(root, SHA)
+
+
+@pytest.mark.parametrize("path", ["ManoStudio/_internal/extra.dll", "ManoStudio/EXTRA.PYD", "ManoStudio/other.exe"])
+def test_reject_other_unlisted_binary(candidate, path):
+    root, z, _ = candidate
+    with zipfile.ZipFile(z, "a") as archive:
+        archive.writestr(path, b"unlisted")
+    checksum(z)
+    with pytest.raises(ValueError, match="inventory is incomplete"):
+        validate(root, SHA)
+
+
+@pytest.mark.parametrize("path", ["ManoStudio/manostudio.EXE", "ManoStudio/../escape.txt", "outside.txt", "ManoStudio\\extra.txt"])
+def test_reject_ambiguous_archive_path(candidate, path):
+    root, z, _ = candidate
+    with zipfile.ZipFile(z, "a") as archive:
+        archive.writestr(path, b"unexpected")
+    checksum(z)
+    with pytest.raises(ValueError, match="[Uu]nsafe|case-colliding"):
+        validate(root, SHA)
+
+
+
+@pytest.mark.parametrize("damage", ["missing", "digest", "count", "acceptance", "extra_document"])
+def test_reject_stale_installed_payload_report(candidate, damage):
+    root, z, _ = candidate
+    path = root / "installer" / "output" / "installed-payload.json"
+    if damage == "missing":
+        path.unlink()
+    elif damage == "extra_document":
+        rewrite_zip(z, add={"ManoStudio/_internal/docs/extra.txt": b"not installed"})
+    else:
+        report = json.loads(path.read_text())
+        if damage == "digest":
+            report["payload_sha256"] = "0" * 64
+        elif damage == "count":
+            report["files"] += 1
+        else:
+            report["native_acceptance"] = True
+        path.write_text(json.dumps(report))
+    with pytest.raises(ValueError, match="[Ii]nstalled payload report"):
         validate(root, SHA)

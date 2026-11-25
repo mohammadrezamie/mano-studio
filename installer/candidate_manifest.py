@@ -121,7 +121,7 @@ def verify_distribution_payload(root, archive):
     actual_binaries = {
         name[len("ManoStudio/"):]
         for name in names
-        if name.startswith("ManoStudio/") and PurePosixPath(name).suffix.lower() in (".dll", ".pyd", ".exe")
+        if name.startswith("ManoStudio/") and not name.endswith("/") and PurePosixPath(name).suffix.lower() in (".dll", ".pyd", ".exe")
     }
     if actual_binaries != seen_binaries:
         raise ValueError("Binary inventory is incomplete or contains files outside the archive")
@@ -159,6 +159,26 @@ def verify_distribution_payload(root, archive):
     }
 
 
+
+def verify_installed_report(path, archive):
+    if not path.is_file():
+        raise ValueError("Missing installed payload report")
+    report = json.loads(path.read_text(encoding="utf-8-sig"))
+    expected = {
+        info.filename[len("ManoStudio/"):]: {
+            "size": info.file_size, "sha256": digest_member(archive, info.filename)
+        }
+        for info in archive.infolist() if not info.is_dir()
+    }
+    canonical = json.dumps(expected, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    expected_report = {"kind": "installed-payload-comparison", "result": "PASS", "files": len(expected),
+                       "payload_sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
+                       "native_acceptance": False}
+    if report != expected_report or type(report.get("files")) is not int or report.get("native_acceptance") is not False:
+        raise ValueError("Installed payload report does not match portable archive")
+    return expected_report
+
+
 def validate(root, sha):
     if not re.fullmatch(r"[a-f0-9]{40}", sha):
         raise ValueError("Invalid source commit")
@@ -177,20 +197,29 @@ def validate(root, sha):
     with zipfile.ZipFile(z) as archive:
         if archive.testzip() is not None:
             raise ValueError("Corrupt portable archive")
-        if len(archive.namelist()) != len(set(archive.namelist())):
-            raise ValueError("Duplicate portable entries")
+        seen_paths = set()
+        for name in archive.namelist():
+            raw = name.rstrip("/")
+            normalized = safe_relative(raw)
+            if raw != normalized or not (raw == "ManoStudio" or raw.startswith("ManoStudio/")):
+                raise ValueError("Unsafe or noncanonical portable archive path")
+            key = raw.casefold()
+            if key in seen_paths:
+                raise ValueError("Duplicate or case-colliding portable entries")
+            seen_paths.add(key)
         app = packaged_member(set(archive.namelist()), "ManoStudio.exe")
         with archive.open(app) as program:
             if machine(program) != 0x8664:
                 raise ValueError("Portable executable is not AMD64")
         license_evidence = verify_distribution_payload(root, archive)
+        installed_payload = verify_installed_report(setup / "installed-payload.json", archive)
     with exe.open("rb") as stream:
         # Inno Setup may use a 32-bit bootstrap for a 64-bit application.
         machine(stream)
     return {"kind": "internal-development-candidate", "version": version, "source_sha": sha,
             "platform": "Windows x64", "portable_smoke": "PASS", "installed_smoke": "PASS",
             "academic_source_sha256": digest(root / "rtl_translator.py"), "assets": assets,
-            "license_evidence": license_evidence,
+            "license_evidence": license_evidence, "installed_payload": installed_payload,
             "native_acceptance": False, "public_release": False}
 
 
