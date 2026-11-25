@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
 from boolean_minimizer import circuit_output_values, gray_indices, minimize
 from boolean_synthesis import comparison_rows
 from boolean_analysis import analyze
+from ui.boolean_laws_view import BooleanLawsView
 from logic_exercise import KarnaughExercise
 from ui.exercise_actions import add_exercise_actions
 from ui.motion import MotionTabs
@@ -120,6 +121,8 @@ class KarnaughView(QWidget):
         analysis_layout.addWidget(self.hazard_example_button)
         analysis_layout.addWidget(self.analysis,1)
         self.results.addTab(self.analysis_panel,self.t("Forms & hazards","فرم‌ها و مخاطرات"))
+        self.laws = BooleanLawsView(self.fa)
+        self.results.addTab(self.laws,self.t("Boolean laws","قوانین بول"))
         side.addWidget(self.results,1)
         self.proof_note = QLabel()
         self.proof_note.setWordWrap(True)
