@@ -6,6 +6,7 @@ import tempfile
 import json
 import hashlib
 from learning_catalog import TOOLS
+from visual_review import build_gallery
 from ui.learning_center import LearningCenter
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QApplication
@@ -146,6 +147,7 @@ def main():
                 computer.close()
                 computer.deleteLater();lab.deleteLater()
         capture_routes(app,window,output)
+        build_gallery(output)
         window.editor.document().setModified(False)
         window.close()
 

@@ -5,11 +5,11 @@ The user wants an early usable preview representing the whole book; this is not 
 | Gate | Current state |
 |---|---|
 | Academic RTL translator, 25 named instructions, separate Python file | Implemented in documented dialect; instructor dialect verification open |
-| Bilingual desktop/editor, export, settings, offline, three themes | Implemented, regressions; newest exact-head CI pending |
+| Bilingual desktop/editor, export, settings, offline, three themes | Implemented; main regression passed, manual bilingual review remains |
 | Learning Center and working Computer/Logic labs | 40 routes across all 13 indexed chapters; chapter 13 shared bus, crossbar and atomic lock experiment implemented |
 | Brand, splash and visual feedback | Procedural implementation; current render tests/native review pending |
-| All 13 chapters represented by at least one verified interactive exercise | Implemented routes for 13 chapters; newest exact-head verification pending |
-| Exact-head Windows/Ubuntu regression | Latest checks pending |
+| All 13 chapters represented by at least one verified interactive exercise | All 40 routes represented; automated main CI passed, manual scientific/visual review remains |
+| Exact-head Windows/Ubuntu regression | Verified main 9eb19971: 928 tests passed on each platform; follow-up branch pending |
 | Real Windows x64 candidate artifact, smoke, installer if requested | Not verified; manual workflow dispatch unavailable through current connector at prior check |
 | Visual owner acceptance and publication | Not done; separate explicit approval required |
 
@@ -25,3 +25,8 @@ Owner reaffirmed international conventions, original high-quality visuals and sc
 
 ## Beta correctness and localization: real translation path
 Corrected virtual-memory canvas: TLB hit uses a distinct bypass to physical address, resident TLB miss uses page table, page fault visits simulated backing storage with dirty writeback/load indication. Active routes are derived from completed model events, not an invented timing sequence; inactive paths dashed, labels distinguish bypass, fault and load. Localized CAM match/priority, paging counters/status, cache hit/miss and traffic, serial format and start/parity/stop/overrun errors and counters; technical hex controls explicitly LTR, crossbar wait/request labels localized. Added both-language transaction-feedback test for the three real paging cases, cache hit/miss and serial parity error. Existing scientific models unchanged. Prior CI still pending at inspection; latest cache run 45485766455 success, no latest exact-head pass or native visual acceptance claimed. No new dependencies, installer or translator changes.
+
+
+## Post-merge visual review increment
+PR #9 merged into main as 9eb19971b91af8f218988a0fb9ba294eb1155603 on 2026-11-25. Both pre-merge exact-head runs 45491944270 and 45491959562 succeeded. Post-merge main run 45511520586 succeeded on Windows and Ubuntu: 928 passed, one PytestRemovedIn10Warning each; actual desktop preview capture and upload succeeded, artifacts 14978228331 (Windows) and 14976968147 (Ubuntu). Source integration only; no installer/release or native visual acceptance.
+New branch quality/beta-visual-review starts from verified main. Removed the iterator parametrize deprecation identified in logs. Added developer-only offline index.html to screenshot artifacts: all 13 chapters, side-by-side en/fa route captures, original-image links and other three-theme captures. Validate full entry/locale coverage, route identity, PNG header dimensions and SHA-256; fail capture if evidence is inconsistent. Tests authored for missing/duplicate/incorrect route, image, hash, dimensions and missing file. No screenshot pixel review or formal certification claimed; new CI pending. No runtime dependency, academic translator or packaging/release changes.

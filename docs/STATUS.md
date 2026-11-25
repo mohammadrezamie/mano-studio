@@ -1,6 +1,6 @@
-# Development status — 2026-11-24
+# Development status — 2026-11-25
 
-Active checkpoint: draft PR #9, feature/desktop-workspace. Continue this branch and inspect Actions before merging. No stable release or v1.0.0 tag; owner approval after classroom review is mandatory. See RELEASE_POLICY.md.
+PR #9 is merged; verified main baseline 9eb19971. Continue quality/beta-visual-review on a separate PR; inspect current open PRs and Actions before editing. No stable release or v1.0.0 tag; owner approval after classroom review is mandatory. See RELEASE_POLICY.md.
 
 ## Completed and verified history
 - Standalone Python RTL translator and catalog cover 25 named instructions / 32 documented forms; prior Linux tests: 64 passed.
@@ -321,3 +321,8 @@ Owner reaffirmed international conventions, original high-quality visuals and sc
 
 ## Beta correctness and localization: real translation path
 Corrected virtual-memory canvas: TLB hit uses a distinct bypass to physical address, resident TLB miss uses page table, page fault visits simulated backing storage with dirty writeback/load indication. Active routes are derived from completed model events, not an invented timing sequence; inactive paths dashed, labels distinguish bypass, fault and load. Localized CAM match/priority, paging counters/status, cache hit/miss and traffic, serial format and start/parity/stop/overrun errors and counters; technical hex controls explicitly LTR, crossbar wait/request labels localized. Added both-language transaction-feedback test for the three real paging cases, cache hit/miss and serial parity error. Existing scientific models unchanged. Prior CI still pending at inspection; latest cache run 45485766455 success, no latest exact-head pass or native visual acceptance claimed. No new dependencies, installer or translator changes.
+
+
+## Post-merge visual review increment
+PR #9 merged into main as 9eb19971b91af8f218988a0fb9ba294eb1155603 on 2026-11-25. Both pre-merge exact-head runs 45491944270 and 45491959562 succeeded. Post-merge main run 45511520586 succeeded on Windows and Ubuntu: 928 passed, one PytestRemovedIn10Warning each; actual desktop preview capture and upload succeeded, artifacts 14978228331 (Windows) and 14976968147 (Ubuntu). Source integration only; no installer/release or native visual acceptance.
+New branch quality/beta-visual-review starts from verified main. Removed the iterator parametrize deprecation identified in logs. Added developer-only offline index.html to screenshot artifacts: all 13 chapters, side-by-side en/fa route captures, original-image links and other three-theme captures. Validate full entry/locale coverage, route identity, PNG header dimensions and SHA-256; fail capture if evidence is inconsistent. Tests authored for missing/duplicate/incorrect route, image, hash, dimensions and missing file. No screenshot pixel review or formal certification claimed; new CI pending. No runtime dependency, academic translator or packaging/release changes.

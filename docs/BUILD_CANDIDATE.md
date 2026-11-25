@@ -1,6 +1,6 @@
 # Mano Studio 0.3.0-dev.1 — first development build candidate
 
-Requested by owner 2026-11-24. This is an internal development checkpoint in draft PR #9, not a GitHub Release or a stable version.
+Requested by owner 2026-11-24. This is an internal development checkpoint; source PR #9 has now merged into main, not a GitHub Release or a stable version.
 
 - Required academic file: [rtl_translator.py](../rtl_translator.py), unchanged, standalone, marked in README.
 - Main desktop: RTL/ASM, visual builder, offline examples, file workflow and three themes.
@@ -18,3 +18,8 @@ See BETA_PREVIEW.md for the latest acceptance definition and CONTINUE.md for liv
 
 ## Beta quality checkpoint: actual visual route evidence and functional pin states
 Owner reaffirmed international conventions, original high-quality visuals and scientific accuracy. Added numeric 0/1 state labels at functional gate terminals in both ANSI-style and IEC-style drawings; terminal and inversion-bubble roles are separately tagged for geometry regressions (not package pin numbers). Explicit RTL/LTR dialog direction in Learning Center, Computer and Logic labs; technical editors and schematics retain LTR. Added regression for all supported gate/arity/style combinations and both-locale route/document preservation. Expanded existing CI screenshot script to render each unique learning route in English and Persian dark theme, with Learning Center images and a JSON manifest mapping all 40 catalog entries per locale to actual images, dimensions and SHA-256. Existing three-theme editor/selected lab captures retained. Capture is automated offscreen evidence, not manual visual approval or formal IEC/IEEE certification; other themes for every route, native scaling and accessibility review remain open. Latest observed cache workflow 45485766455 green, counterpart pending; other latest CI pending. No installer dispatch, publication, new dependency or translator changes.
+
+
+## Post-merge visual review increment
+PR #9 merged into main as 9eb19971b91af8f218988a0fb9ba294eb1155603 on 2026-11-25. Both pre-merge exact-head runs 45491944270 and 45491959562 succeeded. Post-merge main run 45511520586 succeeded on Windows and Ubuntu: 928 passed, one PytestRemovedIn10Warning each; actual desktop preview capture and upload succeeded, artifacts 14978228331 (Windows) and 14976968147 (Ubuntu). Source integration only; no installer/release or native visual acceptance.
+New branch quality/beta-visual-review starts from verified main. Removed the iterator parametrize deprecation identified in logs. Added developer-only offline index.html to screenshot artifacts: all 13 chapters, side-by-side en/fa route captures, original-image links and other three-theme captures. Validate full entry/locale coverage, route identity, PNG header dimensions and SHA-256; fail capture if evidence is inconsistent. Tests authored for missing/duplicate/incorrect route, image, hash, dimensions and missing file. No screenshot pixel review or formal certification claimed; new CI pending. No runtime dependency, academic translator or packaging/release changes.
