@@ -73,3 +73,24 @@ def test_wraparound_and_constants():
 def test_invalid(values, form):
     with pytest.raises(ValueError):
         minimize(values, form)
+
+
+@pytest.mark.parametrize("key",["half_adder","full_adder","decoder","mux"])
+def test_copy_circuit_output_exact(key):
+    from boolean_minimizer import circuit_output_values
+    from logic_engine import CIRCUITS
+    circuit=CIRCUITS[key]
+    for name,_ in circuit.outputs:
+        values=circuit_output_values(circuit,name)
+        result=minimize(values)
+        for i in range(len(values)):
+            bits=tuple(int(bit) for bit in f"{i:0{len(circuit.inputs)}b}")
+            assert result.evaluate(i)==circuit.result(dict(zip(circuit.inputs,bits)))[name]
+
+
+def test_circuit_import_rejects_unsupported():
+    from boolean_minimizer import circuit_output_values
+    from logic_engine import CIRCUITS
+    for key,name in (("not","Y"),("ripple4","S0"),("half_adder","unknown")):
+        with pytest.raises(ValueError):
+            circuit_output_values(CIRCUITS[key],name)

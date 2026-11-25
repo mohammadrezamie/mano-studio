@@ -445,6 +445,11 @@ class LogicLab(QDialog):
         self.selector.currentIndexChanged.connect(self.load)
         self.pin_count.valueChanged.connect(self.load)
         self.load()
+        self.mode_tabs.currentChanged.connect(self.refresh_karnaugh_source)
+
+    def refresh_karnaugh_source(self,*_):
+        if self.mode_tabs.currentWidget() is self.karnaugh:
+            self.karnaugh.set_source(self.circuit)
 
     def select_tool(self,route):
         if route in ("gates","sequential"):

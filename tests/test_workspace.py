@@ -1428,3 +1428,30 @@ def test_karnaugh_interactive_route(workspace,app,language):
     lab.select_tool("gates")
     assert lab.document is document
     lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_karnaugh_import_existing_circuit(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    lab.selector.setCurrentIndex(lab.selector.findData("full_adder"))
+    doc=lab.document
+    inputs=dict(lab.inputs)
+    lab.select_tool("karnaugh")
+    v=lab.karnaugh
+    original=v.values.copy()
+    assert v.values==original and v.source_output.count()==2
+    v.source_output.setCurrentIndex(v.source_output.findData("Cout"))
+    v.import_button.click()
+    assert v.width.currentData()==3 and len(v.cells)==8
+    assert v.values==[0,0,0,1,0,1,1,1]
+    assert "C = Cin" in v.mapping.text() and "F = Cout" in v.mapping.text()
+    assert lab.document is doc and lab.inputs==inputs
+    v.cycle(0)
+    edited=v.values.copy()
+    lab.select_tool("gates")
+    lab.selector.setCurrentIndex(lab.selector.findData("not"))
+    lab.select_tool("karnaugh")
+    assert not v.import_button.isEnabled() and v.values==edited
+    lab.close()

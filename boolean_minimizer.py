@@ -88,3 +88,17 @@ def minimize(values, form='SOP'):
         return min(choices, key=score)
 
     return Solution(n, form, cover(required))
+
+
+def circuit_output_values(circuit, output):
+    """Copy one output from a 2–4-input circuit in its declared input order.
+
+    A/B/C/D in the minimizer correspond to circuit.inputs in that order.
+    The original circuit and its current live inputs are not modified.
+    """
+    n = len(circuit.inputs)
+    names = tuple(name for name, _ in circuit.outputs)
+    if n not in (2, 3, 4) or output not in names:
+        raise ValueError("Expected a circuit with 2–4 inputs and an existing output")
+    column = names.index(output)
+    return tuple(outputs[column] for _, outputs in circuit.truth_table())
