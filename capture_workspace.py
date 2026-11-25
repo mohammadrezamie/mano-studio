@@ -77,6 +77,13 @@ def capture_active_states(app,window,output,language):
         def shared_read():
             dirty_owner();msi.core.setValue(1);msi.access(False)
         capture(computer,"coherence","shared-read",shared_read,lambda:msi.last.value==0xABCD and msi.model.memory[3]==0xABCD and msi.model.lines[0][3].state==msi.model.lines[1][3].state=="S")
+        omega=computer.omega
+        def omega_conflict():
+            omega.size.setCurrentIndex(omega.size.findData(8));omega.example()
+        capture(computer,"omega","internal-block",omega_conflict,lambda:len(omega.results)==2 and omega.results[0].granted and omega.results[1].blocked_stage==0)
+        def omega_cross():
+            omega.size.setCurrentIndex(omega.size.findData(2));omega.example()
+        capture(computer,"omega","crossed-switch",omega_cross,lambda:len(omega.results)==2 and all(t.granted and t.hops[0].crossed for t in omega.results))
     finally:
         for lab in (logic,computer):
             lab.close();lab.deleteLater()
