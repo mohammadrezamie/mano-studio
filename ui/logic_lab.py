@@ -26,6 +26,7 @@ from ui.cache_view import CacheView
 from ui.karnaugh_view import KarnaughView
 from ui.state_synthesis_view import StateSynthesisView
 from boolean_synthesis import synthesize
+from universal_gates import universalize
 from ui.virtual_memory_view import AddressTranslationView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES, STATUS
@@ -517,7 +518,21 @@ class LogicLab(QDialog):
             QMessageBox.information(self,self.t("Apply first","ابتدا اعمال کنید"),
                 self.t("Apply or cancel the staged circuit edit first.","ابتدا ویرایش مدار را اعمال یا لغو کنید."))
             return
-        document=synthesize(self.karnaugh.values,self.karnaugh.form.currentData())
+        try:
+            document=synthesize(self.karnaugh.values,self.karnaugh.form.currentData())
+            family=self.karnaugh.gate_family.currentData()
+            if family!="mixed":
+                document=universalize(document,family)
+        except ValueError:
+            QMessageBox.warning(self,self.t("Cannot build circuit","ساخت مدار ممکن نیست"),
+                self.t("The selected realization exceeds the supported circuit limits or has invalid inputs.",
+                       "پیاده‌سازی انتخاب‌شده از حدود مدار فراتر می‌رود یا ورودی نامعتبر دارد."))
+            return
+        except RuntimeError:
+            QMessageBox.warning(self,self.t("Equivalence check failed","بررسی هم‌ارزی ناموفق بود"),
+                self.t("The generated circuit was rejected; the current circuit is unchanged.",
+                       "مدار تولیدشده رد شد؛ مدار فعلی بدون تغییر باقی ماند."))
+            return
         answer=QMessageBox.question(self,self.t("Build circuit","ساخت مدار"),
             self.t("Replace the current circuit with this single-output circuit? Undo edit restores the previous circuit.",
                    "مدار جاری با این مدار تک‌خروجی جایگزین شود؟ واگرد ویرایش مدار قبلی را بازمی‌گرداند."),
