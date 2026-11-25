@@ -1,47 +1,125 @@
-# Mano Studio
-**Build. Translate. Simulate. Learn.**
+<p align="center">
+  <img src="docs/assets/mano-studio.svg" alt="Mano Studio M-chip logo" width="112">
+</p>
 
-An open-source bilingual offline desktop IDE for Morris Mano's Computer System Architecture, centered on the Basic Computer and the academic RTL-to-assembly assignment. Optional labs cover selected topics across the textbook.
+<h1 align="center">Mano Studio</h1>
+<p align="center"><strong>Build. Translate. Simulate. Learn.</strong></p>
+<p align="center">An offline-first desktop IDE for Morris Mano's Computer System Architecture.<br>From register-transfer notation to interactive computer architecture experiments.</p>
 
-**Status: initial desktop source merged into main (PR #9); 928 tests passed on each of Windows and Ubuntu at the verified merge baseline. Python translator supports all 25 named Mano instructions in the documented dialect. No downloadable desktop release yet.**
+<p align="center">
+  <a href="https://github.com/mohammadrezamie/mano-studio/actions"><img alt="Tests" src="https://github.com/mohammadrezamie/mano-studio/actions/workflows/tests.yml/badge.svg?branch=main"></a>
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&amp;logoColor=white">
+  <img alt="Qt for Python" src="https://img.shields.io/badge/PySide6-Qt-41CD52?logo=qt&amp;logoColor=white">
+  <img alt="Languages" src="https://img.shields.io/badge/UI-English%20%2F%20Persian-7664D8">
+  <img alt="Release status" src="https://img.shields.io/badge/release-preparing%20beta-E5A344">
+  <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-287D65"></a>
+</p>
 
-## Desktop development preview
+<p align="center">
+  <a href="#quick-start">Quick start</a> · <a href="#academic-assignment">Academic core</a> · <a href="#visual-preview">Visual preview</a> · <a href="#development-status">Status</a> · <a href="#documentation">Docs</a>
+</p>
+
+## What you can do
+
+| Workspace | Explore |
+| --- | --- |
+| **RTL editor** | Translate RTL to assembly using typing, an on-screen symbol pad, or a guided builder; export plain text. |
+| **Computer** | Assemble programs, step through the Basic Computer, inspect registers and memory, reverse execution, explore arithmetic, microprogramming, pipelines and I/O. |
+| **Digital Logic** | Edit circuits, inspect truth tables and Boolean equations, study sequential components, Karnaugh maps, FSM synthesis/reduction and memory. |
+| **Learning Center** | Search bilingual interactive exercises across all 13 indexed chapters; keep local practice progress. |
+
+Designed for English and Persian, with persistent language preferences, Light/Dark/Night themes and optional glass effects and motion. Core features work offline; only an explicit update check may contact GitHub.
+
+## Development status
+
+| Track | Current milestone |
+| --- | --- |
+| **Main — verified source baseline** | PR [#15](https://github.com/mohammadrezamie/mano-studio/pull/15) merged; 1,200 tests passed on each OS in [run 45557009008](https://github.com/mohammadrezamie/mano-studio/actions/runs/45557009008). 42 learning entries across 13 chapters (partial coverage). |
+| **Release — Windows x64 beta** | [PR #19](https://github.com/mohammadrezamie/mano-studio/pull/19), proposed v0.3.0-beta.1; integrated regression, installer, native acceptance and publication gates remain open. |
+| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): MSI cache coherence adds a 43rd entry; Qt tests and visual evidence pending. |
+
+**No downloadable public release has been verified or published.** Development artifacts are not stable releases. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live state. This snapshot is dated 2026-11-25; evidence refers to the named commits/runs, not every later change.
+
+## Visual preview
+
+The M-chip above is the approved **candidate** identity, exported from the vector geometry in the release candidate (not the older main application icon). Actual desktop captures are available from [the verified PR #15 CI run](https://github.com/mohammadrezamie/mano-studio/actions/runs/45557009008) under its artifacts. The Windows archive contains real English/Persian Qt previews in multiple themes; offscreen capture is not native Windows visual acceptance. GitHub sign-in may be required to download artifacts.
+
+See [design system](docs/DESIGN_SYSTEM.md), [brand system](docs/BRAND_SYSTEM.md) and [animation guide](docs/ANIMATION_GUIDE.md). Keep screenshots few, representative, genuine and clearly dated; never substitute generated concepts for running software.
+
+## Quick start
+
+For a source preview (Python 3.12 is the CI-tested version):
+
 ```sh
-python -m pip install -r requirements.txt -r requirements-dev.txt
+git clone https://github.com/mohammadrezamie/mano-studio.git
+cd mano-studio
+python -m venv .venv
+```
+
+Activate the environment on Windows PowerShell:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+Then install and launch:
+
+```sh
+python -m pip install -r requirements.txt
 python main.py
 ```
-Three entry modes, three themes, Computer (assembler, CPU, reversible debugger, Data & ALU), and Digital Logic (editable combinational schematic, clocked components and waveform) are implemented. Optional canonical ASM-to-RTL import is available in the same editor. The **[Learning Center](docs/LEARNING_CENTER.md)** (Ctrl+K) connects 42 interactive learning entries across all 13 indexed chapters (partial coverage), with bilingual search, explicit coverage gaps and local personal practice progress. See [development candidate](docs/BUILD_CANDIDATE.md), [live Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [status](docs/STATUS.md). No published release. Development artifacts are not stable releases.
 
-Computer and Digital Logic use a shared collapsible navigation rail, preserving existing simulator state and direct learning routes. Design and motion standards: [Design system](docs/DESIGN_SYSTEM.md) · [Animation guide](docs/ANIMATION_GUIDE.md) · [Technology decisions](docs/TECH_STACK.md).
+Choose a language, enter RTL, translate, and export assembly. Press **Ctrl+K** to open the Learning Center. For regression tests, install `requirements-dev.txt` and run `python -m pytest -q`. Windows installation packages will be listed under Releases only after verification; do not treat a CI archive as an accepted installer.
 
-## Academic assignment — فایل تکلیف استاد
+## Academic assignment
 
-**[rtl_translator.py](rtl_translator.py) — the only source file for the RTL-to-assembly assignment defense.**
+**[rtl_translator.py](rtl_translator.py) is the single standalone source file for instructor review.** It uses only the Python standard library, includes translation and validation, and supports all 25 named Basic Computer instructions in the documented provisional dialect. Optional simulation and UI are separate.
 
-این فایل مستقل، فقط الگوریتم تبدیل RTL به اسمبلی، اعتبارسنجی و خواندن/نوشتن فایل را در خود دارد. برای دفاع همین فایل را باز کنید. سایر فایل‌ها مربوط به امکانات اختیاری Mano Studio هستند و جزو این تکلیف نیستند. [راهنمای مطالعه و دفاع](docs/TRANSLATOR.md).
-
-## Try the translator
-Python 3.10+; no runtime dependencies.
 ```sh
 python rtl_translator.py examples/add.rtl -o result.asm
-python -m pip install -r requirements-dev.txt
-python -m pytest -q
 ```
-See [translator guide](docs/TRANSLATOR.md) and [supported RTL](docs/RTL.md).
 
-## Development / continuation
-**Resume from [CONTINUE.md](docs/CONTINUE.md)** in a fresh chat. The current [beta preview gates](docs/BETA_PREVIEW.md) and [procedural brand system](docs/BRAND_SYSTEM.md) are tracked in the repository.
+[Translator defense guide](docs/TRANSLATOR.md) · [Supported RTL dialect](docs/RTL.md) · [Example input](examples/add.rtl)
 
-Start with [AGENTS.md](AGENTS.md), [current status](docs/STATUS.md), [project specification](docs/PROJECT.md), [RTL dialect](docs/RTL.md), [roadmap](docs/ROADMAP.md), [references](docs/REFERENCES.md), [UI design](docs/UI_DESIGN.md), and [maintenance plan](docs/MAINTAINABILITY.md). Inspect open issues and PRs before making changes. Keep the translator independent of the GUI and update STATUS.md each time.
+برای دفاع، فقط فایل `rtl_translator.py` را باز کنید؛ امکانات جانبی برنامه از هسته تکلیف مستقل هستند.
 
-## فارسی
-مانو استودیو محیط توسعه آموزشی معماری موریس مانو با هدف تبدیل RTL به اسمبلی، ساخت بصری برنامه و شبیه‌سازی پردازنده است. رابط فارسی و انگلیسی و نصب‌کننده مستقل ویندوز در برنامه توسعه قرار دارند. هسته مترجم از هر ۲۵ دستور نام‌دار مانو با قواعد ورودی مستندشده پشتیبانی می‌کند. برای ادامه توسعه کافی است ریپوی Mano Studio را در گیت‌هاب باز کنید و AGENTS.md و docs/STATUS.md را بخوانید. پروژه را از ابتدا شروع نکنید.
+## Architecture
 
-## License
-MIT — see LICENSE.
+```text
+RTL text / guided builder
+          │
+          ▼
+  rtl_translator.py ──► Assembly text
+          ▲
+          │
+      PySide6 UI
+          │
+          ├── Computer: assembler + simulator + architecture models
+          ├── Digital Logic: circuits + mathematical models
+          └── Learning Center: bilingual catalog + existing tool routes
+```
 
-## Current UX plan
-[Integrated UX development plan](docs/UX_PLAN.md): keep the primary RTL-to-ASM workflow simple; combine CPU tools into one Computer workspace and share the digital logic canvas. No installer or release activity until the owner asks.
+The academic translator remains dependency-free and independently testable. See [technology decisions](docs/TECH_STACK.md) and [maintenance plan](docs/MAINTAINABILITY.md).
 
+## Documentation
 
-Chapter 1 development preview: Karnaugh map, FSM synthesis and reduction, and explicit portable exercise save/open. Full GUI verification pending; see [exercises](docs/EXERCISES.md) and docs/STATUS.md.
+| Start here | Technical guides |
+| --- | --- |
+| [Project specification](docs/PROJECT.md) | [RTL dialect](docs/RTL.md) |
+| [Current status](docs/STATUS.md) | [Computer simulator](docs/SIMULATOR.md) |
+| [Continuation checkpoint](docs/CONTINUE.md) | [Logic Lab](docs/LOGIC_LAB.md) |
+| [Roadmap](docs/ROADMAP.md) | [Learning Center](docs/LEARNING_CENTER.md) |
+| [Release policy](docs/RELEASE_POLICY.md) | [Curriculum coverage](docs/CURRICULUM_COVERAGE.md) |
+| [Documentation policy](docs/DOCUMENTATION_POLICY.md) | [Exercises](docs/EXERCISES.md) |
+
+## Two tracks, one project
+
+The release track stabilizes a Windows-first beta without scope creep. The next-generation track expands the textbook models, visual tools and educational experiments independently. Neither track waits for the other to finish. Full textbook coverage is a goal, not a completion claim. New libraries are welcome when licensing, offline operation, packaging and maintainability are compatible.
+
+**Contributors and agents:** read [AGENTS.md](AGENTS.md) and [CONTINUE.md](docs/CONTINUE.md). Update README and affected documentation in the same work cycle as every meaningful project change. Record actual evidence, not anticipated results.
+
+## Acknowledgments & license
+
+An independent educational project for the computer architecture course, based on M. Morris Mano's *Computer System Architecture*. Academic acknowledgment and institutional details are subject to verification; no official endorsement is implied.
+
+Released under the [MIT License](LICENSE). See [references](docs/REFERENCES.md) for technical sources.
