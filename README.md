@@ -3,7 +3,7 @@
 
 An open-source bilingual offline desktop IDE for Morris Mano's Computer System Architecture, centered on the Basic Computer and the academic RTL-to-assembly assignment. Optional labs cover selected topics across the textbook.
 
-**Status: initial desktop source merged into main (PR #9); 928 tests passed on each of Windows and Ubuntu at the verified merge baseline. Python translator supports all 25 named Mano instructions in the documented dialect. No downloadable desktop release yet.**
+**Beta preparation branch — 0.3.0-beta.1 in source only.** PR #19's development candidate remains unchanged, with Windows/Ubuntu and installer jobs queued and no installer artifact. The verified earlier main baseline has 1,200 tests passed on each OS in run 45557009008; this is not evidence for the final beta. Python translator supports all 25 named instructions in the documented provisional dialect. [P0 delivery recovery and clean Windows VM build](docs/BETA_DELIVERY_RECOVERY.md). No downloadable desktop release yet.
 
 ## Desktop development preview
 ```sh
