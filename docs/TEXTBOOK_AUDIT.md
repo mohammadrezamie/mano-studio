@@ -30,7 +30,7 @@ Existing candidate routes: `gates, sequential, karnaugh, state-design` (partial 
 | C01.05 | partial | CircuitDocument (2bf0d9f9), validated netlists, truth tables, synthesis and serialization. More worked designs and independent visual review open. |
 | C01.06 | partial | Actual clocked model sequential_logic.py (b5fb70ca), derived characteristic and excitation reference (d8b549a1): 11 local tests passed using real engine, all 24 characteristic and 16 excitation rows. Bilingual tables and pending Qt evidence; level-sensitive latches, asynchronous controls and edition reconciliation remain open. |
 | C01.07 | partial | Prior workflow suite includes state reduction, encoding, synthesis and clock equivalence. Edition-specific examples and remaining encoding domains open. |
-| C01.08 | partial | Existing waveform records actual event order (not physical time); sequential_logic rejects forbidden SR edges, local verified. Setup/hold, propagation, asynchronous races and metastability models remain open. |
+| C01.08 | partial | Existing waveform records actual event order (not physical time); sequential_logic rejects forbidden SR edges, local verified. Ideal setup/hold constraint model and independent waveform exercise implemented (TIMING_CONSTRAINTS.md; 11 actual local tests, 12,288 combinations). Propagation, latches, asynchronous races and metastability models remain open; Qt verification pending. |
 
 No checklist box closed: edition-specific reconciliation and per-item acceptance remain necessary. See [Universal gate realization](UNIVERSAL_GATES.md). The local isolated oracle is not a full application test.
 
