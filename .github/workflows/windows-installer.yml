@@ -49,10 +49,11 @@ jobs:
         shell: pwsh
         run: |
           $report = Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt'
+          if (Test-Path $report) { Remove-Item $report -Force }
           $app = Join-Path $PWD 'dist\ManoStudio\ManoStudio.exe'
           $p = Start-Process -FilePath $app -ArgumentList "--smoke-test `"$report`"" -PassThru
           if (-not $p.WaitForExit(120000)) { $p.Kill(); throw 'Portable smoke timed out.' }
-          if ($p.ExitCode -ne 0 -or (Get-Content $report -Raw).Trim() -ne 'PASS') { throw 'Portable smoke failed.' }
+          if ($p.ExitCode -ne 0 -or !(Test-Path $report) -or (Get-Content $report -Raw).Trim() -ne 'PASS') { throw 'Portable smoke failed.' }
       - name: Archive portable candidate and build evidence
         shell: pwsh
         run: |
@@ -63,6 +64,7 @@ jobs:
           python -m pip freeze | Set-Content -Encoding utf8 portable-output/build-dependencies.txt
           "SHA=$env:MANO_SOURCE_SHA" | Set-Content -Encoding ascii portable-output/commit.txt
           (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower() | Set-Content -Encoding ascii "$zip.sha256"
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt') portable-output/portable-smoke.txt
       - uses: actions/upload-artifact@v4
         with:
           name: ManoStudio-Windows-x64-portable-development
@@ -96,6 +98,8 @@ jobs:
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
             "$hash  $($_.Name)" | Set-Content -Encoding ascii "$($_.FullName).sha256"
           }
+      - name: Validate both candidate assets and record manifest
+        run: python installer/candidate_manifest.py --root . --sha "${{ env.MANO_SOURCE_SHA }}"
       - uses: actions/upload-artifact@v4
         with:
           name: ManoStudio-Windows-x64-development
