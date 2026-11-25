@@ -10,4 +10,8 @@ Local Python regression: 19 passed. All 5,460 individual routes across the six s
 
 `python -m pytest -q tests/test_omega_network.py`
 
-This is a circuit-path reservation teaching model, not a packet network, buffer simulator, electrical timing model or fairness guarantee. The fixed priority may starve repeated lower-priority requests. Interactive bilingual UI, catalog route, screenshot checks and full CI remain pending. The 43 existing learning routes are unchanged. No effect on the frozen beta or standalone translator.
+This is a circuit-path reservation teaching model, not a packet network, buffer simulator, electrical timing model or fairness guarantee. The fixed priority may starve repeated lower-priority requests. The bilingual interactive UI and catalog route are implemented in source (44 total routes). GUI execution, screenshot generation, and full CI remain pending. No effect on the frozen beta or standalone translator.
+
+## Interactive lesson
+
+Computer → Multiprocessors → Omega network, or Learning Center → Chapter 13. Select 2, 4, 8 or 16 ports in the canvas (the core also supports 32 and 64). Set a request per source, remove or reset, and run a round. The table reports proposed paths, grant or block, and the conflicting stage and owner; the diagram highlights only granted paths. Example on eight ports: P0→D0 and P1→D1 contend at stage 0. Example on two ports: P0→D1 and P1→D0 are both granted. Two locale-specific UI tests and four active-state capture requirements were added; they have not yet been executed.
