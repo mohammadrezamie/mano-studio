@@ -84,6 +84,20 @@ def capture_active_states(app,window,output,language):
         def omega_cross():
             omega.size.setCurrentIndex(omega.size.findData(2));omega.example()
         capture(computer,"omega","crossed-switch",omega_cross,lambda:len(omega.results)==2 and all(t.granted and t.hops[0].crossed for t in omega.results))
+        laws=logic.karnaugh.laws
+        def de_morgan():
+            logic.karnaugh.results.setCurrentWidget(laws)
+            laws.law.setCurrentIndex(laws.law.findData("de-morgan"))
+            laws.dual.setChecked(True)
+        capture(logic,"karnaugh","de-morgan-dual",de_morgan,
+            lambda: "(A · B)'" in laws.equation.text() and all(laws.table.item(i,3).text()==laws.table.item(i,4).text() for i in range(8)))
+        def static_hazard():
+            v=logic.karnaugh
+            v.form.setCurrentIndex(v.form.findData("SOP"))
+            v.results.setCurrentWidget(v.analysis_panel)
+            v.hazard_example()
+        capture(logic,"karnaugh","static-hazard",static_hazard,
+            lambda:"3 ↔ 7" in logic.karnaugh.analysis.toPlainText())
     finally:
         for lab in (logic,computer):
             lab.close();lab.deleteLater()
