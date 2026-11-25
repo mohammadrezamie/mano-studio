@@ -20,13 +20,15 @@ def checksum(path):
     path.with_name(path.name + ".sha256").write_text(hashlib.sha256(path.read_bytes()).hexdigest())
 
 
-def rewrite_zip(path, remove=(), replace=None):
+def rewrite_zip(path, remove=(), replace=None, add=None):
     replace = replace or {}
     with zipfile.ZipFile(path) as source:
         entries = [(name, source.read(name)) for name in source.namelist() if name not in remove]
     with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as target:
         for name, data in entries:
             target.writestr(name, replace.get(name, data))
+        for name, data in (add or {}).items():
+            target.writestr(name, data)
     checksum(path)
 
 
@@ -133,6 +135,13 @@ def test_reject_missing_distribution_payload(candidate, member):
     root, z, _ = candidate
     rewrite_zip(z, remove=[member])
     with pytest.raises(ValueError):
+        validate(root, SHA)
+
+
+def test_reject_unlisted_binary(candidate):
+    root, z, _ = candidate
+    rewrite_zip(z, add={"ManoStudio/_internal/Qt6Core.dll": b"unlisted runtime binary"})
+    with pytest.raises(ValueError, match="inventory is incomplete"):
         validate(root, SHA)
 
 

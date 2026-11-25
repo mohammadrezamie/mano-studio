@@ -118,6 +118,14 @@ def verify_distribution_payload(root, archive):
         if info.file_size != item["size"] or digest_member(archive, member) != item["sha256"]:
             raise ValueError("Bundled binary hash/size differs from inventory: " + relative)
 
+    actual_binaries = {
+        name[len("ManoStudio/"):]
+        for name in names
+        if name.startswith("ManoStudio/") and PurePosixPath(name).suffix.lower() in (".dll", ".pyd", ".exe")
+    }
+    if actual_binaries != seen_binaries:
+        raise ValueError("Binary inventory is incomplete or contains files outside the archive")
+
     notice_count = 0
     for package in inventory["packages"]:
         name = package.get("name", "")
