@@ -428,7 +428,9 @@ def test_persian_credits_and_optional_labs(workspace,monkeypatch):
         return 0
     monkeypatch.setattr(QDialog,"exec",inspect_about)
     workspace.about()
-    assert any("سیاوش اسحقی" in text for text in messages)
+    assert any("سیاوش اسحقیه" in text for text in messages)
+    assert any("عضو هیئت علمی" in text for text in messages)
+    assert any("واحد علوم و تحقیقات" in text for text in messages)
     assert any("Copyright (c) 2026" in text for text in messages)
     lab=ProgramLab(workspace,"UNKNOWN")
     assert "ناشناخته" in lab.machine.toPlainText()
