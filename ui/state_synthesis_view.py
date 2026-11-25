@@ -1,0 +1,164 @@
+"""Editable encoded-state table, excitation equations and clock-step trace."""
+from PySide6.QtCore import Qt, QSignalBlocker
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
+    QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
+    QPlainTextEdit)
+from state_synthesis import design_state_machine
+
+
+class StateSynthesisView(QWidget):
+    def __init__(self, fa=False):
+        super().__init__()
+        self.fa=fa
+        self.state=0
+        self.trace=[]
+        self.next_boxes=[]
+        self.out_boxes=[]
+        box=QVBoxLayout(self)
+        title=QLabel(self.t("State machine design","طراحی ماشین حالت"))
+        title.setObjectName("brand")
+        box.addWidget(title)
+        hint=QLabel(self.t("Edit the complete transition table. Each clock uses the minimized excitation equations. Changing the table resets the simulated state and trace.",
+                           "جدول کامل انتقال حالت را ویرایش کنید. هر پالس ساعت از معادلات تحریک ساده‌شده استفاده می‌کند. تغییر جدول، حالت و تاریخچه شبیه‌سازی را بازنشانی می‌کند."))
+        hint.setWordWrap(True)
+        box.addWidget(hint)
+        row=QHBoxLayout()
+        row.addWidget(QLabel(self.t("State bits","بیت‌های حالت")))
+        self.width=QComboBox()
+        for n in (1,2,3):self.width.addItem(str(n),n)
+        row.addWidget(self.width)
+        row.addWidget(QLabel(self.t("Model","مدل")))
+        self.mode=QComboBox()
+        self.mode.addItem(self.t("Moore","مور"),"Moore")
+        self.mode.addItem(self.t("Mealy","میلی"),"Mealy")
+        row.addWidget(self.mode)
+        row.addWidget(QLabel(self.t("Flip-flop","فلیپ‌فلاپ")))
+        self.ff=QComboBox()
+        for name in ("D","T","JK"):self.ff.addItem(name,name)
+        row.addWidget(self.ff)
+        example=QPushButton(self.t("Counter example","مثال شمارنده"))
+        example.clicked.connect(self.rebuild)
+        row.addWidget(example)
+        box.addLayout(row)
+        middle=QHBoxLayout()
+        self.table=QTableWidget(0,4)
+        self.table.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.table.setAccessibleName(self.t("Editable state transition table","جدول قابل ویرایش انتقال حالت"))
+        self.table.setHorizontalHeaderLabels(["Q","X","Q⁺","Y"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.table.verticalHeader().hide()
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        middle.addWidget(self.table,3)
+        side=QVBoxLayout()
+        side.addWidget(QLabel(self.t("Minimized excitation and output equations","معادلات ساده‌شده تحریک و خروجی")))
+        self.equations=QPlainTextEdit()
+        self.equations.setReadOnly(True)
+        self.equations.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        side.addWidget(self.equations,1)
+        self.mapping=QLabel()
+        self.mapping.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.mapping.setWordWrap(True)
+        side.addWidget(self.mapping)
+        middle.addLayout(side,2)
+        box.addLayout(middle,3)
+        controls=QHBoxLayout()
+        self.input=QComboBox()
+        for n in (0,1):self.input.addItem(f"X = {n}",n)
+        self.input.setAccessibleName(self.t("Binary input X","ورودی دودویی X"))
+        controls.addWidget(self.input)
+        self.clock=QPushButton(self.t("Clock step","پالس ساعت"))
+        self.clock.setObjectName("primary")
+        self.clock.clicked.connect(self.pulse)
+        controls.addWidget(self.clock)
+        reset=QPushButton(self.t("Reset Q","بازنشانی Q"))
+        reset.clicked.connect(self.reset_state)
+        controls.addWidget(reset)
+        self.status=QLabel()
+        self.status.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        controls.addWidget(self.status,1)
+        box.addLayout(controls)
+        box.addWidget(QLabel(self.t("Trace: Q, X → Q next, Y before edge","ردیابی: حالت، ورودی، حالت بعد و خروجی پیش از لبه")))
+        self.history=QPlainTextEdit()
+        self.history.setReadOnly(True)
+        self.history.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        box.addWidget(self.history,1)
+        self.width.currentIndexChanged.connect(self.rebuild)
+        self.mode.currentIndexChanged.connect(self.change_mode)
+        self.ff.currentIndexChanged.connect(self.refresh)
+        self.input.currentIndexChanged.connect(self.preview)
+        self.rebuild()
+
+    def t(self,en,fa):
+        return fa if self.fa else en
+
+    def rebuild(self,*_):
+        n=self.width.currentData()
+        size=2**n
+        self.table.setRowCount(0)
+        self.table.setRowCount(size*2)
+        self.next_boxes=[]
+        self.out_boxes=[]
+        for i in range(size*2):
+            q,x=divmod(i,2)
+            for col,value in enumerate((f"{q:0{n}b}",str(x))):
+                item=QTableWidgetItem(value)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.table.setItem(i,col,item)
+            nxt=QComboBox()
+            for j in range(size):nxt.addItem(f"{j:0{n}b}",j)
+            nxt.setCurrentIndex((q+x)%size)
+            nxt.setAccessibleName(self.t(f"Next state, row {i}",f"حالت بعد، ردیف {i}"))
+            self.table.setCellWidget(i,2,nxt)
+            self.next_boxes.append(nxt)
+            out=QComboBox()
+            for y in (0,1):out.addItem(str(y),y)
+            out.setCurrentIndex(q==size-1)
+            out.setAccessibleName(self.t(f"Output, row {i}",f"خروجی، ردیف {i}"))
+            self.table.setCellWidget(i,3,out)
+            self.out_boxes.append(out)
+        for i,(nxt,out) in enumerate(zip(self.next_boxes,self.out_boxes)):
+            nxt.currentIndexChanged.connect(self.refresh)
+            out.currentIndexChanged.connect(lambda _,row=i:self.output_changed(row))
+        self.change_mode()
+
+    def change_mode(self,*_):
+        moore=self.mode.currentData()=="Moore"
+        for i,out in enumerate(self.out_boxes):
+            with QSignalBlocker(out):
+                if moore and i%2:out.setCurrentIndex(self.out_boxes[i-1].currentIndex())
+            out.setEnabled(not moore or i%2==0)
+        self.refresh()
+
+    def output_changed(self,i):
+        if self.mode.currentData()=="Moore" and i%2==0:
+            with QSignalBlocker(self.out_boxes[i+1]):
+                self.out_boxes[i+1].setCurrentIndex(self.out_boxes[i].currentIndex())
+        self.refresh()
+
+    def refresh(self,*_):
+        rows=tuple((n.currentData(),y.currentData()) for n,y in zip(self.next_boxes,self.out_boxes))
+        self.model=design_state_machine(self.width.currentData(),rows,self.mode.currentData(),self.ff.currentData())
+        self.equations.setPlainText("\n".join(f"{name} = {cover.expression}" for name,cover in self.model.equations))
+        self.mapping.setText("  |  ".join(f"{a} = {q}" for a,q in self.model.aliases))
+        self.reset_state()
+
+    def reset_state(self,*_):
+        self.state=0
+        self.trace=[]
+        self.history.clear()
+        self.preview()
+
+    def preview(self,*_):
+        n=self.model.bits
+        nxt,y=self.model.step(self.state,self.input.currentData())
+        self.status.setText(f"Q={self.state:0{n}b}   Q⁺={nxt:0{n}b}   Y={y}")
+
+    def pulse(self,*_):
+        n=self.model.bits
+        x=self.input.currentData()
+        nxt,y=self.model.step(self.state,x)
+        self.trace.append(f"{self.state:0{n}b}, {x} → {nxt:0{n}b}, {y}")
+        self.trace=self.trace[-64:]
+        self.history.setPlainText("\n".join(self.trace))
+        self.state=nxt
+        self.preview()

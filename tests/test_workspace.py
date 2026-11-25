@@ -1501,3 +1501,28 @@ def test_karnaugh_equivalence_table(workspace,language):
     assert view.proof.item(1,1).text()==view.proof.item(1,3).text()=="1"
     assert lab.document is document
     lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_state_synthesis_route_and_clock(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);original=lab.document
+    lab.select_tool("state-design")
+    v=lab.state_design
+    assert lab.mode_tabs.currentWidget() is v
+    assert v.table.rowCount()==4
+    assert not v.out_boxes[1].isEnabled()
+    v.ff.setCurrentIndex(v.ff.findData("JK"))
+    assert dict(v.model.equations)["J0"].expression=="B"
+    v.input.setCurrentIndex(1)
+    v.clock.click();assert v.state==1 and len(v.trace)==1
+    v.clock.click();assert v.state==0 and len(v.trace)==2
+    v.mode.setCurrentIndex(v.mode.findData("Mealy"))
+    assert v.out_boxes[1].isEnabled() and not v.trace
+    v.out_boxes[1].setCurrentIndex(1)
+    assert v.model.step(0,1)[1]==1
+    v.width.setCurrentIndex(2)
+    assert v.table.rowCount()==16 and v.state==0
+    assert lab.document is original
+    lab.close()
