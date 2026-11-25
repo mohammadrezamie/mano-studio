@@ -338,3 +338,7 @@ Font preflight succeeded in all four jobs of runs 45548560320/45548555331 on hea
 
 ## Active demonstration evidence gate — 2026-11-25
 PR #14 head 24b797c4c459eb1ed49fd5592bb3804c10285d41 was in progress (run 45549779916) at inspection. The eight state-asserted demonstrations in both languages now have mandatory per-image manifest records (route, state, locale, theme, dimensions, SHA-256) and a dedicated paired gallery section. Missing/duplicate/wrong-state or wrong-locale/theme/image/hash/dimension/file evidence fails validation; nine negative regression cases authored. This guards capture completeness and integrity, not pixel correctness or native acceptance. New exact-head tests pending. No changes to main, academic translator, installer or release policy.
+
+
+## Structural screenshot integrity and base workflow coverage — 2026-11-25
+Previous head 354af592 exact run 45549987599 in progress; earlier 45549779916 passed glyph preflight on both OS, full tests and artifacts pending. Hardened developer-only gallery: require all 66 three-theme workflow images plus both Learning Center captures, in addition to route and active-state manifests. Validate PNG chunk boundaries, IHDR, nonempty IDAT, per-chunk CRC and terminal IEND (reject truncation/trailing bytes). This is structural validation, not full pixel decoding or native signoff. Ten new negative cases authored. Local clone unavailable (DNS blocked); PySide6 not installed in local environment. Exact-head CI required. No runtime, translator, installer or release changes.

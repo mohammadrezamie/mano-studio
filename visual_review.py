@@ -7,10 +7,24 @@ import html
 import json
 from pathlib import Path
 import struct
+import zlib
 
 from learning_catalog import CHAPTERS, TOOLS
 
 LANGUAGES=("en","fa")
+THEMES=("dark","light","night")
+BASE_CAPTURES=("editor","pad","builder","reverse","logic","logic-edit",
+               "sequential","computer","debugger","alu","bases")
+
+
+def validate_base_captures(root):
+    """Fail if a three-theme workflow or either Learning Center image is absent."""
+    root=Path(root)
+    names={f"{language}-{theme}-{mode}.png" for language in LANGUAGES
+           for theme in THEMES for mode in BASE_CAPTURES}
+    names.update(f"{language}-dark-learning-center.png" for language in LANGUAGES)
+    return {name:image_info(root,name) for name in sorted(names)}
+
 # Shared contract for each asserted demonstration, not a claim of visual acceptance.
 ACTIVE_STATES=(
     ("live","fetch"), ("sequential","clocked"), ("cache","conflict"),
@@ -45,10 +59,43 @@ def image_info(root,name):
     if not isinstance(name,str) or Path(name).name!=name or "/" in name or "\\" in name or not name.endswith(".png"):
         raise ValueError("Invalid screenshot filename")
     data=(root/name).read_bytes()
-    if len(data)<24 or data[:8]!=b"\x89PNG\r\n\x1a\n" or data[12:16]!=b"IHDR":
+    # Verify the PNG chunk envelope, including CRCs and a complete end marker.
+    # This is structural integrity, not pixel decoding or visual acceptance.
+    if len(data)<33 or data[:8]!=b"\x89PNG\r\n\x1a\n":
         raise ValueError("Invalid PNG header: "+name)
-    width,height=struct.unpack(">II",data[16:24])
-    if not width or not height:raise ValueError("Invalid PNG dimensions: "+name)
+    offset=8
+    width=height=0
+    seen_data=False
+    ended=False
+    while offset<len(data):
+        if len(data)-offset<12:
+            raise ValueError("Truncated PNG chunk: "+name)
+        length,kind=struct.unpack_from(">I4s",data,offset)
+        end=offset+12+length
+        if end>len(data):
+            raise ValueError("Truncated PNG payload: "+name)
+        payload=data[offset+8:end-4]
+        crc,=struct.unpack_from(">I",data,end-4)
+        if zlib.crc32(kind+payload)!=crc:
+            raise ValueError("Invalid PNG chunk CRC: "+name)
+        if offset==8:
+            if kind!=b"IHDR" or length!=13:
+                raise ValueError("Invalid PNG IHDR: "+name)
+            width,height=struct.unpack_from(">II",payload)
+            if not width or not height:
+                raise ValueError("Invalid PNG dimensions: "+name)
+        elif kind==b"IHDR":
+            raise ValueError("Duplicate PNG IHDR: "+name)
+        if kind==b"IDAT" and length:
+            seen_data=True
+        if kind==b"IEND":
+            if length or not seen_data or end!=len(data):
+                raise ValueError("Invalid PNG end: "+name)
+            ended=True
+            break
+        offset=end
+    if not ended:
+        raise ValueError("Missing PNG end: "+name)
     return width,height,hashlib.sha256(data).hexdigest()
 
 
@@ -78,6 +125,7 @@ def build_gallery(root):
     manifest=json.loads((root/"route-manifest.json").read_text(encoding="utf-8"))
     records=validate_routes(root,manifest)
     active=validate_active(root,manifest)
+    base=validate_base_captures(root)
     esc=html.escape
     out=['<!doctype html><html lang="en"><head><meta charset="utf-8">',
          '<meta name="viewport" content="width=device-width,initial-scale=1">',
@@ -117,7 +165,7 @@ def build_gallery(root):
     route_images={r["image"] for r in records.values()} | {r["image"] for r in active.values()}
     for path in sorted(root.glob("*.png")):
         if path.name in route_images:continue
-        width,height,digest=image_info(root,path.name)
+        width,height,digest=base[path.name] if path.name in base else image_info(root,path.name)
         out.append(figure({"image":path.name,"width":width,"height":height},path.stem,"en"))
     out.append('</div></section></main></body></html>')
     target=root/"index.html"

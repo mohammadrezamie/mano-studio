@@ -6,7 +6,8 @@ import zlib
 import pytest
 
 from learning_catalog import TOOLS
-from visual_review import ACTIVE_STATES,build_gallery,validate_active,validate_routes
+from visual_review import (ACTIVE_STATES,BASE_CAPTURES,THEMES,build_gallery,image_info,
+                           validate_active,validate_base_captures,validate_routes)
 
 
 def png():
@@ -34,6 +35,11 @@ def captures(tmp_path):
             (tmp_path/name).write_bytes(data)
             active.append(dict(language=language,theme="dark",route=route,state=state,image=name,
                                width=1,height=1,sha256=hashlib.sha256(data).hexdigest()))
+    for language in ("en","fa"):
+        for theme in THEMES:
+            for mode in BASE_CAPTURES:
+                (tmp_path/f"{language}-{theme}-{mode}.png").write_bytes(data)
+        (tmp_path/f"{language}-dark-learning-center.png").write_bytes(data)
     return tmp_path,{"entries":rows,"active_states":active}
 
 
@@ -47,7 +53,8 @@ def test_offline_gallery(captures):
     assert '<script' not in html and 'https://' not in html
     assert len(validate_active(root,manifest))==2*len(ACTIVE_STATES)
     assert 'id="active"' in html
-    assert html.count('loading="lazy"')==2*(len(TOOLS)+len(ACTIVE_STATES))
+    assert len(validate_base_captures(root))==2*(len(THEMES)*len(BASE_CAPTURES)+1)
+    assert html.count('loading="lazy"')==2*(len(TOOLS)+len(ACTIVE_STATES)+len(THEMES)*len(BASE_CAPTURES)+1)
 
 
 @pytest.mark.parametrize("defect",["missing","duplicate","wrong-route","wrong-image","hash","size","missing-file"])
@@ -76,3 +83,25 @@ def test_reject_invalid_active_evidence(captures,defect):
     elif defect=="size":rows[0]["height"]=2
     else:(root/rows[0]["image"]).unlink()
     with pytest.raises((ValueError,FileNotFoundError)):validate_active(root,manifest)
+
+
+@pytest.mark.parametrize("defect",["header-only","truncated","crc","no-end","trailing","no-data","duplicate-header"])
+def test_reject_structurally_invalid_png(tmp_path,defect):
+    data=png()
+    if defect=="header-only":data=data[:24]
+    elif defect=="truncated":data=data[:-1]
+    elif defect=="crc":data=data[:29]+bytes([data[29]^1])+data[30:]
+    elif defect=="no-end":data=data[:-12]
+    elif defect=="trailing":data+=b"extra"
+    elif defect=="no-data":data=data[:33]+data[-12:]
+    else:data=data[:33]+data[8:]
+    (tmp_path/"bad.png").write_bytes(data)
+    with pytest.raises(ValueError):image_info(tmp_path,"bad.png")
+
+
+@pytest.mark.parametrize("name",["fa-night-builder.png","en-light-alu.png","fa-dark-learning-center.png"])
+def test_require_all_base_captures(captures,name):
+    root,manifest=captures
+    (root/name).unlink()
+    (root/"route-manifest.json").write_text(json.dumps(manifest),encoding="utf-8")
+    with pytest.raises(FileNotFoundError):build_gallery(root)
