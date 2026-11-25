@@ -16,3 +16,7 @@ See LOGIC_LAB.md for chapters 1–4 and future topics. Maintain optional labs se
 
 ## Full-book coverage
 Track all 13 original third-edition chapter families in CURRICULUM_COVERAGE.md and issue #13. Build original mathematically verified functional models incrementally. The classroom Windows candidate does not require full-book completion; prioritize quality and correctness over number of modules.
+
+
+## Owner-approved parallel release and development — 2026-11-25
+The owner explicitly asks to publish the initial beta while continuing future development. First release: PR #19 stays isolated from new features; active exact-head Windows/Ubuntu tests and installer, artifact integrity, native acceptance and redistribution gates remain mandatory. Public prerelease is authorized in principle by the latest owner request, subject to those gates; never publish an untested installer or stable release. Current connection has no release/tag creation or asset-upload operation. Next-beta development: branch `develop/next-beta` from prepared candidate c2fe262b, no PR while CI is congested. Next Chapter 13 increment: ideal MSI cache coherence (four masters, direct-mapped single-word lines, dirty writeback and invalidation, deterministic serialized accesses). Implement a pure model and independent tests first, then integrate bilingual UI into the existing Computer workspace and Learning Center after verification. No changes to academic translator or current release branch. Reconcile with accepted beta before opening the next-feature PR.
