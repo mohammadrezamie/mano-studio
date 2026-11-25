@@ -18,6 +18,10 @@ def capture_karnaugh(app, lab, output, language, theme):
     if {i for i,b in view.cells.items() if b.property("groupSelected")} != set(corners):
         raise RuntimeError("Karnaugh group selection not reflected in cells")
     app.processEvents()
+    for c,header in enumerate(view.column_headers):
+        cell=view.cells[view.matrix[0][c]]
+        if header.height()>=cell.height() or abs(header.geometry().center().x()-cell.geometry().center().x())>2:
+            raise RuntimeError("Karnaugh header is not compact and aligned")
     _save(lab, output / f"{language}-{theme}-karnaugh-corners.png")
 
     # Explicit developer-only installation into the disposable lab.

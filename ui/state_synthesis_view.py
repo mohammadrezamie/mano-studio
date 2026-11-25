@@ -58,6 +58,7 @@ class StateSynthesisView(QWidget):
         self.table.setHorizontalHeaderLabels(["Q","X","Q⁺","Y"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.verticalHeader().hide()
+        self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         middle.addWidget(self.table,3)
         side=QVBoxLayout()
@@ -133,6 +134,9 @@ class StateSynthesisView(QWidget):
         size=2**n
         self.table.setRowCount(0)
         self.table.setRowCount(size*2)
+        # Short tables use the available pane; large ones retain readable rows and scroll.
+        self.table.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch if size<=4 else QHeaderView.ResizeMode.ResizeToContents)
+        self.table.verticalHeader().setMinimumSectionSize(36)
         self.next_boxes=[]
         self.out_boxes=[]
         for i in range(size*2):
@@ -238,6 +242,9 @@ class StateSynthesisView(QWidget):
         n=self.model.bits
         nxt,y=self.model.step(self.state,self.input.currentData())
         self.status.setText(f"Q={self.state:0{n}b}   Q⁺={nxt:0{n}b}   Y={y}")
+        # Selection is a read-only indicator of the imminent transition.
+        self.table.setCurrentCell(self.state*2+self.input.currentData(),0)
+        self.table.scrollToItem(self.table.item(self.state*2+self.input.currentData(),0))
         self.graph.set_state(self.model,self.state,self.input.currentData())
         self.graph_note.setText(self.t("Current state's outgoing edges; ▶ marks the next edge, not a completed clock. Node: Q / Y; edge: X.",
                                       "مسیرهای خروجی حالت جاری؛ ▶ مسیر بعدی است، نه پالس اجراشده. گره: Q / Y؛ یال: X.")

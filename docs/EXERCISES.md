@@ -14,3 +14,5 @@ These examples use the versioned JSON format and the existing Logic Lab pages. O
 تمرین اول: گروه چهار گوشه و عبارت B'D' را بررسی کنید. تمرین دوم: تکمیل مجاز X و فرم POS را مقایسه کنید. تمرین سوم: حالت‌های معادل و دسترس‌ناپذیر را پیدا کنید. تمرین چهارم: دنباله 10101 را وارد کنید و خروجی 00101 را ببینید.
 
 Format v1: `format=mano-exercise`, `version=1`; `kind=karnaugh` contains values in binary minterm order and SOP/POS; `kind=state-design` contains bits, mode, flipflop and complete rows [next state, output] in Q then X order. Maximum accepted file size 32 KiB; strict validation before replacement. No saved simulation histories, imported signal aliases, or physical netlists. Save physical combinational circuits through existing circuit-document actions instead.
+
+Keyboard / صفحه‌کلید: arrow keys move focus across the visible Karnaugh map; Space cycles the focused value. / کلیدهای جهت‌دار برای حرکت بین سلول‌ها و Space برای تغییر مقدار سلول انتخاب‌شده است.
