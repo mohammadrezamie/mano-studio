@@ -32,7 +32,18 @@ jobs:
           "QT_QPA_FONTDIR=$fonts" >> $env:GITHUB_ENV
       - name: Reject missing Latin, Persian and technical glyphs
         run: python render_preflight.py
-      - run: python -m pytest -q
+      - name: Run pytest with timing diagnostics
+        run: python -m pytest -q --durations=30 --durations-min=0 --junitxml=ci-reports/junit.xml
+      - name: Summarize test timings
+        if: ${{ always() && hashFiles('ci-reports/junit.xml') != '' }}
+        run: python dev_tools/ci_timing.py ci-reports/junit.xml --output ci-reports/timings.md
+      - name: Upload test timing evidence
+        if: ${{ always() && hashFiles('ci-reports/junit.xml') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-timings-${{ matrix.os }}
+          path: ci-reports/
+          if-no-files-found: error
       - name: Capture actual desktop previews
         run: python capture_workspace.py
       - uses: actions/upload-artifact@v4
