@@ -113,7 +113,13 @@ class KarnaughView(QWidget):
         self.analysis.setReadOnly(True)
         self.analysis.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.analysis.setAccessibleName(self.t("Canonical forms and static hazard analysis","فرم‌های استاندارد و بررسی مخاطره ایستا"))
-        self.results.addTab(self.analysis,self.t("Forms & hazards","فرم‌ها و مخاطرات"))
+        self.analysis_panel = QWidget()
+        analysis_layout = QVBoxLayout(self.analysis_panel)
+        self.hazard_example_button = QPushButton(self.t("Consensus example","مثال جمله اجماع"))
+        self.hazard_example_button.clicked.connect(self.hazard_example)
+        analysis_layout.addWidget(self.hazard_example_button)
+        analysis_layout.addWidget(self.analysis,1)
+        self.results.addTab(self.analysis_panel,self.t("Forms & hazards","فرم‌ها و مخاطرات"))
         side.addWidget(self.results,1)
         self.proof_note = QLabel()
         self.proof_note.setWordWrap(True)
@@ -292,8 +298,18 @@ class KarnaughView(QWidget):
         self.refresh_proof()
         self.refresh_analysis()
 
+    def hazard_example(self,*_):
+        # F = A'B + AC; complement for the dual static-0 example.
+        self.mapping.clear()
+        with QSignalBlocker(self.width):
+            self.width.setCurrentIndex(self.width.findData(3))
+        self.values = [int(bool((not (i & 4) and i & 2) or (i & 4 and i & 1))) for i in range(8)]
+        if self.form.currentData() == 'POS':
+            self.values = [1-v for v in self.values]
+        self.rebuild()
+
     def refresh_analysis(self,*_):
-        if self.results.currentWidget() is not self.analysis:
+        if self.results.currentWidget() is not self.analysis_panel:
             return
         a = analyze(self.values,self.form.currentData())
         indices = lambda items: ', '.join(map(str,items)) or '—'
