@@ -36,6 +36,7 @@ ACTIVE_STATES=(
     ("coherence","dirty-owner"), ("coherence","shared-read"),
     ("omega","internal-block"), ("omega","crossed-switch"),
     ("karnaugh","de-morgan-dual"), ("karnaugh","static-hazard"),
+    ("sequential","jk-excitation"), ("sequential","sr-forbidden"),
 )
 
 
