@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCombo
 from state_synthesis import design_state_machine
 from state_analysis import analyze_machine
 from state_reduction import reduce_machine
+from state_encoding import encode_reduced
 from ui.state_graph import StateGraph
 from ui.motion import MotionTabs
 
@@ -191,6 +192,22 @@ class StateSynthesisView(QWidget):
         lines.extend(f"R{i}: "+", ".join(label(q) for q in group) for i,group in enumerate(reduced.groups))
         lines.extend(["",self.t("Reduced transition table","جدول انتقال کاهش‌یافته"),"R | X | R⁺ | Y"])
         lines.extend(f"R{i//2} | {i%2} | R{nxt} | {y}" for i,(nxt,y) in enumerate(reduced.table))
+        self.encoding=encode_reduced(self.model)
+        enc=self.encoding
+        width=enc.design.bits
+        code=lambda q:f"{q:0{width}b}"
+        lines.extend(["",self.t("Binary implementation preview","پیش‌نمایش پیاده‌سازی دودویی"),
+                      self.t(f"State bits: {width}; assignments evaluated: {enc.candidates}.",
+                             f"بیت‌های حالت: {width}؛ تخصیص‌های بررسی‌شده: {enc.candidates}."),
+                      self.t("All assignments searched with fixed reset code 0." if len(reduced.groups)<=4 else "Ascending codes; no assignment optimization.",
+                             "همه تخصیص‌ها با کد بازنشانی ثابت صفر بررسی شدند." if len(reduced.groups)<=4 else "کدگذاری صعودی؛ بدون بهینه‌سازی تخصیص."),
+                      self.t(f"Independent SOP terms / literals: {enc.cost[0]} / {enc.cost[1]}.",
+                             f"جمله‌ها / لیترال‌های مستقل SOP: {enc.cost[0]} / {enc.cost[1]}.")])
+        lines.extend(f"R{i} = {code(q)}" for i,q in enumerate(enc.codes))
+        lines.extend([self.t("Unused codes return to zero with Y=0: ","کدهای بلااستفاده با Y=0 به صفر بازمی‌گردند: ")+(", ".join(map(code,enc.unused)) or none),
+                      "",self.t("Encoded excitation and output equations","معادلات تحریک و خروجی کدگذاری‌شده"),
+                      "  |  ".join(f"{a} = {q}" for a,q in enc.design.aliases)])
+        lines.extend(f"{name} = {cover.expression}" for name,cover in enc.design.equations)
         self.reduction_text.setPlainText("\n".join(lines))
 
     def reset_state(self,*_):

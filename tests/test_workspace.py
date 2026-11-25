@@ -1584,3 +1584,20 @@ def test_state_reduction_preview_preserves_design(workspace,language):
     v.input.setCurrentIndex(1);v.clock.click()
     assert v.state==0 and len(v.trace)==1
     lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_reduced_binary_encoding_preview(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.select_tool("state-design")
+    v=lab.state_design
+    v.next_boxes[1].setCurrentIndex(0)
+    assert v.reduction.bits==0 and v.encoding.design.bits==1
+    assert v.encoding.codes==(0,) and v.encoding.unused==(1,)
+    assert v.encoding.design.step(1,0)==v.encoding.design.step(1,1)==(0,0)
+    original=v.model
+    v.views.setCurrentWidget(v.reduction_text)
+    assert "R0 = 0" in v.reduction_text.toPlainText()
+    assert v.model is original and v.state==0
+    lab.close()

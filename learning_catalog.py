@@ -15,7 +15,7 @@ class Chapter:
 
 
 CHAPTERS=(
-    Chapter(1,("Digital logic","منطق دیجیتال"),("State assignment optimization and hazard-free or multi-output minimization remain open.","بهینه‌سازی کدگذاری حالت و ساده‌سازی بدون مخاطره یا چندخروجی باقی مانده‌اند.")),
+    Chapter(1,("Digital logic","منطق دیجیتال"),("State assignment optimization beyond four reachable classes, shared-gate and hazard-free minimization remain open.","بهینه‌سازی کدگذاری بیش از چهار کلاس دسترس‌پذیر، اشتراک گیت و ساده‌سازی بدون مخاطره باقی مانده‌اند.")),
     Chapter(2,("Digital components","اجزای دیجیتال"),("More device variants and physical IC pinouts remain open.","گونه‌های بیشتر قطعات و پایه‌های آی‌سی واقعی باقی مانده‌اند.")),
     Chapter(3,("Data representation","نمایش داده"),("Historical floating-point formats and additional coding exercises remain.","قالب‌های تاریخی ممیز شناور و تمرین‌های کدگذاری بیشتر باقی مانده‌اند.")),
     Chapter(4,("Register transfer and microoperations","انتقال ثبات و ریزعملیات"),("Electrical timing and full arithmetic-logic-shift hardware remain.","زمان‌بندی الکتریکی و مدار کامل حسابی‌ـ‌منطقی‌ـ‌شیفت باقی مانده‌اند.")),
