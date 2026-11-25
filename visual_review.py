@@ -35,6 +35,7 @@ ACTIVE_STATES=(
     ("synchronization","atomic-lock"),
     ("coherence","dirty-owner"), ("coherence","shared-read"),
     ("omega","internal-block"), ("omega","crossed-switch"),
+    ("karnaugh","de-morgan-dual"), ("karnaugh","static-hazard"),
 )
 
 
