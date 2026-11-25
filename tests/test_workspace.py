@@ -1414,3 +1414,245 @@ def test_arithmetic_focused_without_losing_cpu(workspace,language):
     assert all(not w.isHidden() for w in lab.cpu_widgets)
     assert lab.source.toPlainText()==source and lab.steps==1
     lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_karnaugh_interactive_route(workspace,app,language):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    document=lab.document
+    lab.select_tool("karnaugh")
+    view=lab.karnaugh
+    assert lab.mode_tabs.currentWidget() is view
+    assert lab.navigation.list.currentRow()==3
+    assert view.map.layoutDirection()==Qt.LayoutDirection.LeftToRight
+    assert view.expression.text()=="D'"
+    assert view.cells[0].property("groupSelected")
+    lab.show();app.processEvents()
+    view.cells[0].setFocus()
+    QTest.keyClick(view.cells[0],Qt.Key.Key_Space)
+    assert view.values[0] is None
+    QTest.keyClick(view.cells[0],Qt.Key.Key_Space)
+    assert view.values[0]==0
+    view.form.setCurrentIndex(1)
+    assert view.solution.form=="POS"
+    assert all(view.solution.evaluate(i)==v for i,v in enumerate(view.values) if v is not None)
+    view.width.setCurrentIndex(0)
+    assert len(view.cells)==4 and view.expression.text()=="0"
+    view.example()
+    assert view.expression.text()=="(B')"
+    assert not view.grab().isNull()
+    lab.select_tool("gates")
+    assert lab.document is document
+    lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_karnaugh_import_existing_circuit(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    lab.selector.setCurrentIndex(lab.selector.findData("full_adder"))
+    doc=lab.document
+    inputs=dict(lab.inputs)
+    lab.select_tool("karnaugh")
+    v=lab.karnaugh
+    original=v.values.copy()
+    assert v.values==original and v.source_output.count()==2
+    v.source_output.setCurrentIndex(v.source_output.findData("Cout"))
+    v.import_button.click()
+    assert v.width.currentData()==3 and len(v.cells)==8
+    assert v.values==[0,0,0,1,0,1,1,1]
+    assert "C = Cin" in v.mapping.text() and "F = Cout" in v.mapping.text()
+    assert lab.document is doc and lab.inputs==inputs
+    v.cycle(0)
+    edited=v.values.copy()
+    lab.select_tool("gates")
+    lab.selector.setCurrentIndex(lab.selector.findData("not"))
+    lab.select_tool("karnaugh")
+    assert not v.import_button.isEnabled() and v.values==edited
+    lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_karnaugh_build_confirm_and_undo(workspace,monkeypatch,language):
+    from PySide6.QtWidgets import QMessageBox
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    lab.select_tool("karnaugh")
+    original=lab.document
+    view=lab.karnaugh
+    values=view.values.copy()
+    monkeypatch.setattr(QMessageBox,"question",lambda *a,**k:QMessageBox.StandardButton.No)
+    view.build_button.click()
+    assert lab.document is original
+    assert lab.mode_tabs.currentWidget() is view
+    monkeypatch.setattr(QMessageBox,"question",lambda *a,**k:QMessageBox.StandardButton.Yes)
+    view.build_button.click()
+    assert lab.mode_tabs.currentIndex()==0 and lab.dirty
+    assert lab.document.outputs[0][0]=="F"
+    assert [o[0] for _,o in lab.circuit.truth_table()]==values
+    assert view.values==values
+    lab.undo_edit()
+    assert lab.document==original and not lab.dirty
+    lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_karnaugh_equivalence_table(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.select_tool("karnaugh")
+    view=lab.karnaugh
+    document=lab.document
+    view.width.setCurrentIndex(0)
+    view.cycle(0);view.cycle(0)
+    view.results.setCurrentWidget(view.proof)
+    assert view.proof.rowCount()==4
+    assert view.proof.item(0,1).text()=="X"
+    assert view.proof.item(0,2).text()==view.proof.item(0,3).text()=="0"
+    view.form.setCurrentIndex(1)
+    assert view.proof.item(0,2).text()==view.proof.item(0,3).text()=="0"
+    view.cycle(1)
+    assert view.proof.item(1,1).text()==view.proof.item(1,3).text()=="1"
+    assert lab.document is document
+    lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_state_synthesis_route_and_clock(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);original=lab.document
+    lab.select_tool("state-design")
+    v=lab.state_design
+    assert lab.mode_tabs.currentWidget() is v
+    assert v.table.rowCount()==4
+    assert not v.out_boxes[1].isEnabled()
+    v.ff.setCurrentIndex(v.ff.findData("JK"))
+    assert dict(v.model.equations)["J0"].expression=="B"
+    v.input.setCurrentIndex(1)
+    v.clock.click();assert v.state==1 and len(v.trace)==1
+    v.clock.click();assert v.state==0 and len(v.trace)==2
+    v.mode.setCurrentIndex(v.mode.findData("Mealy"))
+    assert v.out_boxes[1].isEnabled() and not v.trace
+    v.out_boxes[1].setCurrentIndex(1)
+    assert v.model.step(0,1)[1]==1
+    v.width.setCurrentIndex(2)
+    assert v.table.rowCount()==16 and v.state==0
+    assert lab.document is original
+    lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_state_graph_preview_and_clock(workspace,app,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.select_tool("state-design")
+    v=lab.state_design
+    lab.show();app.processEvents()
+    assert v.graph.state==0 and len(v.graph.edges)==2
+    v.input.setCurrentIndex(1)
+    assert v.graph.x==1 and v.graph.state==0 and not v.trace
+    assert "X=1" in v.graph.accessibleDescription()
+    v.clock.click()
+    assert v.graph.state==1 and len(v.trace)==1
+    v.next_boxes[0].setCurrentIndex(1)
+    assert v.graph.state==0 and len(v.graph.edges)==1
+    assert v.graph.edges[0].conditions==((0,0),(1,0))
+    assert not v.graph.grab().isNull()
+    lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_state_analysis_updates_without_clock(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.select_tool("state-design")
+    v=lab.state_design
+    v.views.setCurrentWidget(v.analysis_text)
+    assert v.analysis.paths==((0,''),(1,'1'))
+    assert v.analysis.classes==((0,),(1,))
+    v.next_boxes[1].setCurrentIndex(0)
+    assert v.analysis.unreachable==(1,)
+    assert not v.trace
+    assert ("حالت‌های دسترس‌ناپذیر" if language=="fa" else "Unreachable states") in v.analysis_text.toPlainText()
+    v.input.setCurrentIndex(1);v.clock.click()
+    assert v.state==0 and len(v.trace)==1
+    v.views.setCurrentWidget(v.graph)
+    assert len(v.trace)==1
+    lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_state_reduction_preview_preserves_design(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.select_tool("state-design")
+    v=lab.state_design
+    v.next_boxes[1].setCurrentIndex(0)
+    assert v.reduction.groups==((0,),)
+    assert v.reduction.bits==0
+    original=v.model
+    v.views.setCurrentWidget(v.reduction_text)
+    assert v.model is original and v.table.rowCount()==4 and not v.trace
+    assert "R0 | 1 | R0 | 0" in v.reduction_text.toPlainText()
+    v.input.setCurrentIndex(1);v.clock.click()
+    assert v.state==0 and len(v.trace)==1
+    lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_reduced_binary_encoding_preview(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.select_tool("state-design")
+    v=lab.state_design
+    v.next_boxes[1].setCurrentIndex(0)
+    assert v.reduction.bits==0 and v.encoding.design.bits==1
+    assert v.encoding.codes==(0,) and v.encoding.unused==(1,)
+    assert v.encoding.design.step(1,0)==v.encoding.design.step(1,1)==(0,0)
+    original=v.model
+    v.views.setCurrentWidget(v.reduction_text)
+    assert "R0 = 0" in v.reduction_text.toPlainText()
+    assert v.model is original and v.state==0
+    lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_exercise_file_actions(workspace,language,tmp_path,monkeypatch):
+    from PySide6.QtWidgets import QFileDialog,QMessageBox
+    from ui.logic_lab import LogicLab
+    from logic_exercise import KarnaughExercise,StateExercise,read_exercise,write_exercise
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    circuit=lab.document
+    for route,view,exercise in (
+        ("karnaugh",lab.karnaugh,KarnaughExercise((0,1,None,0),"POS")),
+        ("state-design",lab.state_design,StateExercise(2,"Mealy","JK",tuple(((i//2+i%2)%4,i%2) for i in range(8)))),
+    ):
+        lab.select_tool(route)
+        path=tmp_path/(route+".mano-exercise.json")
+        write_exercise(path,exercise)
+        monkeypatch.setattr(QFileDialog,"getOpenFileName",lambda *a:(str(path),""))
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.No)
+        before=view.exercise()
+        view.open_exercise_button.click()
+        assert view.exercise()==before
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Yes)
+        view.open_exercise_button.click()
+        assert view.exercise()==exercise
+        output=tmp_path/(route+"-saved.json")
+        monkeypatch.setattr(QFileDialog,"getSaveFileName",lambda *a:(str(output),""))
+        view.save_exercise_button.click()
+        assert read_exercise(output)==exercise
+        path.write_text("invalid",encoding="utf-8")
+        monkeypatch.setattr(QMessageBox,"warning",lambda *a:None)
+        view.open_exercise_button.click()
+        assert view.exercise()==exercise
+        assert lab.document is circuit
+    lab.close()

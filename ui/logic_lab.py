@@ -22,6 +22,9 @@ from ui.memory_view import MemoryView
 from ui.memory_array_view import MemoryArrayView
 from ui.bus_view import BusView
 from ui.cache_view import CacheView
+from ui.karnaugh_view import KarnaughView
+from ui.state_synthesis_view import StateSynthesisView
+from boolean_synthesis import synthesize
 from ui.virtual_memory_view import AddressTranslationView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES, STATUS
@@ -340,7 +343,12 @@ class LogicLab(QDialog):
         self.address_translation=AddressTranslationView(parent.theme,self.fa)
         memory_tabs.addTab(self.address_translation,self.t("CAM / Virtual memory","حافظه انجمنی / مجازی"))
         self.mode_tabs.addTab(memory_tabs,self.t("Memory & bus","حافظه و گذرگاه"))
-        self.navigation=NavigationRail(self.mode_tabs,parent.settings,"logic",self.t("DIGITAL LOGIC","منطق دیجیتال"),("logic","clock","registers"),self.fa)
+        self.karnaugh=KarnaughView(self.fa)
+        self.karnaugh.synthesize_requested.connect(self.build_karnaugh_circuit)
+        self.mode_tabs.addTab(self.karnaugh,self.t("Karnaugh map","نقشه کارنو"))
+        self.state_design=StateSynthesisView(self.fa)
+        self.mode_tabs.addTab(self.state_design,self.t("State design","طراحی ماشین حالت"))
+        self.navigation=NavigationRail(self.mode_tabs,parent.settings,"logic",self.t("DIGITAL LOGIC","منطق دیجیتال"),("logic","clock","registers","logic","clock"),self.fa)
         outer.insertWidget(0,self.navigation)
         layout=QVBoxLayout(combinational)
         title=QLabel(self.t("Logic Lab · Digital circuits","آزمایشگاه مدار منطقی"))
@@ -442,10 +450,37 @@ class LogicLab(QDialog):
         self.selector.currentIndexChanged.connect(self.load)
         self.pin_count.valueChanged.connect(self.load)
         self.load()
+        self.mode_tabs.currentChanged.connect(self.refresh_karnaugh_source)
+
+    def build_karnaugh_circuit(self):
+        if self.stack.currentIndex()==1:
+            QMessageBox.information(self,self.t("Apply first","ابتدا اعمال کنید"),
+                self.t("Apply or cancel the staged circuit edit first.","ابتدا ویرایش مدار را اعمال یا لغو کنید."))
+            return
+        document=synthesize(self.karnaugh.values,self.karnaugh.form.currentData())
+        answer=QMessageBox.question(self,self.t("Build circuit","ساخت مدار"),
+            self.t("Replace the current circuit with this single-output circuit? Undo edit restores the previous circuit.",
+                   "مدار جاری با این مدار تک‌خروجی جایگزین شود؟ واگرد ویرایش مدار قبلی را بازمی‌گرداند."),
+            QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No)
+        if answer!=QMessageBox.StandardButton.Yes:
+            return
+        self.history.append((self.document,self.dirty))
+        self.history=self.history[-30:]
+        self.install_document(document,True)
+        self.select_tool("gates")
+
+    def refresh_karnaugh_source(self,*_):
+        if self.mode_tabs.currentWidget() is self.karnaugh:
+            self.karnaugh.set_source(self.circuit)
 
     def select_tool(self,route):
         if route in ("gates","sequential"):
             self.mode_tabs.setCurrentIndex(0 if route=="gates" else 1)
+        elif route=="state-design":
+            self.mode_tabs.setCurrentWidget(self.state_design)
+        elif route=="karnaugh":
+            self.mode_tabs.setCurrentWidget(self.karnaugh)
         elif route in ("cam","virtual-memory"):
             self.mode_tabs.setCurrentWidget(self.memory_tabs)
             self.memory_tabs.setCurrentWidget(self.address_translation)

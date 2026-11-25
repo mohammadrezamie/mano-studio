@@ -15,7 +15,7 @@ class Chapter:
 
 
 CHAPTERS=(
-    Chapter(1,("Digital logic","منطق دیجیتال"),("Karnaugh maps and state synthesis remain open.","نقشه کارنو و طراحی ماشین حالت باقی مانده‌اند.")),
+    Chapter(1,("Digital logic","منطق دیجیتال"),("State assignment optimization beyond four reachable classes, shared-gate and hazard-free minimization remain open.","بهینه‌سازی کدگذاری بیش از چهار کلاس دسترس‌پذیر، اشتراک گیت و ساده‌سازی بدون مخاطره باقی مانده‌اند.")),
     Chapter(2,("Digital components","اجزای دیجیتال"),("More device variants and physical IC pinouts remain open.","گونه‌های بیشتر قطعات و پایه‌های آی‌سی واقعی باقی مانده‌اند.")),
     Chapter(3,("Data representation","نمایش داده"),("Historical floating-point formats and additional coding exercises remain.","قالب‌های تاریخی ممیز شناور و تمرین‌های کدگذاری بیشتر باقی مانده‌اند.")),
     Chapter(4,("Register transfer and microoperations","انتقال ثبات و ریزعملیات"),("Electrical timing and full arithmetic-logic-shift hardware remain.","زمان‌بندی الکتریکی و مدار کامل حسابی‌ـ‌منطقی‌ـ‌شیفت باقی مانده‌اند.")),
@@ -45,6 +45,8 @@ class Tool:
 TOOLS=(
     Tool("gates",1,"logic","gates",("Logic gates & truth tables","گیت‌ها و جدول درستی"),("Change circuit inputs and compare Boolean equations with output.","ورودی مدار را تغییر دهید و خروجی را با معادله بولی مقایسه کنید."),"AND OR XOR NAND NOR NOT K-map"),
     Tool("sequential",1,"logic","sequential",("Flip-flops & sequential logic","فلیپ‌فلاپ و منطق ترتیبی"),("Apply a clock edge and compare present and next state.","لبه ساعت اعمال کنید و حالت فعلی و بعدی را مقایسه کنید."),"D JK T SR clock waveform"),
+    Tool("karnaugh",1,"logic","karnaugh",("Karnaugh map & minimization","نقشه کارنو و ساده‌سازی"),("Cycle cells, compare SOP/POS, and inspect wrap-around groups.","سلول‌ها را تغییر دهید، SOP و POS را مقایسه و گروه‌های متصل از لبه‌ها را بررسی کنید."),"K-map Karnaugh Boolean minterm maxterm don't care کارنو"),
+    Tool("state-design",1,"logic","state-design",("Finite-state machine design","طراحی ماشین حالت محدود"),("Edit transitions, compare D/T/JK equations and clock the machine.","انتقال‌ها را ویرایش کنید، معادلات D/T/JK را مقایسه و ماشین را با پالس ساعت اجرا کنید."),"FSM Moore Mealy state synthesis ماشین حالت"),
     Tool("components",2,"logic","gates",("Digital component library","کتابخانه قطعات دیجیتال"),("Choose an adder, decoder, encoder or multiplexer and inspect its pins.","جمع‌کننده، دیکدر، انکدر یا مالتی‌پلکسر را انتخاب و پایه‌ها را بررسی کنید."),"MUX DEMUX adder decoder encoder"),
     Tool("registers-counter",2,"logic","sequential",("Registers & counters","ثبات‌ها و شمارنده‌ها"),("Compare shift registers, counters and their state transitions.","ثبات‌های شیفت و شمارنده‌ها و تغییر حالتشان را مقایسه کنید."),"ring Johnson counter shift"),
     Tool("bases",3,"computer","alu",("Number bases & signed words","مبناهای عددی و کلمات علامت‌دار"),("Compare binary, octal, decimal and hexadecimal words.","نمایش دودویی، هشت‌هشتی، ده‌دهی و هگز را مقایسه کنید."),"BIN OCT DEC HEX two complement"),

@@ -1,0 +1,16 @@
+{
+  "format": "mano-exercise",
+  "version": 1,
+  "kind": "karnaugh",
+  "values": [
+    0,
+    1,
+    null,
+    1,
+    0,
+    null,
+    0,
+    1
+  ],
+  "form": "POS"
+}

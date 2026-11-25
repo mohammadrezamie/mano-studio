@@ -10,7 +10,7 @@ An open-source bilingual offline desktop IDE for Morris Mano's Computer System A
 python -m pip install -r requirements.txt -r requirements-dev.txt
 python main.py
 ```
-Three entry modes, three themes, Computer (assembler, CPU, reversible debugger, Data & ALU), and Digital Logic (editable combinational schematic, clocked components and waveform) are implemented. Optional canonical ASM-to-RTL import is available in the same editor. The **[Learning Center](docs/LEARNING_CENTER.md)** (Ctrl+K) connects 40 interactive learning entries across all 13 indexed chapters (partial coverage), with bilingual search, explicit coverage gaps and local personal practice progress. See [development candidate](docs/BUILD_CANDIDATE.md), [live Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [status](docs/STATUS.md). No published release. Development artifacts are not stable releases.
+Three entry modes, three themes, Computer (assembler, CPU, reversible debugger, Data & ALU), and Digital Logic (editable combinational schematic, clocked components and waveform) are implemented. Optional canonical ASM-to-RTL import is available in the same editor. The **[Learning Center](docs/LEARNING_CENTER.md)** (Ctrl+K) connects 42 interactive learning entries across all 13 indexed chapters (partial coverage), with bilingual search, explicit coverage gaps and local personal practice progress. See [development candidate](docs/BUILD_CANDIDATE.md), [live Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [status](docs/STATUS.md). No published release. Development artifacts are not stable releases.
 
 Computer and Digital Logic use a shared collapsible navigation rail, preserving existing simulator state and direct learning routes. Design and motion standards: [Design system](docs/DESIGN_SYSTEM.md) · [Animation guide](docs/ANIMATION_GUIDE.md) · [Technology decisions](docs/TECH_STACK.md).
 
@@ -42,3 +42,6 @@ MIT — see LICENSE.
 
 ## Current UX plan
 [Integrated UX development plan](docs/UX_PLAN.md): keep the primary RTL-to-ASM workflow simple; combine CPU tools into one Computer workspace and share the digital logic canvas. No installer or release activity until the owner asks.
+
+
+Chapter 1 development preview: Karnaugh map, FSM synthesis and reduction, and explicit portable exercise save/open. Full GUI verification pending; see [exercises](docs/EXERCISES.md) and docs/STATUS.md.
