@@ -28,9 +28,9 @@ Existing candidate routes: `gates, sequential, karnaugh, state-design` (partial 
 | C01.03 | partial | Existing K-map Gray indexing, legal cubes, both forms and don't-care handling; prior real-engine workflow tests (381d96a4). Exact edition figures and full visual review open. |
 | C01.04 | partial | universal_gates.py (72dc42dc), NAND/NOR-only build in existing Karnaugh UI; isolated exact-converter oracle passed 438 circuits/6,740 rows. Real-engine and Qt regressions authored but unexecuted; static-1 SOP/static-0 POS edge detection and consensus preview now implemented (BOOLEAN_ANALYSIS.md). Physical/dynamic hazards and shared multi-output minimization open. |
 | C01.05 | partial | CircuitDocument (2bf0d9f9), validated netlists, truth tables, synthesis and serialization. More worked designs and independent visual review open. |
-| C01.06 | unreviewed | Sequential route exists; inspect actual excitation/characteristic equations and timing before closure. |
+| C01.06 | partial | Actual clocked model sequential_logic.py (b5fb70ca), derived characteristic and excitation reference (d8b549a1): 11 local tests passed using real engine, all 24 characteristic and 16 excitation rows. Bilingual tables and pending Qt evidence; level-sensitive latches, asynchronous controls and edition reconciliation remain open. |
 | C01.07 | partial | Prior workflow suite includes state reduction, encoding, synthesis and clock equivalence. Edition-specific examples and remaining encoding domains open. |
-| C01.08 | unreviewed | Need explicit scope for propagation, setup/hold, asynchronous races and ideal model limits. |
+| C01.08 | partial | Existing waveform records actual event order (not physical time); sequential_logic rejects forbidden SR edges, local verified. Setup/hold, propagation, asynchronous races and metastability models remain open. |
 
 No checklist box closed: edition-specific reconciliation and per-item acceptance remain necessary. See [Universal gate realization](UNIVERSAL_GATES.md). The local isolated oracle is not a full application test.
 
