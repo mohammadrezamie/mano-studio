@@ -10,8 +10,8 @@ class BooleanLawsView(QWidget):
         super().__init__()
         self.fa=fa
         box=QVBoxLayout(self)
-        note=QLabel(self.t("Duality swaps AND with OR and 0 with 1. Variables and complements stay unchanged. Compare both sides for every binary input.",
-            "دوگانگی، AND و OR و همچنین ۰ و ۱ را جابه‌جا می‌کند. متغیرها و متمم‌ها ثابت می‌مانند. دو طرف را برای تمام ورودی‌ها مقایسه کنید."))
+        note=QLabel(self.t("Duality swaps AND with OR and 0 with 1. Variable names and the NOT operator stay unchanged. Compare both sides for every binary input.",
+            "دوگانگی، AND و OR و همچنین ۰ و ۱ را جابه‌جا می‌کند. نام متغیرها و عملگر NOT ثابت می‌مانند. دو طرف را برای تمام ورودی‌ها مقایسه کنید."))
         note.setWordWrap(True)
         box.addWidget(note)
         row=QHBoxLayout()
