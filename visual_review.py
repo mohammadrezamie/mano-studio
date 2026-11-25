@@ -34,6 +34,7 @@ ACTIVE_STATES=(
     ("crossbar","parallel-grants"), ("synchronization","lost-update"),
     ("synchronization","atomic-lock"),
     ("coherence","dirty-owner"), ("coherence","shared-read"),
+    ("omega","internal-block"), ("omega","crossed-switch"),
 )
 
 
