@@ -15,6 +15,10 @@ function Run-Checked($file, $arguments) {
 }
 Run-Checked $setup.FullName "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /SP- /DIR=`"$target`""
 try {
+    $source = @(Get-ChildItem -LiteralPath $target -Recurse -File -Filter 'rtl_translator.py')
+    if ($source.Count -ne 1) { throw 'Expected exactly one installed academic source.' }
+    $expected = (Get-FileHash -LiteralPath (Join-Path $PWD 'rtl_translator.py') -Algorithm SHA256).Hash
+    if ((Get-FileHash -LiteralPath $source[0].FullName -Algorithm SHA256).Hash -ne $expected) { throw 'Installed academic source does not match checkout.' }
     Run-Checked (Join-Path $target 'ManoStudio.exe') "--smoke-test `"$report`""
     if (!(Test-Path $report) -or (Get-Content $report -Raw).Trim() -ne 'PASS') { throw 'Frozen app smoke test failed.' }
 } finally {
