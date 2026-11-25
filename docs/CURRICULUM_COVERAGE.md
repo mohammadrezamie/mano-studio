@@ -218,3 +218,7 @@ Chapter 13 now includes the ideal MSI model in Computer → Multiprocessors and 
 
 ## Omega network — next-beta model checkpoint (2026-11-25)
 Pure `omega_network.py` models 2–64 ports, perfect-shuffle wiring, destination-bit routing, internal blocking and atomic fixed-priority path grants. 19 local tests passed; all 5,460 individual routes, 24 four-port permutations, 400 seeded rounds. Exact tested blobs verified against GitHub. UI, bilingual learning route and Qt evidence pending; 43 routes remain unchanged. See OMEGA_NETWORK.md. No new release changes.
+
+
+## Omega interactive increment and exhaustive-scope mandate
+Next-beta includes the bilingual Omega view, 44th catalog route, real granted-path canvas, interactive requests and blocking trace, two UI test cases and four required active-state captures. UI supports 2–16 ports; engine supports 2–64. New tests/captures not executed. The owner requires every topic and detail of Mano's textbook, so the [detailed topic audit](TEXTBOOK_AUDIT.md) tracks 104 initial topic families across all 13 chapters plus edition/figure/equation/exercise reconciliation gates. Route counts are not coverage percentages. Every item remains unchecked until its evidence is reconciled. No claim of complete textbook coverage. Next: verify GUI, then audit Chapter 1 item-by-item and close concrete gaps, without blocking first beta.
