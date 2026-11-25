@@ -118,3 +118,15 @@ def test_synthesis_large_covers_and_constants(form):
         assert all(1<=len(g.inputs)<=4 for g in doc.gates)
         result=minimize(values,form)
         assert [o[0] for _,o in doc.compile().truth_table()]==[result.evaluate(i) for i in range(16)]
+
+
+@pytest.mark.parametrize("form",["SOP","POS"])
+def test_comparison_reports_specified_and_completed_cells(form):
+    from boolean_synthesis import comparison_rows
+    for values in product((0,1,None),repeat=4):
+        rows=comparison_rows(values,form)
+        assert tuple(r[0] for r in rows)==tuple(range(4))
+        assert tuple(r[1] for r in rows)==values
+        assert all(c==g and (v is None or v==g) for _,v,c,g in rows)
+    expected=int(form=="POS")
+    assert comparison_rows([None]*16,form)==tuple((i,None,expected,expected) for i in range(16))

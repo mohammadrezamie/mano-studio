@@ -1480,3 +1480,24 @@ def test_karnaugh_build_confirm_and_undo(workspace,monkeypatch,language):
     lab.undo_edit()
     assert lab.document==original and not lab.dirty
     lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_karnaugh_equivalence_table(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.select_tool("karnaugh")
+    view=lab.karnaugh
+    document=lab.document
+    view.width.setCurrentIndex(0)
+    view.cycle(0);view.cycle(0)
+    view.results.setCurrentWidget(view.proof)
+    assert view.proof.rowCount()==4
+    assert view.proof.item(0,1).text()=="X"
+    assert view.proof.item(0,2).text()==view.proof.item(0,3).text()=="0"
+    view.form.setCurrentIndex(1)
+    assert view.proof.item(0,2).text()==view.proof.item(0,3).text()=="0"
+    view.cycle(1)
+    assert view.proof.item(1,1).text()==view.proof.item(1,3).text()=="1"
+    assert lab.document is document
+    lab.close()

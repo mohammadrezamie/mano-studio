@@ -57,3 +57,12 @@ def synthesize(values, form="SOP"):
         if outputs != (solution.evaluate(index),):
             raise RuntimeError("Synthesized circuit does not match the Boolean cover")
     return document
+
+
+def comparison_rows(values, form="SOP"):
+    """Return (index, specified value, cover value, gate output) for every input."""
+    values = tuple(values)
+    solution = minimize(values, form)
+    circuit = synthesize(values, form).compile()
+    return tuple((i, values[i], solution.evaluate(i), outputs[0])
+                 for i, (_, outputs) in enumerate(circuit.truth_table()))

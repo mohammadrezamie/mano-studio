@@ -1,8 +1,11 @@
 """Interactive Gray-ordered Karnaugh map using the exact minimizer."""
 from PySide6.QtCore import Qt, QSignalBlocker, Signal
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QLabel, QComboBox, QPushButton, QListWidget, QLineEdit)
+    QLabel, QComboBox, QPushButton, QListWidget, QLineEdit,
+    QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView)
 from boolean_minimizer import circuit_output_values, gray_indices, minimize
+from boolean_synthesis import comparison_rows
+from ui.motion import MotionTabs
 
 
 class KarnaughView(QWidget):
@@ -70,11 +73,25 @@ class KarnaughView(QWidget):
         self.grid.setSpacing(8)
         body.addWidget(self.map,2)
         side = QVBoxLayout()
-        side.addWidget(QLabel(self.t("Optimal groups", "گروه‌های بهینه")))
         self.groups = QListWidget()
         self.groups.setAccessibleName(self.t("Optimal groups; select to highlight", "گروه‌های بهینه؛ برای برجسته‌سازی انتخاب کنید"))
         self.groups.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        side.addWidget(self.groups,1)
+        self.results = MotionTabs()
+        self.results.addTab(self.groups,self.t("Optimal groups","گروه‌های بهینه"))
+        self.proof = QTableWidget(0,4)
+        self.proof.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.proof.setAccessibleName(self.t("Compare specified, minimized and gate outputs","مقایسه خروجی اولیه، ساده‌شده و مدار"))
+        self.proof.setHorizontalHeaderLabels(["m",self.t("Input","ورودی"),self.t("Cover","عبارت"),self.t("Gates","مدار")])
+        self.proof.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.proof.verticalHeader().hide()
+        self.proof.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.proof.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.results.addTab(self.proof,self.t("Verify","مقایسه"))
+        side.addWidget(self.results,1)
+        self.proof_note = QLabel()
+        self.proof_note.setWordWrap(True)
+        self.proof_note.setVisible(False)
+        side.addWidget(self.proof_note)
         body.addLayout(side,1)
         box.addLayout(body,1)
         box.addWidget(QLabel(self.t("Simplified expression", "عبارت ساده‌شده")))
@@ -97,6 +114,7 @@ class KarnaughView(QWidget):
         self.width.currentIndexChanged.connect(self.reset)
         self.form.currentIndexChanged.connect(self.refresh)
         self.groups.currentRowChanged.connect(self.highlight)
+        self.results.currentChanged.connect(self.refresh_proof)
         self.example()
         self.set_source(None)
 
@@ -190,6 +208,26 @@ class KarnaughView(QWidget):
         self.summary.setText(self.t(f"Groups: {count} · Literals: {literals}. Minimum groups, then minimum literals.",
                                     f"گروه‌ها: {count} · لیترال‌ها: {literals}. ابتدا کمترین گروه، سپس کمترین لیترال."))
         self.highlight(self.groups.currentRow())
+        self.refresh_proof()
+
+    def refresh_proof(self,*_):
+        visible = self.results.currentWidget() is self.proof
+        self.proof_note.setVisible(visible)
+        if not visible:
+            return
+        rows = comparison_rows(self.values,self.form.currentData())
+        self.proof.setRowCount(len(rows))
+        specified = 0
+        for r,(index,value,cover,gate) in enumerate(rows):
+            specified += value is not None
+            for col,text in enumerate((str(index),"X" if value is None else str(value),str(cover),str(gate))):
+                item = QTableWidgetItem(text)
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.proof.setItem(r,col,item)
+        valid = all(cover==gate and (value is None or value==gate) for _,value,cover,gate in rows)
+        self.proof_note.setText(self.t(
+            f"{specified}/{len(rows)} specified cells; {len(rows)-specified} X completions. " + ("All outputs match." if valid else "Mismatch."),
+            f"{specified}/{len(rows)} سلول مشخص؛ {len(rows)-specified} مقدار انتخابی برای X. " + ("همه خروجی‌ها منطبق‌اند." if valid else "عدم تطابق.")))
 
     def highlight(self,row):
         active = self.solution.groups[row].cells if 0 <= row < len(self.solution.groups) else ()
