@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   installer:
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/first-beta-candidate')
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && (github.head_ref == 'release/first-beta-candidate' || github.head_ref == 'release/beta-integrated'))
     runs-on: windows-latest
     timeout-minutes: 45
     env:

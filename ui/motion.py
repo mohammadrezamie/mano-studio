@@ -3,9 +3,9 @@
 One lightweight indicator per tab bar; no animated page snapshots, timers
 at idle, layout movement or effects on text/circuit content.
 """
-from PySide6.QtCore import Qt, QRectF, QVariantAnimation, QEasingCurve, QAbstractAnimation
-from PySide6.QtGui import QPainter, QPalette
-from PySide6.QtWidgets import QApplication, QTabBar, QTabWidget
+from PySide6.QtCore import Qt, QRectF, QVariantAnimation, QEasingCurve, QAbstractAnimation, QEvent
+from PySide6.QtGui import QPainter, QPalette, QPen
+from PySide6.QtWidgets import QApplication, QTabBar, QTabWidget, QPushButton
 
 TAB_DURATION=160
 
@@ -19,13 +19,14 @@ def set_reduced_motion(app, reduced):
     app.setProperty("manoReducedMotion",bool(reduced))
     if reduced:
         for widget in app.allWidgets():
-            if isinstance(widget,MotionTabBar):
+            if widget.property("manoMotionSurface"):
                 widget.snap()
 
 
 class MotionTabBar(QTabBar):
     def __init__(self,parent=None):
         super().__init__(parent)
+        self.setProperty("manoMotionSurface", True)
         self.setDrawBase(False)
         self._position=QRectF()
         self._animation=QVariantAnimation(self)
@@ -89,3 +90,75 @@ class MotionTabs(QTabWidget):
         self.setDocumentMode(True)
         self.setUsesScrollButtons(True)
         self.setElideMode(Qt.TextElideMode.ElideRight)
+
+
+class MotionButton(QPushButton):
+    """Bounded, native button interaction feedback; no layout or text animation."""
+    def __init__(self, text="", parent=None):
+        super().__init__(text, parent)
+        self.setProperty("manoMotionSurface", True)
+        self.level = 0.0
+        self.hovered = False
+        self.animation = QVariantAnimation(self)
+        self.animation.setDuration(145)
+        self.animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self.animation.valueChanged.connect(self._frame)
+        self.pressed.connect(lambda: self._retarget(1.0))
+        self.released.connect(lambda: self._retarget(0.48 if self.hovered else 0.0))
+
+    def _frame(self, value):
+        self.level = float(value)
+        self.update()
+
+    def snap(self):
+        self.animation.stop()
+        self.level = 0.0
+        self.update()
+
+    def _retarget(self, target):
+        self.animation.stop()
+        if not (self.isVisible() and self.isEnabled() and motion_allowed()):
+            self.snap()
+            return
+        if abs(self.level - target) < 0.001:
+            return
+        self.animation.setStartValue(self.level)
+        self.animation.setEndValue(float(target))
+        self.animation.start()
+
+    def enterEvent(self, event):
+        self.hovered = True
+        super().enterEvent(event)
+        self._retarget(1.0 if self.isDown() else 0.48)
+
+    def leaveEvent(self, event):
+        self.hovered = False
+        super().leaveEvent(event)
+        self._retarget(0.0)
+
+    def hideEvent(self, event):
+        self.hovered = False
+        self.snap()
+        super().hideEvent(event)
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.EnabledChange and hasattr(self, "animation") and not self.isEnabled():
+            self.snap()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if self.level <= 0 or not self.isEnabled():
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        color = self.palette().color(QPalette.ColorRole.Highlight)
+        if self.objectName() == "primary":
+            color = self.palette().color(QPalette.ColorRole.HighlightedText)
+        color.setAlpha(round(120 * self.level))
+        pen = QPen(color)
+        pen.setWidthF(1.5)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRoundedRect(QRectF(self.rect()).adjusted(2, 2, -2, -2), 6, 6)
+        painter.end()

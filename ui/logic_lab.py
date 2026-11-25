@@ -1,9 +1,10 @@
 """Live schematic, binary input controls and truth tables from one netlist."""
 from pathlib import Path
-from ui.motion import MotionTabs
+from ui.motion import MotionTabs, motion_allowed
+from ui.signal_motion import changed_routes
 from ui.navigation_rail import NavigationRail
 import csv
-from PySide6.QtCore import Qt, QRectF, QPointF, Signal, QSize
+from PySide6.QtCore import Qt, QRectF, QPointF, Signal, QSize, QVariantAnimation, QEasingCurve
 from PySide6.QtGui import QColor, QPen, QBrush, QFont, QPainter, QPainterPath
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton,
@@ -62,8 +63,53 @@ class LogicDiagram(QGraphicsView):
         self.drag_node=None
         self.preview=None
         self.setMouseTracking(True)
+        self.setProperty("manoMotionSurface", True)
+        self._last_circuit = None
+        self._last_values = None
+        self._last_route_key = None
+        self._changed_paths = ()
+        self._pulse = 0.0
+        self._net_animation = QVariantAnimation(self)
+        self._net_animation.setDuration(320)
+        self._net_animation.setStartValue(1.0)
+        self._net_animation.setEndValue(0.0)
+        self._net_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+        self._net_animation.valueChanged.connect(self._pulse_frame)
+        self._net_animation.finished.connect(self.snap)
+
+    def _pulse_frame(self, value):
+        self._pulse = float(value)
+        self.viewport().update()
+
+    def snap(self):
+        self._net_animation.stop()
+        self._changed_paths = ()
+        self._pulse = 0.0
+        self.viewport().update()
+
+    def hideEvent(self, event):
+        self.snap()
+        super().hideEvent(event)
+
+    def drawForeground(self, painter, rect):
+        super().drawForeground(painter, rect)
+        if not self._changed_paths or self._pulse <= 0:
+            return
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        color = QColor(PALETTES[self.theme][5])
+        color.setAlpha(round(76 * self._pulse))
+        painter.setPen(QPen(color, 6, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        for _, points in self._changed_paths:
+            path = QPainterPath(QPointF(*points[0]))
+            for point in points[1:]:
+                path.lineTo(*point)
+            painter.drawPath(path)
+        painter.restore()
 
     def draw(self, circuit, values, placement=()):
+        self.snap()
         scene = self.graph
         self.clear_gesture()
         scene.clear()
@@ -219,6 +265,17 @@ class LogicDiagram(QGraphicsView):
                 dot.setZValue(3)
                 dot.setToolTip(f"{name}: " + (("مبدأ" if self.fa else "source") if pin<0 else (f"پایه {pin+1}" if self.fa else f"pin {pin+1}")))
         scene.setSceneRect(scene.itemsBoundingRect().adjusted(-40,-40,40,40))
+        # This is a simultaneous change indication, not simulated propagation.
+        if (self._last_circuit == circuit and self._last_route_key == route_key
+                and not self.editing and not self.unrouted and not self.ambiguous
+                and self.isVisible() and motion_allowed()):
+            self._changed_paths = changed_routes(routes, self._last_values, values)
+            if self._changed_paths:
+                self._pulse = 1.0
+                self._net_animation.start()
+        self._last_circuit = circuit
+        self._last_route_key = route_key
+        self._last_values = dict(values)
 
     def clear_gesture(self):
         if self.preview is not None:
@@ -228,6 +285,7 @@ class LogicDiagram(QGraphicsView):
         self.drag_node=None
 
     def set_editing(self, enabled):
+        self.snap()
         self.clear_gesture()
         self.editing=enabled
         self.setDragMode(QGraphicsView.DragMode.NoDrag if enabled else QGraphicsView.DragMode.ScrollHandDrag)
