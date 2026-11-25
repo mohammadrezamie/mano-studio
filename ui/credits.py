@@ -13,3 +13,11 @@ LICENSE_NOTE = (
     "Released under the MIT License. Third-party components retain their own licenses.",
     "دارای مجوز MIT؛ اجزای شخص ثالث تابع مجوزهای خود هستند."
 )
+
+ACADEMIC_ACKNOWLEDGMENT = (
+    "With deep appreciation to our respected instructor, Siavash Eshaghi, for assigning this academic project and encouraging the practical study of computer architecture. This independent student project brings textbook concepts into an interactive learning environment.",
+    "با نهایت احترام و سپاس از استاد ارجمند، سیاوش اسحقی، برای تعریف این پروژه دانشگاهی و فراهم کردن زمینه یادگیری عملی معماری کامپیوتر. این پروژه مستقل دانشجویی با هدف پیوند مفاهیم کتاب درسی با تجربه تعاملی توسعه یافته است."
+)
+COURSE = ("Computer Architecture and Microcontroller", "معماری کامپیوتر و میکروکنترلر")
+INSTITUTION = ("Islamic Azad University — Science and Research Branch (course context)", "دانشگاه آزاد اسلامی ـ واحد علوم و تحقیقات (بستر آموزشی پروژه)")
+REFERENCE = ("Computer System Architecture — M. Morris Mano", "معماری سیستم‌های کامپیوتری ـ موریس مانو")
