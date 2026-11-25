@@ -2,9 +2,10 @@
 from PySide6.QtCore import Qt, QSignalBlocker, Signal
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QComboBox, QPushButton, QListWidget, QLineEdit,
-    QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QSizePolicy)
+    QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QSizePolicy, QPlainTextEdit)
 from boolean_minimizer import circuit_output_values, gray_indices, minimize
 from boolean_synthesis import comparison_rows
+from boolean_analysis import analyze
 from logic_exercise import KarnaughExercise
 from ui.exercise_actions import add_exercise_actions
 from ui.motion import MotionTabs
@@ -108,6 +109,11 @@ class KarnaughView(QWidget):
         self.proof.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.proof.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.results.addTab(self.proof,self.t("Verify","مقایسه"))
+        self.analysis = QPlainTextEdit()
+        self.analysis.setReadOnly(True)
+        self.analysis.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.analysis.setAccessibleName(self.t("Canonical forms and static hazard analysis","فرم‌های استاندارد و بررسی مخاطره ایستا"))
+        self.results.addTab(self.analysis,self.t("Forms & hazards","فرم‌ها و مخاطرات"))
         side.addWidget(self.results,1)
         self.proof_note = QLabel()
         self.proof_note.setWordWrap(True)
@@ -147,6 +153,7 @@ class KarnaughView(QWidget):
         self.form.currentIndexChanged.connect(self.refresh)
         self.groups.currentRowChanged.connect(self.highlight)
         self.results.currentChanged.connect(self.refresh_proof)
+        self.results.currentChanged.connect(self.refresh_analysis)
         self.example()
         self.set_source(None)
 
@@ -283,6 +290,26 @@ class KarnaughView(QWidget):
                                     f"گروه‌ها: {count} · لیترال‌ها: {literals}. ابتدا کمترین گروه، سپس کمترین لیترال."))
         self.highlight(self.groups.currentRow())
         self.refresh_proof()
+        self.refresh_analysis()
+
+    def refresh_analysis(self,*_):
+        if self.results.currentWidget() is not self.analysis:
+            return
+        a = analyze(self.values,self.form.currentData())
+        indices = lambda items: ', '.join(map(str,items)) or '—'
+        edges = ', '.join(f'{i} ↔ {j}' for i,j in a.hazards) or '—'
+        self.analysis.setPlainText('\n'.join((
+            self.t('Canonical forms of the chosen X completion','فرم‌های استاندارد پس از تعیین مقادیر X'),
+            'Σm(' + indices(a.minterms) + ')',
+            'ΠM(' + indices(a.maxterms) + ')',
+            'X: ' + indices(a.dont_cares),
+            '', 'SOP = ' + a.canonical_sop, 'POS = ' + a.canonical_pos,
+            '', self.t('Potential single-input static hazard edges','لبه‌های دارای احتمال مخاطره ایستای تک‌ورودی'),
+            ('Static-1: ' if a.solution.form == 'SOP' else 'Static-0: ') + edges,
+            self.t('Consensus repair (cover preview)','اصلاح با جمله اجماع (پیش‌نمایش عبارت)'),
+            a.repaired.expression,
+            self.t('Same completed truth table. Ideal two-level cover only; not a physical timing guarantee.','جدول درستی بدون تغییر است. فقط پوشش دومرحله‌ای ایده‌آل؛ بدون تضمین زمان‌بندی فیزیکی.')
+        )))
 
     def refresh_proof(self,*_):
         visible = self.results.currentWidget() is self.proof
