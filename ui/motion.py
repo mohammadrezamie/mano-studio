@@ -156,7 +156,9 @@ class MotionButton(QPushButton):
         if self.objectName() == "primary":
             color = self.palette().color(QPalette.ColorRole.HighlightedText)
         color.setAlpha(round(120 * self.level))
-        painter.setPen(QPen(color, 1.5))
+        pen = QPen(color)
+        pen.setWidthF(1.5)
+        painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRoundedRect(QRectF(self.rect()).adjusted(2, 2, -2, -2), 6, 6)
         painter.end()
