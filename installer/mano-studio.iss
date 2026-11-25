@@ -17,6 +17,7 @@ OutputBaseFilename=ManoStudio-Setup-v{#BuildVersion}-x64
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\build\mano-studio.ico
 UninstallDisplayIcon={app}\ManoStudio.exe
 CloseApplications=yes
 RestartApplications=no
