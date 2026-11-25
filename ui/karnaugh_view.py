@@ -1,11 +1,13 @@
 """Interactive Gray-ordered Karnaugh map using the exact minimizer."""
-from PySide6.QtCore import Qt, QSignalBlocker
+from PySide6.QtCore import Qt, QSignalBlocker, Signal
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QComboBox, QPushButton, QListWidget, QLineEdit)
 from boolean_minimizer import circuit_output_values, gray_indices, minimize
 
 
 class KarnaughView(QWidget):
+    synthesize_requested = Signal()
+
     def __init__(self, fa=False):
         super().__init__()
         self.fa = fa
@@ -84,6 +86,14 @@ class KarnaughView(QWidget):
         self.summary = QLabel()
         self.summary.setWordWrap(True)
         box.addWidget(self.summary)
+        self.build_button = QPushButton(self.t("Build editable circuit", "ساخت مدار قابل ویرایش"))
+        self.build_button.setObjectName("primary")
+        self.build_button.clicked.connect(lambda: self.synthesize_requested.emit())
+        box.addWidget(self.build_button)
+        build_note = QLabel(self.t("Build a single-output circuit F using A–D. Don't-care cells take the chosen cover's values. Existing circuit replacement requires confirmation.",
+                                  "مدار تک‌خروجی F با ورودی‌های A تا D ساخته می‌شود. سلول‌های بی‌تفاوت مقدار گروه‌بندی انتخاب‌شده را می‌گیرند. جایگزینی مدار فعلی نیاز به تأیید دارد."))
+        build_note.setWordWrap(True)
+        box.addWidget(build_note)
         self.width.currentIndexChanged.connect(self.reset)
         self.form.currentIndexChanged.connect(self.refresh)
         self.groups.currentRowChanged.connect(self.highlight)

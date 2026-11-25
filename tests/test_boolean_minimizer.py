@@ -94,3 +94,27 @@ def test_circuit_import_rejects_unsupported():
     for key,name in (("not","Y"),("ripple4","S0"),("half_adder","unknown")):
         with pytest.raises(ValueError):
             circuit_output_values(CIRCUITS[key],name)
+
+
+@pytest.mark.parametrize("form",["SOP","POS"])
+def test_synthesized_netlist_matches_all_small_functions(form):
+    from boolean_synthesis import synthesize
+    from circuit_document import CircuitDocument
+    for values in product((0,1,None),repeat=4):
+        document=synthesize(values,form)
+        restored=CircuitDocument.loads(document.dumps())
+        result=minimize(values,form)
+        assert [out[0] for _,out in restored.compile().truth_table()]==[result.evaluate(i) for i in range(4)]
+
+
+@pytest.mark.parametrize("form",["SOP","POS"])
+def test_synthesis_large_covers_and_constants(form):
+    from boolean_synthesis import synthesize
+    cases=[[0]*16,[1]*16,[None]*16,[i.bit_count()%2 for i in range(16)]]
+    rng=random.Random(172)
+    cases.extend([rng.choice((0,1,None)) for _ in range(16)] for _ in range(64))
+    for values in cases:
+        doc=synthesize(values,form)
+        assert all(1<=len(g.inputs)<=4 for g in doc.gates)
+        result=minimize(values,form)
+        assert [o[0] for _,o in doc.compile().truth_table()]==[result.evaluate(i) for i in range(16)]

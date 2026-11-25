@@ -1455,3 +1455,28 @@ def test_karnaugh_import_existing_circuit(workspace,language):
     lab.select_tool("karnaugh")
     assert not v.import_button.isEnabled() and v.values==edited
     lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_karnaugh_build_confirm_and_undo(workspace,monkeypatch,language):
+    from PySide6.QtWidgets import QMessageBox
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    lab.select_tool("karnaugh")
+    original=lab.document
+    view=lab.karnaugh
+    values=view.values.copy()
+    monkeypatch.setattr(QMessageBox,"question",lambda *a,**k:QMessageBox.StandardButton.No)
+    view.build_button.click()
+    assert lab.document is original
+    assert lab.mode_tabs.currentWidget() is view
+    monkeypatch.setattr(QMessageBox,"question",lambda *a,**k:QMessageBox.StandardButton.Yes)
+    view.build_button.click()
+    assert lab.mode_tabs.currentIndex()==0 and lab.dirty
+    assert lab.document.outputs[0][0]=="F"
+    assert [o[0] for _,o in lab.circuit.truth_table()]==values
+    assert view.values==values
+    lab.undo_edit()
+    assert lab.document==original and not lab.dirty
+    lab.close()
