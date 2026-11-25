@@ -39,3 +39,7 @@ Initial PR #18 head 539906eac05f0fe8402940f6323f51a615756e8c produced queued Tes
 
 ## Integrated first beta candidate — 2026-11-25
 Owner requests expedited initial prerelease with high quality. Isolated release/beta-integrated combines exact heads of #16, #17 and #18. No publication or stable claim. Independent source branches retained; combined CI is final source gate. Current version 0.3.0-dev.1; proposed public beta v0.3.0-beta.1. Verify actual Windows installer/portable artifacts, hashes, bilingual screenshots, native acceptance, redistribution/license and owner acceptance before publication. Freeze optional features. Fix obsolete About modal test and require all six actual About captures. No translator changes.
+
+
+## Windows packaging correction — 2026-11-25
+Found a blocking PyInstaller command-line issue before the next Windows build: `--add-data` used POSIX `:` separators in the Windows PowerShell build script. Corrected all four data mappings to Windows `;` separators (academic translator, MIT notice, examples, docs) and added a pure regression test `tests/test_windows_build_contract.py`. This fix is on release/beta-prepared only; it has not yet been exercised by a Windows build. The exact active PR #19 head remains unchanged. Next rebuild only after current CI/queue triage, then inspect the ZIP for the translator and examples and run installed smoke. No release or tag.
