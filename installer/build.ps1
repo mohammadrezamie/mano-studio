@@ -7,6 +7,7 @@ if ($LASTEXITCODE -ne 0 -or $version -notmatch '^0\.\d+\.\d+-(dev|alpha|beta|rc)
     throw 'Only explicitly marked 0.x development/prerelease builds are allowed.'
 }
 if (-not $ReuseFrozen) {
+if (Test-Path 'dist\ManoStudio') { Remove-Item 'dist\ManoStudio' -Recurse -Force }
 python -m PyInstaller --noconfirm --clean --onedir --windowed --name ManoStudio --add-data 'rtl_translator.py:.' --add-data 'LICENSE:.' --add-data 'examples:examples' --add-data 'docs:docs' main.py
 if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed.' }
 $dist = Join-Path $PWD 'dist\ManoStudio'
@@ -23,6 +24,9 @@ if (-not (Test-Path $compiler)) {
     $cmd = Get-Command ISCC.exe -ErrorAction SilentlyContinue
     if (-not $cmd) { throw 'Install Inno Setup 6 before building.' }
     $compiler = $cmd.Source
+}
+if (Test-Path 'installer\output') {
+    Get-ChildItem 'installer\output' -Filter 'ManoStudio-Setup-*-x64.exe*' | Remove-Item -Force
 }
 & $compiler "/DBuildVersion=$version" 'installer\mano-studio.iss'
 if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed.' }
