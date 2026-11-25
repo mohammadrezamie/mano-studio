@@ -11,6 +11,34 @@ import struct
 from learning_catalog import CHAPTERS, TOOLS
 
 LANGUAGES=("en","fa")
+# Shared contract for each asserted demonstration, not a claim of visual acceptance.
+ACTIVE_STATES=(
+    ("live","fetch"), ("sequential","clocked"), ("cache","conflict"),
+    ("virtual-memory","fault-reload"), ("serial","parity-error"),
+    ("crossbar","parallel-grants"), ("synchronization","lost-update"),
+    ("synchronization","atomic-lock"),
+)
+
+
+def validate_active(root,manifest):
+    """Require exactly one verified active-state screenshot for each locale and scenario."""
+    root=Path(root)
+    expected={(language,route,state) for language in LANGUAGES for route,state in ACTIVE_STATES}
+    records={}
+    for row in manifest["active_states"]:
+        key=(row["language"],row["route"],row["state"])
+        if key not in expected or key in records:
+            raise ValueError("Unexpected or duplicate active state: "+str(key))
+        language,route,state=key
+        name=f"{language}-dark-active-{route}-{state}.png"
+        if row["theme"]!="dark" or row["image"]!=name:
+            raise ValueError("Incorrect active screenshot mapping: "+str(key))
+        if image_info(root,name)!=(row["width"],row["height"],row["sha256"]):
+            raise ValueError("Active screenshot integrity mismatch: "+name)
+        records[key]=row
+    if records.keys()!=expected:
+        raise ValueError("Missing active-state captures")
+    return records
 
 
 def image_info(root,name):
@@ -49,6 +77,7 @@ def build_gallery(root):
     root=Path(root)
     manifest=json.loads((root/"route-manifest.json").read_text(encoding="utf-8"))
     records=validate_routes(root,manifest)
+    active=validate_active(root,manifest)
     esc=html.escape
     out=['<!doctype html><html lang="en"><head><meta charset="utf-8">',
          '<meta name="viewport" content="width=device-width,initial-scale=1">',
@@ -61,7 +90,7 @@ def build_gallery(root):
          f'<p>{len(TOOLS)} learning entries · {len(records)} locale mappings · {len({r["image"] for r in records.values()})} distinct route images</p>',
          '<nav aria-label="Chapters">']
     for chapter in CHAPTERS:out.append(f'<a href="#ch{chapter.number}">{chapter.number} · {esc(chapter.title[0])}</a>')
-    out.append('<a href="#other">Other captures</a></nav>')
+    out.append('<a href="#active">Active demonstrations</a><a href="#other">Other captures</a></nav>')
     def figure(row,title,lang):
         name=esc(row["image"],quote=True);label=esc(title,quote=True)
         return (f'<figure><a href="{name}"><img loading="lazy" src="{name}" alt="{label}" '
@@ -76,8 +105,16 @@ def build_gallery(root):
             for i,lang in enumerate(LANGUAGES):out.append(figure(records[(tool.id,lang)],tool.title[i],lang))
             out.append('</div></article>')
         out.append('</section>')
+    out.append('<section id="active"><h2>Active demonstrations</h2><p>Each pair follows a model-state assertion during capture; visual review remains separate.</p>')
+    for route,state in ACTIVE_STATES:
+        label=esc(f"{route} / {state}")
+        out.append(f'<article><h3>{label}</h3><div class="pair">')
+        for lang in LANGUAGES:
+            out.append(figure(active[(lang,route,state)],f"{route} / {state} ({lang})",lang))
+        out.append('</div></article>')
+    out.append('</section>')
     out.append('<section id="other"><h2>Other actual captures</h2><div class="pair">')
-    route_images={r["image"] for r in records.values()}
+    route_images={r["image"] for r in records.values()} | {r["image"] for r in active.values()}
     for path in sorted(root.glob("*.png")):
         if path.name in route_images:continue
         width,height,digest=image_info(root,path.name)

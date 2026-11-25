@@ -8,7 +8,7 @@ import tempfile
 import json
 import hashlib
 from learning_catalog import TOOLS
-from visual_review import build_gallery
+from visual_review import build_gallery, image_info
 from ui.learning_center import LearningCenter
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QApplication
@@ -21,6 +21,7 @@ def capture_active_states(app,window,output,language):
     """Fresh sandboxes, explicit actions, and real model assertions before every image."""
     logic=LogicLab(window);computer=ProgramLab(window)
     logic.resize(1360,900);computer.resize(1360,900)
+    records=[]
     def capture(lab,route,state,action,check):
         for other in (logic,computer):
             if other is not lab:other.hide()
@@ -31,6 +32,9 @@ def capture_active_states(app,window,output,language):
         target=output/f"{language}-dark-active-{route}-{state}.png"
         image=lab.grab()
         if image.isNull() or not image.save(str(target)):raise RuntimeError(f"Could not save {target}")
+        width,height,digest=image_info(output,target.name)
+        records.append(dict(language=language,theme="dark",route=route,state=state,image=target.name,
+                            width=width,height=height,sha256=digest))
     try:
         def cpu():
             computer.example();computer.step()
@@ -68,11 +72,13 @@ def capture_active_states(app,window,output,language):
         for lab in (logic,computer):
             lab.close();lab.deleteLater()
         app.processEvents()
+    return records
 
 
 def capture_routes(app,window,output):
     """Capture each distinct real route once per locale, with entry-to-image mapping."""
     records=[]
+    active=[]
     window.themes.setCurrentIndex(window.themes.findData("dark"))
     for language in ("en","fa"):
         window.languages.setCurrentIndex(window.languages.findData(language))
@@ -111,10 +117,10 @@ def capture_routes(app,window,output):
         for dialog in (logic,computer):
             dialog.close();dialog.deleteLater()
         app.processEvents()
-        capture_active_states(app,window,output,language)
+        active.extend(capture_active_states(app,window,output,language))
     (output/"route-manifest.json").write_text(json.dumps({
         "kind":"actual Qt offscreen render; not manual visual acceptance",
-        "entries":records},ensure_ascii=False,indent=2),encoding="utf-8")
+        "entries":records,"active_states":active},ensure_ascii=False,indent=2),encoding="utf-8")
 
 
 def main():

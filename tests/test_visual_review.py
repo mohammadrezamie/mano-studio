@@ -6,7 +6,7 @@ import zlib
 import pytest
 
 from learning_catalog import TOOLS
-from visual_review import build_gallery,validate_routes
+from visual_review import ACTIVE_STATES,build_gallery,validate_active,validate_routes
 
 
 def png():
@@ -27,7 +27,14 @@ def captures(tmp_path):
             (tmp_path/name).write_bytes(data)
             rows.append(dict(entry=t.id,chapter=t.chapter,language=language,theme="dark",lab=t.lab,
                              route=t.route,image=name,width=1,height=1,sha256=hashlib.sha256(data).hexdigest()))
-    return tmp_path,{"entries":rows}
+    active=[]
+    for language in ("en","fa"):
+        for route,state in ACTIVE_STATES:
+            name=f"{language}-dark-active-{route}-{state}.png"
+            (tmp_path/name).write_bytes(data)
+            active.append(dict(language=language,theme="dark",route=route,state=state,image=name,
+                               width=1,height=1,sha256=hashlib.sha256(data).hexdigest()))
+    return tmp_path,{"entries":rows,"active_states":active}
 
 
 def test_offline_gallery(captures):
@@ -38,7 +45,9 @@ def test_offline_gallery(captures):
     assert 'id="ch13"' in html and 'lang="fa" dir="rtl"' in html
     assert "Offscreen CI evidence only" in html
     assert '<script' not in html and 'https://' not in html
-    assert html.count('loading="lazy"')==2*len(TOOLS)
+    assert len(validate_active(root,manifest))==2*len(ACTIVE_STATES)
+    assert 'id="active"' in html
+    assert html.count('loading="lazy"')==2*(len(TOOLS)+len(ACTIVE_STATES))
 
 
 @pytest.mark.parametrize("defect",["missing","duplicate","wrong-route","wrong-image","hash","size","missing-file"])
@@ -52,3 +61,18 @@ def test_reject_invalid_evidence(captures,defect):
     elif defect=="size":rows[0]["width"]=2
     else:(root/rows[0]["image"]).unlink()
     with pytest.raises((ValueError,FileNotFoundError)):validate_routes(root,manifest)
+
+
+@pytest.mark.parametrize("defect",["missing","duplicate","state","locale","theme","image","hash","size","missing-file"])
+def test_reject_invalid_active_evidence(captures,defect):
+    root,manifest=captures;rows=manifest["active_states"]
+    if defect=="missing":rows.pop()
+    elif defect=="duplicate":rows.append(rows[0])
+    elif defect=="state":rows[0]["state"]="unknown"
+    elif defect=="locale":rows[0]["language"]="xx"
+    elif defect=="theme":rows[0]["theme"]="light"
+    elif defect=="image":rows[0]["image"]="../bad.png"
+    elif defect=="hash":rows[0]["sha256"]="bad"
+    elif defect=="size":rows[0]["height"]=2
+    else:(root/rows[0]["image"]).unlink()
+    with pytest.raises((ValueError,FileNotFoundError)):validate_active(root,manifest)
