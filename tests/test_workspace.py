@@ -1566,3 +1566,21 @@ def test_state_analysis_updates_without_clock(workspace,language):
     v.views.setCurrentWidget(v.graph)
     assert len(v.trace)==1
     lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_state_reduction_preview_preserves_design(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.select_tool("state-design")
+    v=lab.state_design
+    v.next_boxes[1].setCurrentIndex(0)
+    assert v.reduction.groups==((0,),)
+    assert v.reduction.bits==0
+    original=v.model
+    v.views.setCurrentWidget(v.reduction_text)
+    assert v.model is original and v.table.rowCount()==4 and not v.trace
+    assert "R0 | 1 | R0 | 0" in v.reduction_text.toPlainText()
+    v.input.setCurrentIndex(1);v.clock.click()
+    assert v.state==0 and len(v.trace)==1
+    lab.close()

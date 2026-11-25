@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCombo
     QPlainTextEdit)
 from state_synthesis import design_state_machine
 from state_analysis import analyze_machine
+from state_reduction import reduce_machine
 from ui.state_graph import StateGraph
 from ui.motion import MotionTabs
 
@@ -64,6 +65,10 @@ class StateSynthesisView(QWidget):
         self.analysis_text.setReadOnly(True)
         self.analysis_text.setAccessibleName(self.t("State reachability and equivalence","دسترس‌پذیری و هم‌ارزی حالت‌ها"))
         self.views.addTab(self.analysis_text,self.t("Analysis","تحلیل"))
+        self.reduction_text=QPlainTextEdit()
+        self.reduction_text.setReadOnly(True)
+        self.reduction_text.setAccessibleName(self.t("Reduced reachable machine","ماشین کاهش‌یافته دسترس‌پذیر"))
+        self.views.addTab(self.reduction_text,self.t("Reduction","کاهش حالت"))
         side.addWidget(self.views,1)
         self.graph_note=QLabel()
         self.graph_note.setWordWrap(True)
@@ -174,6 +179,19 @@ class StateSynthesisView(QWidget):
         for a,b,word in self.analysis.witnesses:
             lines.append(f"{label(a)} / {label(b)}: "+(word if word is not None else self.t("equivalent","هم‌ارز")))
         self.analysis_text.setPlainText("\n".join(lines))
+        self.reduction=reduce_machine(self.model)
+        reduced=self.reduction
+        lines=[self.t("Reachable minimal machine (preview only)","ماشین کمینه دسترس‌پذیر (فقط پیش‌نمایش)"),
+               self.t(f"Encoded states: {2**bits}; reachable: {len(self.analysis.paths)}; reduced: {len(reduced.groups)}.",
+                      f"حالت‌های کدشده: {2**bits}؛ دسترس‌پذیر: {len(self.analysis.paths)}؛ پس از کاهش: {len(reduced.groups)}."),
+               self.t(f"Ideal state bits: {reduced.bits}. No automatic re-encoding.",
+                      f"تعداد بیت ایده‌آل حالت: {reduced.bits}. بدون کدگذاری مجدد خودکار."),
+               "",self.t("R0 contains reset Q=0. Original design is unchanged.","R0 شامل حالت بازنشانی Q=0 است. طرح اصلی تغییر نمی‌کند."),"",
+               self.t("Original states → reduced classes","حالت‌های اصلی ← کلاس‌های کاهش‌یافته")]
+        lines.extend(f"R{i}: "+", ".join(label(q) for q in group) for i,group in enumerate(reduced.groups))
+        lines.extend(["",self.t("Reduced transition table","جدول انتقال کاهش‌یافته"),"R | X | R⁺ | Y"])
+        lines.extend(f"R{i//2} | {i%2} | R{nxt} | {y}" for i,(nxt,y) in enumerate(reduced.table))
+        self.reduction_text.setPlainText("\n".join(lines))
 
     def reset_state(self,*_):
         self.state=0
