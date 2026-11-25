@@ -1,6 +1,6 @@
 # Start here — continuation checkpoint
 
-**Current priority:** isolated `release/beta-integrated` first beta candidate; see final integrated checkpoint. No further optional feature work until release gates pass. Historical checkpoints below.
+**Current priority:** isolated `release/beta-integrated` first beta candidate; see final integrated checkpoint. No optional feature work on the frozen release branch until release gates pass; independent development continues on develop/next-beta. Historical checkpoints below.
 
 **Latest:** PR #15 merged into main aad0256ee4f7c86001c4d4443ec27f35a478c96c. Follow-up: quality/chapter1-academic-finalization. See final Current verified checkpoint below.
 
@@ -156,3 +156,7 @@ Reconciled prepared cfa9488e with integrated be11875a without advancing active #
 
 ## Parallel next-beta: Chapter 13 MSI coherence — 2026-11-25
 Owner explicitly requests public first beta and ongoing development in parallel. Isolated develop/next-beta branch starts from prepared c2fe262b. Added cache_coherence.py: ideal serialized four-processor MSI snooping, 16 words of 16-bit RAM, 4 direct-mapped one-word lines/core, BusRd/BusRdX/BusUpgr, dirty eviction and intervention writebacks, invalidation, immutable before/after snapshots. 20 local pytest cases passed in 0.35s, including 10,000 seeded accesses verified against an independent sequential-memory oracle and per-address MSI invariants, plus explicit transition cases and atomic invalid input. Source/test blobs match local ce6e6cb75f2d6dd469bfb4ee480fbe0c88470d9e and 6453dc34a76980622d6b090471a9b2b5dfd53e9d. Model only; no MESI, true concurrency, memory consistency model, electrical timing or integration into CPU cache yet. Next: bilingual interactive coherence page within existing Computer inspector, Learning Center route, UI regressions and visual evidence. No new feature PR yet (CI backlog). Release #19 and academic translator unchanged. Public beta requested but actual Windows artifact and release operations remain unavailable; release gates apply.
+
+
+## Dual-track MSI integration checkpoint — 2026-11-25
+Release PR #19 exact head be11875aafd1f6921a5c4f6a19a6873e60a7a01d remains draft, mergeable and unmerged. Tests 45638110340 (Windows and Ubuntu) and installer 45638110456 are queued; do not restart or merge before evidence. Next-beta now has a bilingual MSI inspector (f4c0a24), Computer route (f417eb9), 43rd Learning Center entry (9c70fa9), catalog and UI tests (6b74e33, f2bd0e3, add7c94), model-asserted captures (2687939) and required visual contract (a158b69); see CACHE_COHERENCE.md. No new feature PR while release CI is queued. Local Qt unavailable, so UI tests/screenshots are authored, not executed. Next: verify exact-head GUI tests/visuals, then extend Chapter 13 multistage networks on this separate track. Academic translator and active release branch unchanged.
