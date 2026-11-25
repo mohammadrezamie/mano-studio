@@ -1,0 +1,75 @@
+from itertools import product
+import random
+
+import pytest
+
+from boolean_minimizer import gray_indices, minimize
+
+
+def oracle(values, target):
+    # Independent enumeration of all fixed-bit masks and dynamic programming
+    # over covered required cells, including non-prime cubes.
+    size = len(values)
+    required = sum(1 << i for i, v in enumerate(values) if v == target)
+    costs = {0: (0, 0)}
+    cubes = []
+    for fixed in range(size):
+        for bits in range(size):
+            if bits & ~fixed:
+                continue
+            cells = [i for i in range(size) if i & fixed == bits]
+            if any(values[i] == 1-target for i in cells):
+                continue
+            mask = sum(1 << i for i in cells) & required
+            if mask:
+                cubes.append((mask, fixed.bit_count()))
+    for mask, literals in cubes:
+        for covered, cost in list(costs.items()):
+            union = covered | mask
+            proposed = (cost[0]+1, cost[1]+literals)
+            costs[union] = min(costs.get(union, proposed), proposed)
+    return costs[required]
+
+
+def check(values, form):
+    result = minimize(values, form)
+    assert all(result.evaluate(i) == v for i, v in enumerate(values) if v is not None)
+    assert (len(result.groups), sum(g.literals for g in result.groups)) == oracle(values, int(form == 'SOP'))
+    assert result == minimize(values, form)
+
+
+@pytest.mark.parametrize('form', ['SOP', 'POS'])
+def test_all_three_variable_binary_functions(form):
+    for values in product((0, 1), repeat=8):
+        check(values, form)
+
+
+@pytest.mark.parametrize('form', ['SOP', 'POS'])
+def test_all_two_variable_ternary_functions(form):
+    for values in product((0, 1, None), repeat=4):
+        check(values, form)
+
+
+@pytest.mark.parametrize('form', ['SOP', 'POS'])
+def test_four_variable_dont_cares(form):
+    rng = random.Random(2026)
+    for _ in range(80):
+        check(tuple(rng.choice((0, 1, None)) for _ in range(16)), form)
+
+
+def test_wraparound_and_constants():
+    assert gray_indices(4) == ((0,1,3,2),(4,5,7,6),(12,13,15,14),(8,9,11,10))
+    v = tuple(int(i in (0,2,8,10)) for i in range(16))
+    assert minimize(v).expression == "B'D'"
+    assert minimize(v, 'POS').expression == "(D') · (B')"
+    for value in (0, 1):
+        for form in ('SOP', 'POS'):
+            assert minimize([value]*8, form).expression == str(value)
+    assert minimize([None]*4).expression == '0'
+    assert minimize([None]*4, 'POS').expression == '1'
+
+
+@pytest.mark.parametrize('values,form', [([0]*3,'SOP'),([2]*4,'SOP'),([True]*4,'SOP'),([0]*4,'XOR')])
+def test_invalid(values, form):
+    with pytest.raises(ValueError):
+        minimize(values, form)
