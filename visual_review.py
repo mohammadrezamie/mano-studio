@@ -33,6 +33,7 @@ ACTIVE_STATES=(
     ("virtual-memory","fault-reload"), ("serial","parity-error"),
     ("crossbar","parallel-grants"), ("synchronization","lost-update"),
     ("synchronization","atomic-lock"),
+    ("coherence","dirty-owner"), ("coherence","shared-read"),
 )
 
 
