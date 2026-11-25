@@ -31,7 +31,7 @@ def brand_svg(theme="dark",glass=True,progress=None,state="neutral",compact=Fals
     signal={"neutral":accent,"success":good,"error":bad}.get(state,accent)
     parts=['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">']
     if glass and not compact:
-        parts.append(f'<defs><linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a45b9"/><stop offset="1" stop-color="{bg}"/></linearGradient><linearGradient id="mark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#a4edff"/></linearGradient><linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ecb1ff"/><stop offset=".55" stop-color="#6b7dff"/><stop offset="1" stop-color="#75efff"/></linearGradient></defs>')
+        parts.append(f'<defs><linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a45b9"/><stop offset="1" stop-color="#161d45"/></linearGradient><linearGradient id="mark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#a4edff"/></linearGradient><linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ecb1ff"/><stop offset=".55" stop-color="#6b7dff"/><stop offset="1" stop-color="#75efff"/></linearGradient></defs>')
         fill,stroke="url(#tile)","url(#mark)"
     else:fill,stroke=panel,accent
     rim = "url(#rim)" if glass and not compact else border
