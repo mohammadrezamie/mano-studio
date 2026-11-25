@@ -7,6 +7,8 @@ from state_synthesis import design_state_machine
 from state_analysis import analyze_machine
 from state_reduction import reduce_machine
 from state_encoding import encode_reduced
+from logic_exercise import StateExercise
+from ui.exercise_actions import add_exercise_actions
 from ui.state_graph import StateGraph
 from ui.motion import MotionTabs
 
@@ -45,6 +47,10 @@ class StateSynthesisView(QWidget):
         example.clicked.connect(self.rebuild)
         row.addWidget(example)
         box.addLayout(row)
+        files=QHBoxLayout()
+        add_exercise_actions(self,files,"state-design")
+        files.addStretch()
+        box.addLayout(files)
         middle=QHBoxLayout()
         self.table=QTableWidget(0,4)
         self.table.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
@@ -110,7 +116,19 @@ class StateSynthesisView(QWidget):
     def t(self,en,fa):
         return fa if self.fa else en
 
-    def rebuild(self,*_):
+    def exercise(self):
+        return StateExercise(self.model.bits,self.model.mode,self.model.flipflop,self.model.table)
+
+    def apply_exercise(self,exercise):
+        if not isinstance(exercise,StateExercise):
+            raise ValueError("Expected state exercise")
+        with QSignalBlocker(self.width), QSignalBlocker(self.mode), QSignalBlocker(self.ff):
+            self.width.setCurrentIndex(self.width.findData(exercise.bits))
+            self.mode.setCurrentIndex(self.mode.findData(exercise.mode))
+            self.ff.setCurrentIndex(self.ff.findData(exercise.flipflop))
+        self.rebuild(rows=exercise.table)
+
+    def rebuild(self,*_,rows=None):
         n=self.width.currentData()
         size=2**n
         self.table.setRowCount(0)
@@ -125,13 +143,13 @@ class StateSynthesisView(QWidget):
                 self.table.setItem(i,col,item)
             nxt=QComboBox()
             for j in range(size):nxt.addItem(f"{j:0{n}b}",j)
-            nxt.setCurrentIndex((q+x)%size)
+            nxt.setCurrentIndex((q+x)%size if rows is None else rows[i][0])
             nxt.setAccessibleName(self.t(f"Next state, row {i}",f"حالت بعد، ردیف {i}"))
             self.table.setCellWidget(i,2,nxt)
             self.next_boxes.append(nxt)
             out=QComboBox()
             for y in (0,1):out.addItem(str(y),y)
-            out.setCurrentIndex(q==size-1)
+            out.setCurrentIndex(int(q==size-1) if rows is None else rows[i][1])
             out.setAccessibleName(self.t(f"Output, row {i}",f"خروجی، ردیف {i}"))
             self.table.setCellWidget(i,3,out)
             self.out_boxes.append(out)

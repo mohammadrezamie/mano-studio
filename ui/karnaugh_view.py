@@ -5,6 +5,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView)
 from boolean_minimizer import circuit_output_values, gray_indices, minimize
 from boolean_synthesis import comparison_rows
+from logic_exercise import KarnaughExercise
+from ui.exercise_actions import add_exercise_actions
 from ui.motion import MotionTabs
 
 
@@ -46,6 +48,10 @@ class KarnaughView(QWidget):
         clear.clicked.connect(self.reset)
         controls.addWidget(clear)
         box.addLayout(controls)
+        files = QHBoxLayout()
+        add_exercise_actions(self, files, "karnaugh")
+        files.addStretch()
+        box.addLayout(files)
         source = QHBoxLayout()
         source.addWidget(QLabel(self.t("Circuit output", "خروجی مدار")))
         self.source_output = QComboBox()
@@ -81,7 +87,7 @@ class KarnaughView(QWidget):
         self.proof = QTableWidget(0,4)
         self.proof.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.proof.setAccessibleName(self.t("Compare specified, minimized and gate outputs","مقایسه خروجی اولیه، ساده‌شده و مدار"))
-        self.proof.setHorizontalHeaderLabels(["m",self.t("Input","ورودی"),self.t("Cover","عبارت"),self.t("Gates","مدار")])
+        self.proof.setHorizontalHeaderLabels(["m",self.t("Specified","مقدار تعیین‌شده"),self.t("Cover","عبارت"),self.t("Gates","مدار")])
         self.proof.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.proof.verticalHeader().hide()
         self.proof.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -120,6 +126,19 @@ class KarnaughView(QWidget):
 
     def t(self,en,fa):
         return fa if self.fa else en
+
+    def exercise(self):
+        return KarnaughExercise(tuple(self.values), self.form.currentData())
+
+    def apply_exercise(self, exercise):
+        if not isinstance(exercise, KarnaughExercise):
+            raise ValueError("Expected Karnaugh exercise")
+        with QSignalBlocker(self.width), QSignalBlocker(self.form):
+            self.width.setCurrentIndex(self.width.findData(len(exercise.values).bit_length()-1))
+            self.form.setCurrentIndex(self.form.findData(exercise.form))
+        self.values = list(exercise.values)
+        self.mapping.clear()
+        self.rebuild()
 
     def set_source(self,circuit):
         """Refresh available source outputs, never overwrite the current map."""

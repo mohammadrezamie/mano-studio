@@ -1601,3 +1601,38 @@ def test_reduced_binary_encoding_preview(workspace,language):
     assert "R0 = 0" in v.reduction_text.toPlainText()
     assert v.model is original and v.state==0
     lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_exercise_file_actions(workspace,language,tmp_path,monkeypatch):
+    from PySide6.QtWidgets import QFileDialog,QMessageBox
+    from ui.logic_lab import LogicLab
+    from logic_exercise import KarnaughExercise,StateExercise,read_exercise,write_exercise
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    circuit=lab.document
+    for route,view,exercise in (
+        ("karnaugh",lab.karnaugh,KarnaughExercise((0,1,None,0),"POS")),
+        ("state-design",lab.state_design,StateExercise(2,"Mealy","JK",tuple(((i//2+i%2)%4,i%2) for i in range(8)))),
+    ):
+        lab.select_tool(route)
+        path=tmp_path/(route+".mano-exercise.json")
+        write_exercise(path,exercise)
+        monkeypatch.setattr(QFileDialog,"getOpenFileName",lambda *a:(str(path),""))
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.No)
+        before=view.exercise()
+        view.open_exercise_button.click()
+        assert view.exercise()==before
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Yes)
+        view.open_exercise_button.click()
+        assert view.exercise()==exercise
+        output=tmp_path/(route+"-saved.json")
+        monkeypatch.setattr(QFileDialog,"getSaveFileName",lambda *a:(str(output),""))
+        view.save_exercise_button.click()
+        assert read_exercise(output)==exercise
+        path.write_text("invalid",encoding="utf-8")
+        monkeypatch.setattr(QMessageBox,"warning",lambda *a:None)
+        view.open_exercise_button.click()
+        assert view.exercise()==exercise
+        assert lab.document is circuit
+    lab.close()
