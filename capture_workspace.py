@@ -49,6 +49,19 @@ def capture_active_states(app,window,output,language):
             v.reset();v.buttons["D"].setChecked(True);v.pulse()
             v.buttons["D"].setChecked(False);v.pulse()
         capture(logic,"sequential","clocked",logic_wave,lambda:logic.sequential.model.value==0 and len(logic.sequential.waveform.rows)>=5)
+        def excitation_reference():
+            v=logic.sequential
+            v.selector.setCurrentIndex(v.selector.findData("JK"))
+            v.details.setCurrentWidget(v.reference)
+        capture(logic,"sequential","jk-excitation",excitation_reference,
+            lambda:logic.sequential.reference.excitation.item(2,2).text()=="X" and logic.sequential.reference.excitation.item(2,3).text()=="1")
+        def sr_reference():
+            v=logic.sequential
+            v.selector.setCurrentIndex(v.selector.findData("SR"))
+            v.details.setCurrentWidget(v.reference)
+        capture(logic,"sequential","sr-forbidden",sr_reference,
+            lambda:logic.sequential.reference.characteristic.item(3,3).text()==("ممنوع" if language=="fa" else "Forbidden"))
+        logic.sequential.details.setCurrentIndex(0)
         capture(logic,"cache","conflict",logic.cache.example,lambda:logic.cache.model.accesses==6 and logic.cache.model.misses==6)
         paging=logic.address_translation.paging
         capture(logic,"virtual-memory","fault-reload",paging.example,lambda:paging.last.fault and paging.last.value==0xCAFE and paging.model.page_outs==1)
