@@ -69,6 +69,14 @@ def capture_active_states(app,window,output,language):
         def locked():
             sync.mode.setCurrentIndex(0);sync.reset();sync.run()
         capture(computer,"synchronization","atomic-lock",locked,lambda:sync.model.done and sync.model.shared==2)
+        msi=computer.coherence
+        def dirty_owner():
+            msi.reset();msi.core.setValue(0);msi.address.setValue(3);msi.value.setValue(0xABCD)
+            msi.access(True)
+        capture(computer,"coherence","dirty-owner",dirty_owner,lambda:msi.model.lines[0][3].state=="M" and msi.model.memory[3]==0)
+        def shared_read():
+            dirty_owner();msi.core.setValue(1);msi.access(False)
+        capture(computer,"coherence","shared-read",shared_read,lambda:msi.last.value==0xABCD and msi.model.memory[3]==0xABCD and msi.model.lines[0][3].state==msi.model.lines[1][3].state=="S")
     finally:
         for lab in (logic,computer):
             lab.close();lab.deleteLater()
