@@ -2,12 +2,26 @@
 from PySide6.QtCore import Qt, QSignalBlocker, Signal
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QLabel, QComboBox, QPushButton, QListWidget, QLineEdit,
-    QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView)
+    QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QSizePolicy)
 from boolean_minimizer import circuit_output_values, gray_indices, minimize
 from boolean_synthesis import comparison_rows
 from logic_exercise import KarnaughExercise
 from ui.exercise_actions import add_exercise_actions
 from ui.motion import MotionTabs
+
+
+class MapCell(QPushButton):
+    """Navigate physically adjacent Gray-grid cells, without editing them."""
+    move_requested = Signal(int, int)
+
+    def keyPressEvent(self, event):
+        steps = {Qt.Key.Key_Left: (0,-1), Qt.Key.Key_Right: (0,1),
+                 Qt.Key.Key_Up: (-1,0), Qt.Key.Key_Down: (1,0)}
+        if event.key() in steps and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            self.move_requested.emit(*steps[event.key()])
+            event.accept()
+            return
+        super().keyPressEvent(event)
 
 
 class KarnaughView(QWidget):
@@ -24,8 +38,8 @@ class KarnaughView(QWidget):
         title.setObjectName("brand")
         box.addWidget(title)
         hint = QLabel(self.t(
-            "Activate a cell to cycle 0 → 1 → X → 0. X is a don't-care. Select a group to inspect its cells, including wrap-around.",
-            "برای تغییر سلول بین ۰، ۱ و X آن را فعال کنید. X حالت بی‌تفاوت است. یک گروه را انتخاب کنید تا سلول‌های آن، شامل اتصال لبه‌ها، مشخص شوند."))
+            "Activate a cell to cycle 0 → 1 → X → 0. X is a don't-care. Use arrow keys to move between cells. Select a group to inspect its cells, including wrap-around.",
+            "برای تغییر سلول بین ۰، ۱ و X آن را فعال کنید. X حالت بی‌تفاوت است. با کلیدهای جهت‌دار بین سلول‌ها حرکت کنید. یک گروه را انتخاب کنید تا سلول‌های آن، شامل اتصال لبه‌ها، مشخص شوند."))
         hint.setWordWrap(True)
         box.addWidget(hint)
         controls = QHBoxLayout()
@@ -77,6 +91,7 @@ class KarnaughView(QWidget):
         self.map.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.grid = QGridLayout(self.map)
         self.grid.setSpacing(8)
+        self.grid.setContentsMargins(4,4,4,4)
         body.addWidget(self.map,2)
         side = QVBoxLayout()
         self.groups = QListWidget()
@@ -195,19 +210,48 @@ class KarnaughView(QWidget):
         n = self.width.currentData()
         matrix = gray_indices(n)
         cols = n - n//2
-        self.grid.addWidget(QLabel("ABCD"[:n//2]+"/"+"ABCD"[n//2:n]),0,0)
+        # QGridLayout retains stretch factors when the map shrinks.
+        # Clear the entire supported extent, then expand only real cells.
+        for i in range(5):
+            self.grid.setRowStretch(i,0)
+            self.grid.setColumnStretch(i,0)
+            self.grid.setRowMinimumHeight(i,0)
+            self.grid.setColumnMinimumWidth(i,0)
+        self.row_headers = []
+        self.column_headers = []
+        def header(value):
+            label = QLabel(value)
+            label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            label.setSizePolicy(QSizePolicy.Policy.Preferred,QSizePolicy.Policy.Fixed)
+            return label
+        self.grid.addWidget(header("ABCD"[:n//2]+"/"+"ABCD"[n//2:n]),0,0)
         for c,index in enumerate(matrix[0]):
-            self.grid.addWidget(QLabel(f"{index:0{cols}b}"),0,c+1)
+            label=header(f"{index:0{cols}b}")
+            self.column_headers.append(label)
+            self.grid.addWidget(label,0,c+1)
+            self.grid.setColumnStretch(c+1,1)
         for r,row in enumerate(matrix):
-            self.grid.addWidget(QLabel(f"{row[0]>>cols:0{n//2}b}"),r+1,0)
+            label=header(f"{row[0]>>cols:0{n//2}b}")
+            self.row_headers.append(label)
+            self.grid.addWidget(label,r+1,0)
+            self.grid.setRowStretch(r+1,1)
             for c,index in enumerate(row):
-                button = QPushButton()
+                button = MapCell()
                 button.setMinimumSize(66,64)
+                button.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
                 button.setAutoDefault(False)
                 button.clicked.connect(lambda checked=False,i=index:self.cycle(i))
+                button.move_requested.connect(lambda dr,dc,r=r,c=c:self.move_cell(r,c,dr,dc))
                 self.grid.addWidget(button,r+1,c+1)
                 self.cells[index] = button
+        self.matrix = matrix
         self.refresh()
+
+    def move_cell(self,row,col,dr,dc):
+        """Clamp focus at the visible grid edge; no surprise wrap or edit."""
+        target_row=max(0,min(len(self.matrix)-1,row+dr))
+        target_col=max(0,min(len(self.matrix[0])-1,col+dc))
+        self.cells[self.matrix[target_row][target_col]].setFocus()
 
     def cycle(self,index):
         self.values[index] = {0:1,1:None,None:0}[self.values[index]]

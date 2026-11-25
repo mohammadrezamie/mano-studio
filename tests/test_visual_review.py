@@ -99,7 +99,9 @@ def test_reject_structurally_invalid_png(tmp_path,defect):
     with pytest.raises(ValueError):image_info(tmp_path,"bad.png")
 
 
-@pytest.mark.parametrize("name",["fa-night-builder.png","en-light-alu.png","fa-dark-learning-center.png"])
+@pytest.mark.parametrize("name",["fa-night-builder.png","en-light-alu.png","fa-dark-learning-center.png",
+                                 "en-light-karnaugh-verify.png","fa-night-state-design-analysis.png",
+                                 "fa-dark-state-design-reduction.png"])
 def test_require_all_base_captures(captures,name):
     root,manifest=captures
     (root/name).unlink()
