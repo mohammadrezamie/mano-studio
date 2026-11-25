@@ -1,6 +1,8 @@
 """Capture actual Qt workspace screenshots for visual review."""
 import os
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+from render_preflight import configure_offscreen_fonts, check_fonts
+configure_offscreen_fonts()
 from pathlib import Path
 import tempfile
 import json
@@ -66,6 +68,8 @@ def main():
     app.setStyle("Fusion")
     output = Path("screenshots")
     output.mkdir(exist_ok=True)
+    evidence=check_fonts(app)
+    (output/"font-preflight.json").write_text(json.dumps(evidence,ensure_ascii=False,indent=2),encoding="utf-8")
     with tempfile.TemporaryDirectory() as directory:
         settings = QSettings(str(Path(directory) / "settings.ini"), QSettings.Format.IniFormat)
         window = Workspace(settings)
