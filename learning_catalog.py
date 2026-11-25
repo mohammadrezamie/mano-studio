@@ -27,7 +27,7 @@ CHAPTERS=(
     Chapter(10,("Computer arithmetic","محاسبات کامپیوتری"),("Historical floating formats and more algorithms remain.","قالب‌های تاریخی ممیز شناور و الگوریتم‌های بیشتر باقی مانده‌اند.")),
     Chapter(11,("I/O organization","سازمان ورودی و خروجی"),("Baud recovery, other protocols and further I/O integration remain.","بازیابی نرخ بیت، پروتکل‌های دیگر و یکپارچگی بیشتر ورودی‌ـ‌خروجی باقی مانده‌اند.")),
     Chapter(12,("Memory organization","سازمان حافظه"),("Multi-level caches, timing and advanced memory protection remain.","نهان چندسطحی، زمان‌بندی و حفاظت پیشرفته حافظه باقی مانده‌اند.")),
-    Chapter(13,("Multiprocessors","چندپردازنده‌ها"),("Multistage networks, advanced synchronization and coherence remain.","شبکه چندمرحله‌ای، همگام‌سازی پیشرفته و انسجام باقی مانده‌اند.")),
+    Chapter(13,("Multiprocessors","چندپردازنده‌ها"),("Multistage networks, advanced synchronization and concurrent coherence timing remain.","شبکه چندمرحله‌ای، همگام‌سازی پیشرفته و زمان‌بندی همزمان انسجام باقی مانده‌اند.")),
 )
 
 
@@ -85,6 +85,7 @@ TOOLS=(
     Tool("multiprocessor",13,"computer","multiprocessor",("Shared bus arbitration","داوری گذرگاه مشترک"),("Compare fixed and rotating priority with queued read/write requests.","اولویت ثابت و چرخشی را با درخواست‌های خواندن و نوشتن مقایسه کنید."),"multiprocessor arbitration round robin shared bus"),
     Tool("crossbar",13,"computer","crossbar",("Crossbar interconnection","شبکه اتصال متقاطع"),("Compare independent bank transfers and contending queue heads.","انتقال مستقل بانک‌ها و تداخل سر صف‌ها را مقایسه کنید."),"crossbar switch memory bank arbitration"),
     Tool("synchronization",13,"computer","synchronization",("Atomic locks and race conditions","قفل اتمی و شرایط رقابتی"),("Compare lost updates and a test-and-set protected critical section.","به‌روزرسانی ازدست‌رفته و بخش بحرانی محافظت‌شده با آزمون و تنظیم را مقایسه کنید."),"test and set TAS race condition mutex critical section"),
+    Tool("coherence",13,"computer","coherence",("MSI cache coherence","هماهنگی کش MSI"),("Write on one processor, read on another, and inspect shared states and writebacks.","در یک پردازنده بنویسید و در دیگری بخوانید؛ حالت مشترک و بازنویسی را بررسی کنید."),"MSI BusRd BusRdX BusUpgr کش"),
 )
 BY_ID={tool.id:tool for tool in TOOLS}
 BY_CHAPTER={chapter.number:chapter for chapter in CHAPTERS}
