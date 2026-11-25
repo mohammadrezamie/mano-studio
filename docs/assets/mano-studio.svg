@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Mano Studio M-chip">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a45b9"/><stop offset="1" stop-color="#161d45"/></linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#a4edff"/></linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ecb1ff"/><stop offset=".55" stop-color="#6b7dff"/><stop offset="1" stop-color="#75efff"/></linearGradient>
+  </defs>
+  <rect x="3" y="3" width="58" height="58" rx="15" fill="url(#tile)" stroke="url(#rim)" stroke-width="1.5"/>
+  <path d="M8 23 V18 Q8 8 18 8 H37" fill="none" stroke="#f0f4ff" stroke-opacity=".18" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M23 1 V7 M23 57 V63 M32 1 V7 M32 57 V63 M41 1 V7 M41 57 V63 M1 23 H7 M57 23 H63 M1 32 H7 M57 32 H63 M1 41 H7 M57 41 H63" stroke="#80dfff" stroke-width="3" stroke-linecap="round"/>
+  <path d="M19 44 L19 20 L32 34 L45 20 L45 44" stroke="url(#mark)" stroke-width="6" fill="none" stroke-linejoin="round" stroke-linecap="round"/>
+</svg>
