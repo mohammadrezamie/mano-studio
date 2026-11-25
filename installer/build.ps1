@@ -11,7 +11,7 @@ if (-not $ReuseFrozen) {
 python -m installer.build_icon $icon
 if ($LASTEXITCODE -ne 0 -or !(Test-Path $icon)) { throw 'Brand icon generation failed.' }
 if (Test-Path 'dist\ManoStudio') { Remove-Item 'dist\ManoStudio' -Recurse -Force }
-python -m PyInstaller --noconfirm --clean --onedir --windowed --icon $icon --name ManoStudio --add-data 'rtl_translator.py:.' --add-data 'LICENSE:.' --add-data 'examples:examples' --add-data 'docs:docs' main.py
+python -m PyInstaller --noconfirm --clean --onedir --windowed --icon $icon --name ManoStudio --add-data 'rtl_translator.py;.' --add-data 'LICENSE;.' --add-data 'examples;examples' --add-data 'docs;docs' main.py
 if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed.' }
 $dist = Join-Path $PWD 'dist\ManoStudio'
 $notices = Join-Path $dist 'third-party-notices'
