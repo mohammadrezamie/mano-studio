@@ -2,8 +2,8 @@
 COPYRIGHT = "Copyright (c) 2026 Seyed Mohammadreza Miremadi"
 REPOSITORY = "https://github.com/mohammadrezamie/mano-studio"
 THANKS = (
-    "With sincere thanks to Prof. Siawash Eshaghiyeh, faculty member at Islamic Azad University — Science & Research Branch, for assigning the Computer Architecture and Microcontroller project.",
-    "با سپاس و قدردانی صمیمانه از استاد سیاوش اسحقیه، عضو هیئت علمی دانشگاه آزاد اسلامی، واحد علوم و تحقیقات، برای تعریف پروژه درس معماری کامپیوتر و میکروکنترلر."
+    "With thanks to Prof. Siawash Eshaghiyeh, faculty member at Islamic Azad University — Science & Research Branch.",
+    "با سپاس از استاد سیاوش اسحقیه، عضو هیئت علمی دانشگاه آزاد اسلامی، واحد علوم و تحقیقات."
 )
 PURPOSE = (
     "An offline learning environment inspired by Morris Mano’s Computer System Architecture.",
