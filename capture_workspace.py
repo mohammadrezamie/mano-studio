@@ -6,6 +6,7 @@ import tempfile
 import json
 import hashlib
 from learning_catalog import TOOLS
+from capture_karnaugh import capture_karnaugh
 from ui.learning_center import LearningCenter
 from PySide6.QtCore import QSettings, Qt
 from PySide6.QtWidgets import QApplication
@@ -121,6 +122,7 @@ def main():
                 target=output/f"{language}-{theme}-sequential.png"
                 if not lab.grab().save(str(target)):
                     raise RuntimeError(f"Could not save {target}")
+                capture_karnaugh(app,lab,output,language,theme)
                 lab.close()
                 computer=ProgramLab(window)
                 computer.resize(1360,900)
