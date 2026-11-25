@@ -118,6 +118,13 @@ def verify_distribution_payload(root, archive):
         if info.file_size != item["size"] or digest_member(archive, member) != item["sha256"]:
             raise ValueError("Bundled binary hash/size differs from inventory: " + relative)
 
+    expected_binaries = {
+        name[len("ManoStudio/"):] for name in names
+        if not name.endswith("/") and PurePosixPath(name).suffix.lower() in (".dll", ".pyd", ".exe")
+    }
+    if not expected_binaries or seen_binaries != expected_binaries:
+        raise ValueError("Binary inventory does not cover all portable executables and libraries")
+
     notice_count = 0
     for package in inventory["packages"]:
         name = package.get("name", "")
@@ -169,8 +176,16 @@ def validate(root, sha):
     with zipfile.ZipFile(z) as archive:
         if archive.testzip() is not None:
             raise ValueError("Corrupt portable archive")
-        if len(archive.namelist()) != len(set(archive.namelist())):
-            raise ValueError("Duplicate portable entries")
+        seen_paths = set()
+        for name in archive.namelist():
+            raw = name.rstrip("/")
+            normalized = safe_relative(raw)
+            if raw != normalized or not (raw == "ManoStudio" or raw.startswith("ManoStudio/")):
+                raise ValueError("Unsafe or noncanonical portable archive path")
+            key = raw.casefold()
+            if key in seen_paths:
+                raise ValueError("Duplicate or case-colliding portable entries")
+            seen_paths.add(key)
         app = packaged_member(set(archive.namelist()), "ManoStudio.exe")
         with archive.open(app) as program:
             if machine(program) != 0x8664:

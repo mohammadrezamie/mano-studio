@@ -157,3 +157,24 @@ def test_reject_unsafe_inventory_binary_path(candidate):
     checksum(z)
     with pytest.raises(ValueError, match="Unsafe"):
         validate(root, SHA)
+
+
+@pytest.mark.parametrize("path", ["ManoStudio/_internal/extra.dll", "ManoStudio/EXTRA.PYD", "ManoStudio/other.exe"])
+def test_reject_unlisted_binary(candidate, path):
+    root, z, _ = candidate
+    with zipfile.ZipFile(z, "a") as archive:
+        archive.writestr(path, b"unlisted")
+    checksum(z)
+    with pytest.raises(ValueError, match="does not cover"):
+        validate(root, SHA)
+
+
+@pytest.mark.parametrize("path", ["ManoStudio/manostudio.EXE", "ManoStudio/../escape.txt", "outside.txt", "ManoStudio\\extra.txt"])
+def test_reject_ambiguous_archive_path(candidate, path):
+    root, z, _ = candidate
+    with zipfile.ZipFile(z, "a") as archive:
+        archive.writestr(path, b"unexpected")
+    checksum(z)
+    with pytest.raises(ValueError, match="[Uu]nsafe|case-colliding"):
+        validate(root, SHA)
+
