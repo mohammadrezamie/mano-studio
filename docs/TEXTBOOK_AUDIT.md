@@ -24,9 +24,9 @@ Existing candidate routes: `gates, sequential, karnaugh, state-design` (partial 
 | Item | Status | Existing evidence and remaining gaps |
 |---|---|---|
 | C01.01 | partial | logic_engine.py (e09e56f6), tests/test_logic_engine.py (30a6a610): gate truth tables and 2–4 input variants. Explicit Boolean law/duality lessons and edition mapping open. |
-| C01.02 | partial | boolean_minimizer.py (1476c3cd), boolean_synthesis.py (d5c997ef): minimized SOP/POS with constants and deterministic completion. Canonical expansion and algebraic derivation lessons open. |
+| C01.02 | partial | boolean_minimizer.py (1476c3cd), boolean_synthesis.py (d5c997ef): minimized SOP/POS with constants and deterministic completion. Canonical SOP/POS expansion and index lists now implemented; eight exact-engine local tests include known expressions. Algebraic derivation and edition reconciliation remain open. |
 | C01.03 | partial | Existing K-map Gray indexing, legal cubes, both forms and don't-care handling; prior real-engine workflow tests (381d96a4). Exact edition figures and full visual review open. |
-| C01.04 | partial | universal_gates.py (72dc42dc), NAND/NOR-only build in existing Karnaugh UI; isolated exact-converter oracle passed 438 circuits/6,740 rows. Real-engine and Qt regressions authored but unexecuted; hazard analysis and shared multi-output minimization open. |
+| C01.04 | partial | universal_gates.py (72dc42dc), NAND/NOR-only build in existing Karnaugh UI; isolated exact-converter oracle passed 438 circuits/6,740 rows. Real-engine and Qt regressions authored but unexecuted; static-1 SOP/static-0 POS edge detection and consensus preview now implemented (BOOLEAN_ANALYSIS.md). Physical/dynamic hazards and shared multi-output minimization open. |
 | C01.05 | partial | CircuitDocument (2bf0d9f9), validated netlists, truth tables, synthesis and serialization. More worked designs and independent visual review open. |
 | C01.06 | unreviewed | Sequential route exists; inspect actual excitation/characteristic equations and timing before closure. |
 | C01.07 | partial | Prior workflow suite includes state reduction, encoding, synthesis and clock equivalence. Edition-specific examples and remaining encoding domains open. |
