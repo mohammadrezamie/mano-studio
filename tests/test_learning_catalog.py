@@ -39,3 +39,8 @@ def test_omega_search():
 def test_boolean_law_search():
     for query in ("De Morgan","duality","دمورگان","دوگانگی"):
         assert any(t.id=="karnaugh" for t in search_tools(query,1))
+
+
+def test_flipflop_reference_search():
+    for query in ("excitation","characteristic","تحریک","مشخصه"):
+        assert any(t.id=="sequential" for t in search_tools(query,1))
