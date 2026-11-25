@@ -1394,3 +1394,37 @@ def test_memory_serial_localized_transaction_feedback(workspace,language):
     assert ("خطای توازن" if fa else "Parity error") in s.status.text()
     assert s.payload.layoutDirection()==Qt.LayoutDirection.LeftToRight
     lab.close();logic.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_karnaugh_interactive_route(workspace,app,language):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    document=lab.document
+    lab.select_tool("karnaugh")
+    view=lab.karnaugh
+    assert lab.mode_tabs.currentWidget() is view
+    assert lab.navigation.list.currentRow()==3
+    assert view.map.layoutDirection()==Qt.LayoutDirection.LeftToRight
+    assert view.expression.text()=="D'"
+    assert view.cells[0].property("groupSelected")
+    lab.show();app.processEvents()
+    view.cells[0].setFocus()
+    QTest.keyClick(view.cells[0],Qt.Key.Key_Space)
+    assert view.values[0] is None
+    QTest.keyClick(view.cells[0],Qt.Key.Key_Space)
+    assert view.values[0]==0
+    view.form.setCurrentIndex(1)
+    assert view.solution.form=="POS"
+    assert all(view.solution.evaluate(i)==v for i,v in enumerate(view.values) if v is not None)
+    view.width.setCurrentIndex(0)
+    assert len(view.cells)==4 and view.expression.text()=="0"
+    view.example()
+    assert view.expression.text()=="(B')"
+    assert not view.grab().isNull()
+    lab.select_tool("gates")
+    assert lab.document is document
+    lab.close()

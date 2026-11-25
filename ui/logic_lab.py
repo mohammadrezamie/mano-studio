@@ -22,6 +22,7 @@ from ui.memory_view import MemoryView
 from ui.memory_array_view import MemoryArrayView
 from ui.bus_view import BusView
 from ui.cache_view import CacheView
+from ui.karnaugh_view import KarnaughView
 from ui.virtual_memory_view import AddressTranslationView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES, STATUS
@@ -340,7 +341,9 @@ class LogicLab(QDialog):
         self.address_translation=AddressTranslationView(parent.theme,self.fa)
         memory_tabs.addTab(self.address_translation,self.t("CAM / Virtual memory","حافظه انجمنی / مجازی"))
         self.mode_tabs.addTab(memory_tabs,self.t("Memory & bus","حافظه و گذرگاه"))
-        self.navigation=NavigationRail(self.mode_tabs,parent.settings,"logic",self.t("DIGITAL LOGIC","منطق دیجیتال"),("logic","clock","registers"),self.fa)
+        self.karnaugh=KarnaughView(self.fa)
+        self.mode_tabs.addTab(self.karnaugh,self.t("Karnaugh map","نقشه کارنو"))
+        self.navigation=NavigationRail(self.mode_tabs,parent.settings,"logic",self.t("DIGITAL LOGIC","منطق دیجیتال"),("logic","clock","registers","logic"),self.fa)
         outer.insertWidget(0,self.navigation)
         layout=QVBoxLayout(combinational)
         title=QLabel(self.t("Logic Lab · Digital circuits","آزمایشگاه مدار منطقی"))
@@ -446,6 +449,8 @@ class LogicLab(QDialog):
     def select_tool(self,route):
         if route in ("gates","sequential"):
             self.mode_tabs.setCurrentIndex(0 if route=="gates" else 1)
+        elif route=="karnaugh":
+            self.mode_tabs.setCurrentWidget(self.karnaugh)
         elif route in ("cam","virtual-memory"):
             self.mode_tabs.setCurrentWidget(self.memory_tabs)
             self.memory_tabs.setCurrentWidget(self.address_translation)
