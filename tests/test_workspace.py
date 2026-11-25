@@ -417,6 +417,22 @@ def test_reverse_builder_and_mapping(workspace):
     workspace.editor.document().setModified(False)
 
 
+@pytest.mark.parametrize(("language", "required"), [
+    ("en", ("Prof. Siawash Eshaghiyeh", "faculty member", "Science & Research Branch")),
+    ("fa", ("سیاوش اسحقیه", "عضو هیئت علمی", "واحد علوم و تحقیقات")),
+])
+def test_about_academic_attribution_is_exact_in_both_languages(workspace, language, required):
+    from PySide6.QtWidgets import QLabel
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    dialog = workspace.about_dialog()
+    try:
+        visible_text = "\n".join(label.text() for label in dialog.findChildren(QLabel))
+        for phrase in required:
+            assert phrase in visible_text
+    finally:
+        dialog.close()
+
+
 def test_persian_credits_and_optional_labs(workspace,monkeypatch):
     from PySide6.QtWidgets import QDialog, QLabel
     from ui.program_lab import ProgramLab
