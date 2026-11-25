@@ -30,6 +30,17 @@ def capture_karnaugh(app, lab, output, language, theme):
     app.processEvents()
     _save(lab, output / f"{language}-{theme}-karnaugh-synthesized.png")
 
+    lab.select_tool("state-design")
+    state=lab.state_design
+    state.width.setCurrentIndex(state.width.findData(2))
+    state.ff.setCurrentIndex(state.ff.findData("JK"))
+    state.input.setCurrentIndex(1)
+    state.clock.click()
+    if state.state!=1 or state.graph.state!=1 or not state.trace:
+        raise RuntimeError("Expected executed FSM clock transition")
+    app.processEvents()
+    _save(lab, output / f"{language}-{theme}-state-design-clock.png")
+
 
 def _save(lab, target):
     image = lab.grab()

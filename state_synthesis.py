@@ -67,3 +67,19 @@ def design_state_machine(bits, table, mode='Mealy', flipflop='D'):
         if result.step(index//2, index%2) != expected:
             raise RuntimeError('Excitation cover does not implement state table')
     return result
+
+
+@dataclass(frozen=True)
+class StateEdge:
+    destination: int
+    conditions: tuple[tuple[int, int], ...]
+
+
+def outgoing_edges(model, state):
+    """Group actual evaluated outgoing transitions by destination, in X order."""
+    grouped = {}
+    for x in (0, 1):
+        destination, y = model.step(state, x)
+        grouped.setdefault(destination, []).append((x, y))
+    return tuple(StateEdge(destination, tuple(conditions))
+                 for destination, conditions in grouped.items())

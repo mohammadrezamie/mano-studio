@@ -1526,3 +1526,23 @@ def test_state_synthesis_route_and_clock(workspace,language):
     assert v.table.rowCount()==16 and v.state==0
     assert lab.document is original
     lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_state_graph_preview_and_clock(workspace,app,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.select_tool("state-design")
+    v=lab.state_design
+    lab.show();app.processEvents()
+    assert v.graph.state==0 and len(v.graph.edges)==2
+    v.input.setCurrentIndex(1)
+    assert v.graph.x==1 and v.graph.state==0 and not v.trace
+    assert "X=1" in v.graph.accessibleDescription()
+    v.clock.click()
+    assert v.graph.state==1 and len(v.trace)==1
+    v.next_boxes[0].setCurrentIndex(1)
+    assert v.graph.state==0 and len(v.graph.edges)==1
+    assert v.graph.edges[0].conditions==((0,0),(1,0))
+    assert not v.graph.grab().isNull()
+    lab.close()

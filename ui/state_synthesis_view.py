@@ -4,6 +4,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCombo
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
     QPlainTextEdit)
 from state_synthesis import design_state_machine
+from ui.state_graph import StateGraph
+from ui.motion import MotionTabs
 
 
 class StateSynthesisView(QWidget):
@@ -50,11 +52,17 @@ class StateSynthesisView(QWidget):
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         middle.addWidget(self.table,3)
         side=QVBoxLayout()
-        side.addWidget(QLabel(self.t("Minimized excitation and output equations","معادلات ساده‌شده تحریک و خروجی")))
         self.equations=QPlainTextEdit()
         self.equations.setReadOnly(True)
         self.equations.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        side.addWidget(self.equations,1)
+        self.views=MotionTabs()
+        self.graph=StateGraph(self.fa)
+        self.views.addTab(self.graph,self.t("Transitions","نمودار انتقال"))
+        self.views.addTab(self.equations,self.t("Equations","معادلات"))
+        side.addWidget(self.views,1)
+        self.graph_note=QLabel()
+        self.graph_note.setWordWrap(True)
+        side.addWidget(self.graph_note)
         self.mapping=QLabel()
         self.mapping.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.mapping.setWordWrap(True)
@@ -152,6 +160,12 @@ class StateSynthesisView(QWidget):
         n=self.model.bits
         nxt,y=self.model.step(self.state,self.input.currentData())
         self.status.setText(f"Q={self.state:0{n}b}   Q⁺={nxt:0{n}b}   Y={y}")
+        self.graph.set_state(self.model,self.state,self.input.currentData())
+        self.graph_note.setText(self.t("Current state's outgoing edges; ▶ marks the next edge, not a completed clock. Node: Q / Y; edge: X.",
+                                      "مسیرهای خروجی حالت جاری؛ ▶ مسیر بعدی است، نه پالس اجراشده. گره: Q / Y؛ یال: X.")
+                                if self.model.mode=="Moore" else
+                                self.t("Current state's outgoing edges; ▶ marks the next edge. Node: Q; edge: X / Y before clock.",
+                                       "مسیرهای خروجی حالت جاری؛ ▶ مسیر بعدی است. گره: Q؛ یال: X / Y پیش از ساعت."))
 
     def pulse(self,*_):
         n=self.model.bits

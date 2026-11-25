@@ -50,3 +50,20 @@ def test_toggle_equations_and_invalid_inputs():
     with pytest.raises(ValueError):design_state_machine(1,[(0,0)]*3)
     with pytest.raises(ValueError):design_state_machine(4,[])
     with pytest.raises(ValueError):design_state_machine(1,[(2,0)]*4)
+
+
+@pytest.mark.parametrize("mode",["Moore","Mealy"])
+def test_outgoing_graph_represents_every_input(mode):
+    from state_synthesis import outgoing_edges
+    rng=random.Random(172)
+    for bits in (1,2,3):
+        for _ in range(24):
+            rows=[(rng.randrange(2**bits),rng.randrange(2)) for _ in range(2**(bits+1))]
+            if mode=="Moore":
+                rows=[(n,rows[i//2*2][1]) for i,(n,_) in enumerate(rows)]
+            model=design_state_machine(bits,rows,mode,"JK")
+            for q in range(2**bits):
+                edges=outgoing_edges(model,q)
+                assert len({edge.destination for edge in edges})==len(edges)
+                actual={x:(edge.destination,y) for edge in edges for x,y in edge.conditions}
+                assert actual=={x:rows[q*2+x] for x in (0,1)}
