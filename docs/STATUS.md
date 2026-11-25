@@ -480,3 +480,7 @@ Main documentation-only merge #21 (2aeb3863) publishes the new README, M-chip lo
 
 ## Omega interface and textbook audit checkpoint — 2026-11-25
 Bilingual Omega canvas and request controls connected to Computer and Learning Center (44 unique entries). Source includes two locale UI regression cases and four required state captures, not yet executed. Prior core test result remains historical. New TEXTBOOK_AUDIT.md records 104 initial topic families across 13 chapters, all awaiting item-level evidence; exact instructor edition and page/figure/exercise reconciliation remain open. README, Omega guide and curriculum ledger updated. Next: verify Qt and audit Chapter 1 in detail, preserve independent beta PR #19 and translator.
+
+
+## Chapter 1 evidence and universal gates — 2026-11-25
+Reconciled eight Chapter 1 topic families in TEXTBOOK_AUDIT.md (six partial, two unreviewed, none closed). Implemented universal_gates.py with NAND/NOR-only 2-input netlists, memoized primitives, naming and 96-gate limit, complete truth-table equivalence check; integrated into existing bilingual Karnaugh build with cancel/undo. Exact converter hash 72dc42dc8f575a5527f2db1f4cf04bbfea4ebbb8 matched local independent oracle using test-double interfaces: 438 circuits/6,740 rows passed. Actual-engine and four GUI cases authored, not run. README, guide and coverage updated. Next: explicit Boolean laws/canonical forms and hazard audit, real-engine and Qt verification. 44 routes unchanged; frozen beta #19 and academic translator unchanged.
