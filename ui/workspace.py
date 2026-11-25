@@ -1,6 +1,6 @@
 """Workspace UI. All translation is delegated to rtl_translator.py."""
 from pathlib import Path
-from ui.motion import MotionTabs, set_reduced_motion
+from ui.motion import MotionTabs, MotionButton, set_reduced_motion
 from PySide6.QtCore import Qt, QTimer, QSize
 from PySide6.QtGui import QFontDatabase, QTextCursor, QTextCharFormat, QSyntaxHighlighter, QColor, QShortcut, QKeySequence
 from PySide6.QtWidgets import (
@@ -113,7 +113,7 @@ class Workspace(QMainWindow):
         self.menu_actions = []
         for name, entries in [("File", [("New", self.new_file), ("Choose file", self.open_file), ("Save input", self.save_file), ("Save input as", self.save_as)]),
                               ("Help", [("Instruction reference", self.open_instruction_reference), ("About", self.about)])]:
-            button = QPushButton(self.t(name))
+            button = MotionButton(self.t(name))
             self.labels.append((button, name))
             menu = QMenu(button)
             for key, slot in entries:
@@ -128,7 +128,7 @@ class Workspace(QMainWindow):
         self.direction_box.currentIndexChanged.connect(self.change_direction)
         toolbar.addWidget(self.direction_box)
         toolbar.addWidget(self.button("Choose file", self.open_file))
-        examples_button = QPushButton(self.t("Examples"))
+        examples_button = MotionButton(self.t("Examples"))
         self.labels.append((examples_button, "Examples"))
         examples_menu = QMenu(examples_button)
         self.example_actions = []
@@ -139,7 +139,7 @@ class Workspace(QMainWindow):
         examples_button.setMenu(examples_menu)
         toolbar.addWidget(examples_button)
         self.icon_buttons.append((examples_button, "examples"))
-        labs = QPushButton(self.t("Learning Center"))
+        labs = MotionButton(self.t("Learning Center"))
         self.labels.append((labs, "Learning Center"))
         self.lab_actions = []
         labs.setObjectName("learnAction")
@@ -306,7 +306,7 @@ class Workspace(QMainWindow):
         return widget
 
     def button(self, key, action, primary=False):
-        widget = QPushButton(self.t(key))
+        widget = MotionButton(self.t(key))
         if primary:
             widget.setObjectName("primary")
         widget.clicked.connect(lambda checked=False: action())
@@ -806,6 +806,10 @@ class Workspace(QMainWindow):
         lab.exec()
 
     def about(self):
+        self.about_dialog().exec()
+
+    def about_dialog(self):
+        """Build the same real About dialog for use and visual verification."""
         fa = self.language == "fa"
         dialog = QDialog(self)
         dialog.setWindowTitle(self.t("About") + " — Mano Studio")
@@ -853,7 +857,7 @@ class Workspace(QMainWindow):
         buttons.button(QDialogButtonBox.StandardButton.Close).setText("بستن" if fa else "Close")
         buttons.rejected.connect(dialog.reject)
         outer.addWidget(buttons)
-        dialog.exec()
+        return dialog
 
     def closeEvent(self, event):
         if not self.confirm_discard():
