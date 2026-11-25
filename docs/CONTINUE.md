@@ -164,3 +164,7 @@ Release PR #19 exact head be11875aafd1f6921a5c4f6a19a6873e60a7a01d remains draft
 
 ## README landing and Omega checkpoint — 2026-11-25
 README, approved candidate logo and permanent documentation policy merged into main via #21 at 2aeb386366355c301d9c8ea145db5b9d14a29fa3 (three docs-only paths, no runtime changes). #20 retains handoff/status changes overlapping active #19; reconcile after exact candidate verification. Release head be11875a unchanged, mergeability returned true after recalculation. Beta jobs 45638110340 / 45638110456 queued at inspection. Next-beta adds omega_network.py and tests: 19 locally passed, exact hashes verified; 5,460 individual routes and 400 seeded rounds. README and coverage ledger updated. Next: bilingual Omega UI in Computer, 44th Learning Center route only when integrated, tests and captures. See OMEGA_NETWORK.md. No installer or publication claim.
+
+
+## Omega interface and textbook audit checkpoint — 2026-11-25
+Bilingual Omega canvas and request controls connected to Computer and Learning Center (44 unique entries). Source includes two locale UI regression cases and four required state captures, not yet executed. Prior core test result remains historical. New TEXTBOOK_AUDIT.md records 104 initial topic families across 13 chapters, all awaiting item-level evidence; exact instructor edition and page/figure/exercise reconciliation remain open. README, Omega guide and curriculum ledger updated. Next: verify Qt and audit Chapter 1 in detail, preserve independent beta PR #19 and translator.
