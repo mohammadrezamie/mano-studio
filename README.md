@@ -19,7 +19,7 @@
   <a href="#quick-start">Quick start</a> · <a href="#academic-assignment">Academic core</a> · <a href="#visual-preview">Visual preview</a> · <a href="#development-status">Status</a> · <a href="#documentation">Docs</a>
 </p>
 
-**You are viewing the next-generation branch.** Its MSI cache-coherence lesson is implemented in source, with 43 learning entries; GUI execution and visual evidence are pending. See [the MSI lesson](docs/CACHE_COHERENCE.md). This is not the first beta release candidate.
+**You are viewing the next-generation branch.** Its MSI cache-coherence lesson is implemented in source, with 43 learning entries; GUI execution and visual evidence are pending. See [the MSI lesson](docs/CACHE_COHERENCE.md). The new [Omega interconnection model](docs/OMEGA_NETWORK.md) supports 2–64 ports, with 19 local regression tests passed; its interactive UI is pending. This is not the first beta release candidate.
 
 ## What you can do
 
@@ -38,7 +38,7 @@ Designed for English and Persian, with persistent language preferences, Light/Da
 | --- | --- |
 | **Main — verified source baseline** | PR [#15](https://github.com/mohammadrezamie/mano-studio/pull/15) merged; 1,200 tests passed on each OS in [run 45557009008](https://github.com/mohammadrezamie/mano-studio/actions/runs/45557009008). 42 learning entries across 13 chapters (partial coverage). |
 | **Release — Windows x64 beta** | [PR #19](https://github.com/mohammadrezamie/mano-studio/pull/19), proposed v0.3.0-beta.1; integrated regression, installer, native acceptance and publication gates remain open. |
-| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): MSI cache coherence adds a 43rd entry; Qt tests and visual evidence pending. |
+| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): MSI cache coherence adds a 43rd entry; Omega routing model added (19 local tests passed). Interactive Omega UI and full Qt evidence pending. |
 
 **No downloadable public release has been verified or published.** Development artifacts are not stable releases. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live state. This snapshot is dated 2026-11-25; evidence refers to the named commits/runs, not every later change.
 
