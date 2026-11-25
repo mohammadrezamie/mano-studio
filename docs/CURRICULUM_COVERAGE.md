@@ -214,3 +214,7 @@ Owner explicitly requests public first beta and ongoing development in parallel.
 
 ## Next-beta MSI interactive lesson — 2026-11-25
 Chapter 13 now includes the ideal MSI model in Computer → Multiprocessors and a stable bilingual Learning Center route (43 total entries). Cache/RAM views, read/write/reset/example and bounded transaction trace use the actual shared engine. Two locale-specific GUI regressions plus two model-asserted visual scenarios per locale are authored. Core model's prior 20-test/10,000-access result remains unchanged; current GUI and full CI are unverified. Real parallel timing, MESI and multistage networks remain open. First beta scope and academic translator unchanged.
+
+
+## Omega network — next-beta model checkpoint (2026-11-25)
+Pure `omega_network.py` models 2–64 ports, perfect-shuffle wiring, destination-bit routing, internal blocking and atomic fixed-priority path grants. 19 local tests passed; all 5,460 individual routes, 24 four-port permutations, 400 seeded rounds. Exact tested blobs verified against GitHub. UI, bilingual learning route and Qt evidence pending; 43 routes remain unchanged. See OMEGA_NETWORK.md. No new release changes.
