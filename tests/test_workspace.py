@@ -1394,3 +1394,23 @@ def test_memory_serial_localized_transaction_feedback(workspace,language):
     assert ("خطای توازن" if fa else "Parity error") in s.status.text()
     assert s.payload.layoutDirection()==Qt.LayoutDirection.LeftToRight
     lab.close();logic.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_arithmetic_focused_without_losing_cpu(workspace,language):
+    from ui.program_lab import ProgramLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=ProgramLab(workspace)
+    lab.step();cpu=lab.cpu;source=lab.source.toPlainText();before=cpu.registers().copy()
+    lab.timer.start(1000)
+    for route in ("alu","booth","division","decimal","floating"):
+        lab.select_tool(route)
+        assert all(w.isHidden() for w in lab.cpu_widgets)
+        assert not lab.timer.isActive()
+        assert lab.cpu is cpu and cpu.registers()==before
+    lab.use_registers()
+    assert lab.cpu is cpu and cpu.registers()==before
+    lab.select_tool("live")
+    assert all(not w.isHidden() for w in lab.cpu_widgets)
+    assert lab.source.toPlainText()==source and lab.steps==1
+    lab.close()

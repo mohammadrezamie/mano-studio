@@ -17,6 +17,59 @@ from ui.program_lab import ProgramLab
 from ui.workspace import Workspace
 
 
+def capture_active_states(app,window,output,language):
+    """Fresh sandboxes, explicit actions, and real model assertions before every image."""
+    logic=LogicLab(window);computer=ProgramLab(window)
+    logic.resize(1360,900);computer.resize(1360,900)
+    def capture(lab,route,state,action,check):
+        for other in (logic,computer):
+            if other is not lab:other.hide()
+        lab.select_tool(route);lab.show();app.processEvents()
+        action()
+        if not check():raise RuntimeError(f"Demo did not reach {route}/{state}")
+        app.processEvents()
+        target=output/f"{language}-dark-active-{route}-{state}.png"
+        image=lab.grab()
+        if image.isNull() or not image.save(str(target)):raise RuntimeError(f"Could not save {target}")
+    try:
+        def cpu():
+            computer.example();computer.step()
+            computer.datapath.focus.setChecked(True)
+            computer.datapath.groups.setCurrentIndex(1)
+            computer.pause()
+        capture(computer,"live","fetch",cpu,lambda:computer.datapath.group.timing==1)
+        def logic_wave():
+            v=logic.sequential
+            v.selector.setCurrentIndex(v.selector.findData("D"))
+            v.reset();v.buttons["D"].setChecked(True);v.pulse()
+            v.buttons["D"].setChecked(False);v.pulse()
+        capture(logic,"sequential","clocked",logic_wave,lambda:logic.sequential.model.value==0 and len(logic.sequential.waveform.rows)>=5)
+        capture(logic,"cache","conflict",logic.cache.example,lambda:logic.cache.model.accesses==6 and logic.cache.model.misses==6)
+        paging=logic.address_translation.paging
+        capture(logic,"virtual-memory","fault-reload",paging.example,lambda:paging.last.fault and paging.last.value==0xCAFE and paging.model.page_outs==1)
+        serial=computer.io_organization.serial
+        def serial_error():
+            serial.parity.setCurrentIndex(1)
+            serial.flip.setCurrentIndex(serial.flip.findData(1))
+            serial.start();serial.finish()
+        capture(computer,"serial","parity-error",serial_error,lambda:serial.model.result.parity_error and serial.model.fifo.empty)
+        cross=computer.crossbar
+        def parallel():
+            cross.demo.setCurrentIndex(0);cross.example();cross.step()
+        capture(computer,"crossbar","parallel-grants",parallel,lambda:len(cross.last.transfers)==4)
+        sync=computer.synchronization
+        def race():
+            sync.mode.setCurrentIndex(1);sync.reset();sync.run()
+        capture(computer,"synchronization","lost-update",race,lambda:sync.model.done and sync.model.shared==1 and sync.model.expected==2)
+        def locked():
+            sync.mode.setCurrentIndex(0);sync.reset();sync.run()
+        capture(computer,"synchronization","atomic-lock",locked,lambda:sync.model.done and sync.model.shared==2)
+    finally:
+        for lab in (logic,computer):
+            lab.close();lab.deleteLater()
+        app.processEvents()
+
+
 def capture_routes(app,window,output):
     """Capture each distinct real route once per locale, with entry-to-image mapping."""
     records=[]
@@ -58,6 +111,7 @@ def capture_routes(app,window,output):
         for dialog in (logic,computer):
             dialog.close();dialog.deleteLater()
         app.processEvents()
+        capture_active_states(app,window,output,language)
     (output/"route-manifest.json").write_text(json.dumps({
         "kind":"actual Qt offscreen render; not manual visual acceptance",
         "entries":records},ensure_ascii=False,indent=2),encoding="utf-8")
