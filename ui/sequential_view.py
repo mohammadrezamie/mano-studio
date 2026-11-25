@@ -5,6 +5,8 @@ from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QGridLayout,QCombo
 from sequential_logic import ClockedCircuit, MODELS, RULES
 from ui.theme import PALETTES
 from waveform_analysis import recorded,window,write_csv
+from ui.motion import MotionTabs
+from ui.flipflop_reference_view import FlipFlopReferenceView
 
 TITLES={
     "D":("D flip-flop","فلیپ‌فلاپ D"),
@@ -213,10 +215,18 @@ class SequentialView(QWidget):
         self.follow=QCheckBox(self.t("Follow latest","دنبال‌کردن آخرین نمونه"));self.follow.setChecked(True);controls.addWidget(self.follow)
         self.position=QSlider(Qt.Orientation.Horizontal);self.position.setAccessibleName(self.t("History position","موقعیت تاریخچه"));controls.addWidget(self.position,1)
         export=QPushButton(self.t("Export CSV","خروجی CSV"));export.clicked.connect(self.export_history);controls.addWidget(export)
-        layout.addLayout(controls)
-        layout.addWidget(self.waveform,3)
+        self.details=MotionTabs()
+        waveform_page=QWidget()
+        waveform_layout=QVBoxLayout(waveform_page)
+        waveform_layout.setContentsMargins(0,0,0,0)
+        waveform_layout.addLayout(controls)
+        waveform_layout.addWidget(self.waveform,3)
         self.inspection=QLabel();self.inspection.setWordWrap(True);self.inspection.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        layout.addWidget(self.inspection)
+        waveform_layout.addWidget(self.inspection)
+        self.details.addTab(waveform_page,self.t("Waveform","نمودار زمانی"))
+        self.reference=FlipFlopReferenceView(self.fa)
+        self.details.addTab(self.reference,self.t("Flip-flop tables","جدول‌های فلیپ‌فلاپ"))
+        layout.addWidget(self.details,3)
         self.zoom.currentIndexChanged.connect(self.update_waveform)
         self.follow.toggled.connect(self.update_waveform)
         self.position.valueChanged.connect(self.seek)
@@ -236,6 +246,7 @@ class SequentialView(QWidget):
 
     def load(self):
         self.model=ClockedCircuit(self.selector.currentData())
+        self.reference.set_kind(self.model.kind)
         while self.input_layout.count():
             item=self.input_layout.takeAt(0)
             if item.widget():
