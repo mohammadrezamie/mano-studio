@@ -193,8 +193,10 @@ class ProgramLab(QDialog):
 
     def update_cpu_context(self,*_):
         page=self.inspector.currentWidget()
-        visible=page in tuple(self.tool_pages[key] for key in ("live","register-memory","debugger","alu","cycles"))
+        visible=page in tuple(self.tool_pages[key] for key in ("live","register-memory","debugger","cycles"))
         focused=page is self.datapath and self.datapath.focus.isChecked()
+        # Arithmetic has its own operands and an explicit AC/DR/E import.
+        # Give it the full inspector area; retain the CPU and program unchanged.
         if not visible:self.pause()
         for widget in self.cpu_widgets:widget.setVisible(visible and not focused)
         if focused:

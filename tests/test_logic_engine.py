@@ -3,7 +3,7 @@ import pytest
 from logic_engine import CIRCUITS, Circuit, Gate, gate_value, ripple_adder
 
 
-@pytest.mark.parametrize("a,b", product((0,1),repeat=2))
+@pytest.mark.parametrize("a,b", tuple(product((0,1),repeat=2)))
 def test_basic_gates(a,b):
     expected={"AND":a&b,"OR":a|b,"XOR":a^b,"NAND":1-(a&b),
               "NOR":1-(a|b),"XNOR":1-(a^b)}

@@ -3,7 +3,7 @@
 
 An open-source bilingual offline desktop IDE for Morris Mano's Computer System Architecture, centered on the Basic Computer and the academic RTL-to-assembly assignment. Optional labs cover selected topics across the textbook.
 
-**Status: Python translator supports all 25 named Mano instructions in the documented dialect; no downloadable desktop release yet.**
+**Status: initial desktop source merged into main (PR #9); 928 tests passed on each of Windows and Ubuntu at the verified merge baseline. Python translator supports all 25 named Mano instructions in the documented dialect. No downloadable desktop release yet.**
 
 ## Desktop development preview
 ```sh
@@ -44,4 +44,4 @@ MIT — see LICENSE.
 [Integrated UX development plan](docs/UX_PLAN.md): keep the primary RTL-to-ASM workflow simple; combine CPU tools into one Computer workspace and share the digital logic canvas. No installer or release activity until the owner asks.
 
 
-Chapter 1 development preview: Karnaugh map, FSM synthesis and reduction, and explicit portable exercise save/open. Full GUI verification pending; see docs/STATUS.md.
+Chapter 1 development preview: Karnaugh map, FSM synthesis and reduction, and explicit portable exercise save/open. Full GUI verification pending; see [exercises](docs/EXERCISES.md) and docs/STATUS.md.

@@ -43,3 +43,5 @@ Owner explicitly authorizes all useful tooling/skills and generated assets; pref
 Owner rejects M monogram as generic. Brand must be distinctive, non-letter, code-driven where useful; image generation remains authorized when it adds genuine quality. Chapter 13 first shared-bus model added; full textbook remains open. See CONTINUE.md.
 
 Owner reconfirmed bilingual parity: new user-facing labels, explanations, errors and accessibility text must ship in English and Persian together; persist language, RTL shell/LTR technical data. Include regression in both locales; native visual review remains separate.
+
+Post-merge 2026-11-25 override: PR #9 is closed and merged; never resume its old branch. Inspect main and current open PRs, continue separate focused branches. Main 9eb19971 verified 928 tests each Windows/Ubuntu and both screenshot artifacts. Continue quality/beta-visual-review while open. No implicit authorization for another merge or publication.
