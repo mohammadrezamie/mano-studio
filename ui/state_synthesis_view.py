@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QCombo
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
     QPlainTextEdit)
 from state_synthesis import design_state_machine
+from state_analysis import analyze_machine
 from ui.state_graph import StateGraph
 from ui.motion import MotionTabs
 
@@ -59,6 +60,10 @@ class StateSynthesisView(QWidget):
         self.graph=StateGraph(self.fa)
         self.views.addTab(self.graph,self.t("Transitions","نمودار انتقال"))
         self.views.addTab(self.equations,self.t("Equations","معادلات"))
+        self.analysis_text=QPlainTextEdit()
+        self.analysis_text.setReadOnly(True)
+        self.analysis_text.setAccessibleName(self.t("State reachability and equivalence","دسترس‌پذیری و هم‌ارزی حالت‌ها"))
+        self.views.addTab(self.analysis_text,self.t("Analysis","تحلیل"))
         side.addWidget(self.views,1)
         self.graph_note=QLabel()
         self.graph_note.setWordWrap(True)
@@ -148,7 +153,27 @@ class StateSynthesisView(QWidget):
         self.model=design_state_machine(self.width.currentData(),rows,self.mode.currentData(),self.ff.currentData())
         self.equations.setPlainText("\n".join(f"{name} = {cover.expression}" for name,cover in self.model.equations))
         self.mapping.setText("  |  ".join(f"{a} = {q}" for a,q in self.model.aliases))
+        self.refresh_analysis()
         self.reset_state()
+
+    def refresh_analysis(self):
+        self.analysis=analyze_machine(self.model)
+        bits=self.model.bits
+        label=lambda q:f"{q:0{bits}b}"
+        empty=self.t("reset","بازنشانی")
+        none=self.t("None","هیچ")
+        lines=[self.t("Shortest input paths from reset Q=0","کوتاه‌ترین مسیرهای ورودی از بازنشانی Q=0")]
+        lines.extend(f"{label(q)}: {word or empty}" for q,word in self.analysis.paths)
+        lines.extend(["",self.t("Unreachable states","حالت‌های دسترس‌ناپذیر"),
+                      ", ".join(map(label,self.analysis.unreachable)) or none,
+                      "",self.t("Equivalent classes (all encoded states)","کلاس‌های هم‌ارزی (همه حالت‌های کدشده)")])
+        lines.extend(" = ".join(map(label,group)) for group in self.analysis.classes)
+        lines.extend(["",self.t("Shortest distinguishing input sequences","کوتاه‌ترین دنباله‌های ورودی متمایزکننده"),
+                      self.t("Outputs sampled before each clock. Equivalent pairs have no distinguishing sequence.",
+                             "خروجی پیش از هر پالس ساعت نمونه‌برداری می‌شود. حالت‌های هم‌ارز دنباله متمایزکننده ندارند.")])
+        for a,b,word in self.analysis.witnesses:
+            lines.append(f"{label(a)} / {label(b)}: "+(word if word is not None else self.t("equivalent","هم‌ارز")))
+        self.analysis_text.setPlainText("\n".join(lines))
 
     def reset_state(self,*_):
         self.state=0

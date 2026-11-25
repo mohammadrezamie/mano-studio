@@ -1546,3 +1546,23 @@ def test_state_graph_preview_and_clock(workspace,app,language):
     assert v.graph.edges[0].conditions==((0,0),(1,0))
     assert not v.graph.grab().isNull()
     lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_state_analysis_updates_without_clock(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.select_tool("state-design")
+    v=lab.state_design
+    v.views.setCurrentWidget(v.analysis_text)
+    assert v.analysis.paths==((0,''),(1,'1'))
+    assert v.analysis.classes==((0,),(1,))
+    v.next_boxes[1].setCurrentIndex(0)
+    assert v.analysis.unreachable==(1,)
+    assert not v.trace
+    assert ("حالت‌های دسترس‌ناپذیر" if language=="fa" else "Unreachable states") in v.analysis_text.toPlainText()
+    v.input.setCurrentIndex(1);v.clock.click()
+    assert v.state==0 and len(v.trace)==1
+    v.views.setCurrentWidget(v.graph)
+    assert len(v.trace)==1
+    lab.close()
