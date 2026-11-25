@@ -1,0 +1,42 @@
+{
+  "format": "mano-exercise",
+  "version": 1,
+  "kind": "state-design",
+  "bits": 2,
+  "mode": "Mealy",
+  "flipflop": "D",
+  "table": [
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      0
+    ]
+  ]
+}

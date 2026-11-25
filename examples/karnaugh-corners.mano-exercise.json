@@ -1,0 +1,24 @@
+{
+  "format": "mano-exercise",
+  "version": 1,
+  "kind": "karnaugh",
+  "values": [
+    1,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0
+  ],
+  "form": "SOP"
+}
