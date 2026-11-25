@@ -33,8 +33,10 @@ class Preferences(QDialog):
         for key, en, fa, default in [
             ("glass_enabled", "Glass effects", "جلوه‌های شیشه‌ای", True),
             ("reduced_motion", "Reduce motion", "کاهش حرکت و انیمیشن", False),
+            ("lab_motion", "Animate lab signals", "انیمیشن سیگنال‌های آزمایشگاه", True),
         ]:
             toggle = QCheckBox(self.text(en, fa))
+            toggle.setObjectName(key)
             toggle.setChecked(self.settings.value(key, default, type=bool))
             toggle.toggled.connect(lambda value, k=key: self.change(k, value))
             layout.addWidget(toggle)

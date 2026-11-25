@@ -1710,3 +1710,27 @@ def test_state_table_focus_and_row_sizing(workspace,language):
     assert v.table.verticalHeader().sectionResizeMode(0)==QHeaderView.ResizeMode.ResizeToContents
     assert v.table.currentRow()==1 and not v.trace
     lab.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_lab_motion_preference_shared_by_cpu_and_logic(workspace, language):
+    from PySide6.QtWidgets import QCheckBox
+    from ui.preferences import Preferences
+    from ui.program_lab import ProgramLab
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    prefs = Preferences(workspace)
+    toggle = prefs.findChild(QCheckBox, "lab_motion")
+    assert toggle is not None
+    assert toggle.text() == ("انیمیشن سیگنال‌های آزمایشگاه" if language == "fa" else "Animate lab signals")
+    toggle.setChecked(False)
+    assert not workspace.settings.value("lab_motion", True, type=bool)
+    prefs.close()
+    cpu = ProgramLab(workspace)
+    logic = LogicLab(workspace)
+    try:
+        assert cpu.datapath.reduced_motion
+        assert logic.diagram.reduced_motion
+    finally:
+        cpu.close()
+        logic.close()

@@ -37,10 +37,11 @@ class LogicDiagram(QGraphicsView):
     moved = Signal(str, float, float)
     hint = Signal(str)
 
-    def __init__(self, theme, fa=False, symbol_style="ansi"):
+    def __init__(self, theme, fa=False, symbol_style="ansi", *, reduced_motion=False):
         super().__init__()
         self.theme = theme
         self.fa = fa
+        self.reduced_motion = bool(reduced_motion)
         self.symbol_style=symbol_style if symbol_style in ("ansi","iec") else "ansi"
         self.graph = QGraphicsScene(self)
         self.setScene(self.graph)
@@ -49,7 +50,7 @@ class LogicDiagram(QGraphicsView):
         self.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.setMinimumHeight(280)
         self.setAccessibleName("شماتیک مدار منطقی" if fa else "Logic circuit schematic")
-        self.setAccessibleDescription("پایه‌ها، مقدار بیت و مسیرهای اتصال؛ حلقه هشدار به معنای اتصال نیست." if fa else "Functional pins, bit values and net routes; warning rings are not connections.")
+        self.setAccessibleDescription("پایه‌ها، مقدار بیت و مسیرهای اتصال؛ حلقه هشدار به معنای اتصال نیست. درخشش، تغییر مقدار را نشان می‌دهد، نه تأخیر انتشار." if fa else "Functional pins, bit values and net routes; warning rings are not connections. Glow indicates value changes, not propagation delay.")
         self.editing=False
         self.positions={}
         self.route_cache={}
@@ -268,7 +269,7 @@ class LogicDiagram(QGraphicsView):
         # This is a simultaneous change indication, not simulated propagation.
         if (self._last_circuit == circuit and self._last_route_key == route_key
                 and not self.editing and not self.unrouted and not self.ambiguous
-                and self.isVisible() and motion_allowed()):
+                and not self.reduced_motion and self.isVisible() and motion_allowed()):
             self._changed_paths = changed_routes(routes, self._last_values, values)
             if self._changed_paths:
                 self._pulse = 1.0
@@ -478,7 +479,8 @@ class LogicLab(QDialog):
         self.route_warning.hide()
         layout.addWidget(self.route_warning)
         split=QSplitter(Qt.Orientation.Vertical)
-        self.diagram=LogicDiagram(parent.theme,self.fa,parent.settings.value("gate_symbol_style","ansi"))
+        self.diagram=LogicDiagram(parent.theme,self.fa,parent.settings.value("gate_symbol_style","ansi"),
+                                  reduced_motion=not parent.settings.value("lab_motion",True,type=bool))
         self.diagram.rewire.connect(self.rewire_pin)
         self.diagram.moved.connect(self.move_component)
         self.diagram.hint.connect(self.set_canvas_hint)

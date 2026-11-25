@@ -14,7 +14,7 @@ jobs:
   installer:
     if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && (github.head_ref == 'release/first-beta-candidate' || github.head_ref == 'release/beta-integrated'))
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 120
     env:
       QT_QPA_PLATFORM: offscreen
     steps:
@@ -43,7 +43,7 @@ jobs:
       - name: Verify actual Persian and technical glyphs
         run: python render_preflight.py
       - name: Run regression and Qt tests
-        run: python -m pytest -q
+        run: python -m pytest -q --durations=25
       - name: Build portable development application
         shell: pwsh
         run: ./installer/build.ps1 -PortableOnly

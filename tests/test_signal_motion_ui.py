@@ -42,3 +42,24 @@ def test_logic_motion_tracks_evaluated_changes():
     finally:
         view.close()
         set_reduced_motion(app, previous)
+
+
+@pytest.mark.parametrize("fa", [False, True])
+def test_lab_signal_motion_disabled_preserves_evaluated_values(fa):
+    app = QApplication.instance() or QApplication([])
+    previous = bool(app.property("manoReducedMotion"))
+    view = LogicDiagram("dark", fa, reduced_motion=True)
+    circuit = basic("NOT")
+    view.show()
+    try:
+        set_reduced_motion(app, False)
+        for bit in (0, 1, 0):
+            values = circuit.evaluate({"A": bit})
+            view.draw(circuit, values)
+            assert view._last_values == values
+            assert values["q"] == 1 - bit
+            assert not view._changed_paths
+            assert view._net_animation.state() == QAbstractAnimation.State.Stopped
+    finally:
+        view.close()
+        set_reduced_motion(app, previous)
