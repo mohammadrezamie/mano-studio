@@ -7,7 +7,7 @@ import tempfile
 MAGIC = "mano-studio"
 SUFFIX = ".mano"
 MAX_BYTES = 2_000_000
-KINDS = {"rtl", "asm", "circuit", "databus", "karnaugh", "state-design"}
+KINDS = {"rtl", "asm", "circuit", "databus", "karnaugh", "state-design", "state-run"}
 
 
 def encode(kind, payload):
