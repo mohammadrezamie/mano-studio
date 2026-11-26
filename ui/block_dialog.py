@@ -1,10 +1,13 @@
 """One focused dialog for inserting an existing combinational preset."""
 from PySide6.QtWidgets import (QDialog,QVBoxLayout,QFormLayout,QLabel,QComboBox,
-    QLineEdit,QDialogButtonBox,QWidget,QScrollArea)
+    QLineEdit,QDialogButtonBox,QWidget,QScrollArea,QPushButton,QFileDialog,QMessageBox)
 from PySide6.QtCore import Qt
 from logic_engine import CIRCUITS
 from circuit_document import CircuitDocument
 from circuit_composition import compose
+from circuit_file import read_text
+from classic_samples import SAMPLES, load_sample
+from pathlib import Path
 
 
 class BlockDialog(QDialog):
@@ -14,14 +17,20 @@ class BlockDialog(QDialog):
         self.result_document=None
         self.setWindowTitle(self.t("Insert circuit block","درج بلوک مدار"))
         layout=QVBoxLayout(self)
-        note=QLabel(self.t("Choose a preset. Connect each input to an existing signal or expose a new input. Original outputs remain; new gate and output names use the prefix. Layout is regenerated.",
-            "یک مدار آماده انتخاب کنید. هر ورودی را به سیگنال موجود وصل کنید یا ورودی جدید بسازید. خروجی‌های قبلی حفظ و نام‌های جدید پیشونددار می‌شوند. چیدمان دوباره ساخته می‌شود."))
+        note=QLabel(self.t("Choose a preset, saved sample or circuit file. Connect each input to an existing signal or expose a new input. Original outputs remain; new gate and output names use the prefix. Layout is regenerated.",
+            "مدار آماده، نمونه یا فایل مدار را انتخاب کنید. هر ورودی را به سیگنال موجود وصل کنید یا ورودی جدید بسازید. خروجی‌های قبلی حفظ و نام‌های جدید پیشونددار می‌شوند. چیدمان دوباره ساخته می‌شود."))
         note.setWordWrap(True);layout.addWidget(note)
         form=QFormLayout()
         self.selector=QComboBox()
         for key,c in CIRCUITS.items():
             self.selector.addItem(c.title[fa],key)
+        for sample in SAMPLES:
+            self.selector.addItem(sample["title"][fa], "sample:"+sample["id"])
+        self.imported=None
         form.addRow(self.t("Block","بلوک"),self.selector)
+        browse=QPushButton(self.t("Load saved circuit…","بارگذاری مدار ذخیره‌شده…"))
+        browse.clicked.connect(self.browse)
+        form.addRow(browse)
         self.prefix=QLineEdit("b1")
         self.prefix.setMaxLength(12)
         self.prefix.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
@@ -55,7 +64,7 @@ class BlockDialog(QDialog):
             self.ports.removeRow(0)
         self.error.clear()
         self.fields={}
-        c=CIRCUITS[self.selector.currentData()]
+        c=self.selected_block()
         signals=(*self.base.inputs,*(g.output for g in self.base.gates))
         for pin in c.inputs:
             field=QComboBox()
@@ -66,9 +75,38 @@ class BlockDialog(QDialog):
             self.fields[pin]=field
             self.ports.addRow(pin,field)
 
+    def selected_block(self):
+        key=self.selector.currentData()
+        if key=="imported":
+            return self.imported
+        if key.startswith("sample:"):
+            return load_sample(key.split(":",1)[1])
+        return CircuitDocument.from_circuit(CIRCUITS[key])
+
+    def browse(self):
+        name,_=QFileDialog.getOpenFileName(self,self.t("Load block","بارگذاری بلوک"),"",
+            "Mano circuit (*.mano-logic.json);;JSON (*.json)")
+        if not name:
+            return
+        try:
+            document=CircuitDocument.loads(read_text(name))
+        except (OSError,UnicodeError,ValueError):
+            QMessageBox.warning(self,self.t("Invalid circuit","مدار نامعتبر"),
+                self.t("The file could not be read or is not a supported circuit.","فایل خوانده نشد یا مدار پشتیبانی‌شده نیست."))
+            return
+        self.imported=document
+        index=self.selector.findData("imported")
+        if index<0:
+            self.selector.addItem(Path(name).name,"imported")
+            index=self.selector.findData("imported")
+        else:
+            self.selector.setItemText(index,Path(name).name)
+        self.selector.setCurrentIndex(index)
+        self.rebuild()
+
     def validate(self):
         try:
-            block=CircuitDocument.from_circuit(CIRCUITS[self.selector.currentData()])
+            block=self.selected_block()
             self.result_document=compose(self.base,block,self.prefix.text(),
                 {pin:field.currentData() for pin,field in self.fields.items()})
         except ValueError:
