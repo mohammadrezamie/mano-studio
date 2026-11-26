@@ -37,6 +37,7 @@ ACTIVE_STATES=(
     ("omega","internal-block"), ("omega","crossed-switch"),
     ("karnaugh","de-morgan-dual"), ("karnaugh","static-hazard"),
     ("sequential","jk-excitation"), ("sequential","sr-forbidden"),
+    ("sequential","latch-unknown"), ("sequential","async-preset"),
 )
 
 
