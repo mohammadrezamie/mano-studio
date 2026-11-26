@@ -66,3 +66,12 @@ def test_invalid_save_preserves_previous(tmp_path):
     with pytest.raises(ValueError):
         save(path,m,(("unknown",),(),0))
     assert path.read_bytes()==original
+
+
+def test_shipped_native_checkpoint():
+    from pathlib import Path
+    path=Path(__file__).resolve().parents[1]/"examples"/"databus"/"parallel-load.mano"
+    model,staged=load(path)
+    assert tuple(model.registers.values())==(6,6,6)
+    assert model.memory.read(9)==6 and model.memory.read(6)==0
+    assert len(model.history)==3 and staged==(("RAM",),("R1",),0)
