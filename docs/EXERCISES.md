@@ -23,3 +23,6 @@ Developer visual QA: the shipped POS and Moore-reduction files are also used in 
 See [Circuit library](CIRCUIT_LIBRARY.md) for six editable JSON circuits and the new block insertion workflow. The [permanent laboratory policy](PRACTICAL_LAB_POLICY.md) extends saved experiments to every applicable textbook section.
 
 Saved combinational circuit files may now also be inserted as blocks with explicit signal mapping; see CIRCUIT_LIBRARY.md.
+
+## RAM/register bus experiments
+Three saved stepwise examples are documented in [DATABUS_LAB.md](DATABUS_LAB.md). Each starts from reset and uses the actual model. Custom scenario import/export is pending.
