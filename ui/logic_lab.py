@@ -854,7 +854,7 @@ class LogicLab(QDialog):
     def done(self,result):
         if self.stack.currentIndex()==1 and QMessageBox.question(self,self.t("Unapplied edits","ویرایش اعمال‌نشده"),self.t("Discard staged edits?","ویرایش‌های اعمال‌نشده حذف شوند؟"),QMessageBox.StandardButton.Discard|QMessageBox.StandardButton.Cancel,QMessageBox.StandardButton.Cancel)!=QMessageBox.StandardButton.Discard:
             return
-        if self.confirm_discard():
+        if self.confirm_discard() and self.databus.confirm_close():
             super().done(result)
 
     def change(self,name,value):
