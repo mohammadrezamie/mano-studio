@@ -143,3 +143,5 @@ Beta #3/#23: new .mano kind cpu-run, saves source, entire 4096-word memory (spar
 
 ### Beta native-document integrity (proposed)
 A focused Beta fix rejects lossy JSON keys and excessively nested native payloads before replacing a saved .mano file. The existing envelope regression plus 17 new cases passed locally (29 total); integrated lab compatibility and Qt acceptance remain pending. See [native files guide](docs/NATIVE_FILES_AND_UPDATES.md). No Stable change or public release.
+
+Follow-up: the proposed fix also bounds serialization to the existing 2,000,000 UTF-8 byte limit, with 33 local tests passing and exact source/test hashes checked. Dedicated PR-scoped integration CI configured; results pending.
