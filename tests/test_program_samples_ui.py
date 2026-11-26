@@ -82,11 +82,15 @@ def test_dirty_sample_replacement_save_checkpoints_before_switch(
         assert lab.steps == 1 and lab.is_dirty()
         old_source, old_steps = lab.source.toPlainText(), lab.steps
         checkpoint = tmp_path / "before-sample.mano"
-        choices = iter([QMessageBox.StandardButton.Save, QMessageBox.StandardButton.Yes])
-        monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: next(choices))
+        calls = []
+        def save_choice(*a, **k):
+            calls.append(1)
+            return QMessageBox.StandardButton.Save
+        monkeypatch.setattr(QMessageBox, "question", save_choice)
         monkeypatch.setattr(QFileDialog, "getSaveFileName",
                             lambda *a, **k: (str(checkpoint), ""))
         assert lab.open_saved_sample("counted-loop")
+        assert len(calls) == 1
         saved_source, program, cpu, saved_steps, breaks = cpu_session.load(checkpoint)
         assert saved_source == old_source and saved_steps == old_steps
         assert lab.steps == 0 and lab.cpu is not None
