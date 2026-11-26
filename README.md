@@ -11,7 +11,7 @@
   <img alt="Python" src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&amp;logoColor=white">
   <img alt="Qt for Python" src="https://img.shields.io/badge/PySide6-Qt-41CD52?logo=qt&amp;logoColor=white">
   <img alt="Languages" src="https://img.shields.io/badge/UI-English%20%2F%20Persian-7664D8">
-  <img alt="Release status" src="https://img.shields.io/badge/release-preparing%20beta-E5A344">
+  <img alt="Release status" src="https://img.shields.io/badge/release-candidate%20testing-E5A344">
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-287D65"></a>
 </p>
 
@@ -35,14 +35,18 @@ Designed for English and Persian, with persistent language preferences, Light/Da
 | Track | Current milestone |
 | --- | --- |
 | **Main — verified source baseline** | PR [#15](https://github.com/mohammadrezamie/mano-studio/pull/15) merged; 1,200 tests passed on each OS in [run 45557009008](https://github.com/mohammadrezamie/mano-studio/actions/runs/45557009008). 42 learning entries across 13 chapters (partial coverage). |
-| **Release — Windows x64 beta** | [PR #19](https://github.com/mohammadrezamie/mano-studio/pull/19), proposed v0.3.0-beta.1; integrated regression, installer, native acceptance and publication gates remain open. |
-| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): MSI cache coherence adds a 43rd entry; Qt tests and visual evidence pending. |
+| **Release — Windows x64 beta** | [PR #22](https://github.com/mohammadrezamie/mano-studio/pull/22), v0.3.0-beta.1: installer workflow [45786384159](https://github.com/mohammadrezamie/mano-studio/actions/runs/45786384159) passed; full regression [45786384171](https://github.com/mohammadrezamie/mano-studio/actions/runs/45786384171) still running on both OS at observation. |
+| **Instructor v1 candidate** | [PR #24](https://github.com/mohammadrezamie/mano-studio/pull/24), internal 1.0.0 candidate: [Windows build and automated install/portable smoke](https://github.com/mohammadrezamie/mano-studio/actions/runs/45798904733) passed; full regression [45798904930](https://github.com/mohammadrezamie/mano-studio/actions/runs/45798904930), native review and distribution approval remain open. |
+| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): native design/session files, ALU bus and update progress source; [visual polish PR #25](https://github.com/mohammadrezamie/mano-studio/pull/25) remains separate and unaccepted. |
 
-**No downloadable public release has been verified or published.** Development artifacts are not stable releases. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live state. This snapshot is dated 2026-11-25; evidence refers to the named commits/runs, not every later change.
+**No downloadable public release has been verified or published.** Successful CI packages are internal candidates, not an accepted stable release. The owner targets Monday 2026-11-30 for instructor delivery; do not delay a verified delivery for optional textbook features. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [owner backlog #23](https://github.com/mohammadrezamie/mano-studio/issues/23), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases). Snapshot: 2026-11-26; evidence is tied to the named runs and revisions. See [release acceptance evidence](docs/RELEASE_ACCEPTANCE_CHECKPOINT.md).
+
 
 ## Visual preview
 
 The M-chip above is the approved **candidate** identity, exported from the vector geometry in the release candidate (not the older main application icon). Actual desktop captures are available from [the verified PR #15 CI run](https://github.com/mohammadrezamie/mano-studio/actions/runs/45557009008) under its artifacts. The Windows archive contains real English/Persian Qt previews in multiple themes; offscreen capture is not native Windows visual acceptance. GitHub sign-in may be required to download artifacts.
+
+The internal v1 candidate also has [actual instructor-focused Qt captures](https://github.com/mohammadrezamie/mano-studio/actions/runs/45798904733) (artifact `ManoStudio-v1-instructor-preview`); the capture job passed, but native visual acceptance remains separate.
 
 See [design system](docs/DESIGN_SYSTEM.md), [brand system](docs/BRAND_SYSTEM.md) and [animation guide](docs/ANIMATION_GUIDE.md). Keep screenshots few, representative, genuine and clearly dated; never substitute generated concepts for running software.
 
@@ -114,7 +118,7 @@ The academic translator remains dependency-free and independently testable. See 
 
 ## Two tracks, one project
 
-The release track stabilizes a Windows-first beta without scope creep. The next-generation track expands the textbook models, visual tools and educational experiments independently. Neither track waits for the other to finish. Full textbook coverage is a goal, not a completion claim. New libraries are welcome when licensing, offline operation, packaging and maintainability are compatible.
+The release track stabilizes Windows-first beta and v1 candidates without uncontrolled scope expansion. The next-generation track expands the textbook models, visual tools and educational experiments independently. Neither track waits for the other to finish. Full textbook coverage is a goal, not a completion claim. New libraries are welcome when licensing, offline operation, packaging and maintainability are compatible.
 
 **Contributors and agents:** read [AGENTS.md](AGENTS.md) and [CONTINUE.md](docs/CONTINUE.md). Update README and affected documentation in the same work cycle as every meaningful project change. Record actual evidence, not anticipated results.
 
