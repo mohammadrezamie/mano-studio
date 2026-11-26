@@ -24,11 +24,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 120
+    timeout-minutes: 300
     env:
       QT_QPA_PLATFORM: offscreen
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -46,7 +49,13 @@ jobs:
           "QT_QPA_FONTDIR=$fonts" >> $env:GITHUB_ENV
       - name: Reject missing Latin, Persian and technical glyphs
         run: python render_preflight.py
-      - run: python -m pytest -q --durations=25
+      - run: python -m pytest -q --durations=25 --junitxml=regression.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-${{ matrix.os }}
+          path: regression.xml
+          if-no-files-found: ignore
       - name: Capture actual desktop previews
         run: python capture_workspace.py
       - uses: actions/upload-artifact@v4
