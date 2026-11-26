@@ -130,3 +130,39 @@ def test_memory_instruction_interpretation(tmp_path, language):
         lab.mark_saved()
         lab.close()
         workspace.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_memory_page_navigation(tmp_path, language):
+    app = QApplication.instance() or QApplication([])
+    settings = QSettings(str(tmp_path / "navigate.ini"), QSettings.Format.IniFormat)
+    settings.setValue("language", language)
+    settings.setValue("reduced_motion", True)
+    workspace = Workspace(settings)
+    lab = ProgramLab(workspace)
+    try:
+        lab.select_tool("register-memory")
+        before = lab.cpu.registers()
+        assert not lab.previous_memory_button.isEnabled()
+        assert lab.next_memory_button.isEnabled()
+        lab.next_memory_button.click()
+        assert lab.inspected_address == 0
+        assert not lab.previous_memory_button.isEnabled()
+        lab.memory_address.setText("FFF")
+        assert lab.inspect_memory()
+        assert not lab.next_memory_button.isEnabled()
+        assert lab.previous_memory_button.isEnabled()
+        lab.previous_memory_button.click()
+        assert lab.inspected_address == 0xFE0
+        assert lab.memory_page_label.text() == "FE0–FEF"
+        lab.clear_memory_page()
+        assert lab.inspected_address is None
+        assert not lab.clear_memory_button.isEnabled()
+        assert lab.cpu.registers() == before and not lab.is_dirty()
+        assert lab.begin_source_edit()
+        assert not lab.next_memory_button.isEnabled()
+        assert not lab.edit_memory_button.isEnabled()
+    finally:
+        lab.mark_saved()
+        lab.close()
+        workspace.close()
