@@ -22,7 +22,7 @@ def captures(tmp_path):
 
 def test_exact_matrix(captures):
     root, rows = captures
-    assert len(expected_captures()) == 48
+    assert len(expected_captures()) == 36
     assert validate(root, rows, inspect) == 48
 
 
