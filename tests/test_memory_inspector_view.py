@@ -107,3 +107,26 @@ def test_edit_memory_with_real_cpu(tmp_path, monkeypatch, language):
         lab.mark_saved()
         lab.close()
         workspace.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_memory_instruction_interpretation(tmp_path, language):
+    app = QApplication.instance() or QApplication([])
+    settings = QSettings(str(tmp_path / "decode.ini"), QSettings.Format.IniFormat)
+    settings.setValue("language", language)
+    settings.setValue("reduced_motion", True)
+    workspace = Workspace(settings)
+    lab = ProgramLab(workspace, "LDA 100\nHLT\nORG 100\nHEX FFFF\nEND")
+    try:
+        def decoded(address):
+            return next(lab.memory.item(row,2).text() for row in range(lab.memory.rowCount())
+                        if lab.memory.item(row,0).text() == address)
+        assert decoded("000") == "LDA 100"
+        assert decoded("001") == "HLT"
+        assert decoded("100") == lab.t("Unsupported", "پشتیبانی‌نشده")
+        assert lab.memory.columnCount() == 3
+        assert not lab.is_dirty()
+    finally:
+        lab.mark_saved()
+        lab.close()
+        workspace.close()

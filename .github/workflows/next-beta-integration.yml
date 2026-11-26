@@ -47,7 +47,7 @@ jobs:
           tests/test_update_progress.py tests/test_localization.py
           tests/test_learning_catalog.py tests/test_storage_elements.py
           tests/test_timing_constraints.py tests/test_flipflop_reference.py
-          tests/test_academic_source.py tests/test_source_metrics.py tests/test_program_samples.py tests/test_cpu_session.py tests/test_cpu_guard.py tests/test_cpu_documents.py tests/test_replacement_guard.py tests/test_memory_inspector.py tests/test_memory_export.py tests/test_memory_edit.py
+          tests/test_academic_source.py tests/test_source_metrics.py tests/test_program_samples.py tests/test_cpu_session.py tests/test_cpu_guard.py tests/test_cpu_documents.py tests/test_replacement_guard.py tests/test_memory_inspector.py tests/test_memory_export.py tests/test_memory_edit.py tests/test_word_decode.py
       - name: Focused Qt regressions
         if: always() && steps.preflight.outcome == 'success'
         run: >-
