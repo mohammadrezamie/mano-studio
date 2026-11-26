@@ -50,7 +50,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Regression venv failed.' }
           (Join-Path $env:RUNNER_TEMP 'mano-regression-venv\Scripts') >> $env:GITHUB_PATH
       - name: Install exact Windows candidate dependencies
-        if: matrix.os == 'windows-latest' && github.head_ref == 'quality/redistribution-gate'
+        if: matrix.os == 'windows-latest' && (github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening')
         run: |
           python -m pip --isolated install --index-url https://pypi.org/simple --only-binary=:all: --report regression-wheel-report.json -c installer/windows-candidate-constraints.txt -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
           if ($LASTEXITCODE -ne 0) { throw 'Pinned regression dependencies failed.' }
