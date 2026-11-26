@@ -38,6 +38,7 @@ ACTIVE_STATES=(
     ("karnaugh","de-morgan-dual"), ("karnaugh","static-hazard"),
     ("sequential","jk-excitation"), ("sequential","sr-forbidden"),
     ("sequential","latch-unknown"), ("sequential","async-preset"),
+    ("gates","lookahead-carry"),
 )
 
 
