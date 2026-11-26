@@ -1,4 +1,4 @@
-"""Validate development build evidence; never publish or execute an artifact."""
+"""Validate internal candidate evidence; never publish or execute an artifact."""
 import argparse
 import ast
 import hashlib
@@ -7,6 +7,11 @@ from pathlib import Path, PurePosixPath
 import re
 import struct
 import zipfile
+
+if __package__:
+    from .version_policy import allowed
+else:
+    from version_policy import allowed
 
 
 def digest(path):
@@ -60,9 +65,9 @@ def source_version(root):
     for node in tree.body:
         if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "VERSION" for t in node.targets):
             version = ast.literal_eval(node.value)
-            if isinstance(version, str) and re.fullmatch(r"0\.\d+\.\d+-(dev|alpha|beta|rc)(\.\d+)?", version):
+            if allowed(version):
                 return version
-    raise ValueError("Not an explicit development/prerelease version")
+    raise ValueError("Not a supported internal candidate version")
 
 
 def require_text(path, expected):
