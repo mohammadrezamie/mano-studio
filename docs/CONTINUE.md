@@ -1,3 +1,19 @@
+# Live Stable continuation — 2026-11-27 (supersedes older status below)
+
+## Exact current candidate
+PR #24 remains a draft Stable 1.0.0 release candidate. PR #26 is the redistribution/security child, current head af75c8d167df14c5e55301d2da6720d5d716b5b0. Windows installer run 45898982989 succeeded; its latest full Windows/Ubuntu regression run 45898982955 remains in progress. The downloaded artifacts were independently audited: nested Setup 34,984,654 B / SHA-256 4f4e69a3c177a5ea56cb38c759352904bcb790829bbc723ffb12dd14e108655d; nested portable 50,965,610 B / SHA-256 6ab47dcb00be8c8b2220445acb4304829eb3a2ad10f92e81e5835e95adbf0706. The portable ZIP has 327 CRC-clean entries and all 111 binary inventory hashes/sizes match. Portable and installed smoke PASS. Setup unsigned. See REDISTRIBUTION_PREFLIGHT.md.
+
+## Do not publish yet
+The candidate correctly reports six Qt LGPL notice flags and three crypto/runtime flags. It packages PySide6 6.12.0 / Qt 6.12.0 and OpenSSL 3.5.9; build SSL is 3.5.0. Qt Framework 6.12.1 is available, but PySide6 6.12.1 was still preparing in the 26-Nov Qt for Python notes. OpenSSL 3.5.10 is scheduled for 1-Dec-2026. Wait for aligned official packages, rebuild from exact pins, and re-run all tests/runtime evidence. No hand-replacement of DLLs. Clean VM, native bilingual acceptance, legal/source review, signing and owner approval remain open.
+
+## Academic source contract
+The only academic deliverable is the standalone root rtl_translator.py. Current Stable candidate still contains academic_source.py, ui/academic_view.py and source-viewer tests/captures. Owner direction now requires the single downloadable file without an in-app source viewer; port the already-reviewed Beta removal to Stable after the current regression run finishes, then rerun the exact-source full matrix and Windows installer. Do not treat the current candidate as final Stable.
+
+## Parallel channels
+Forward Beta remains ahead at 1.1.0-dev.1, with proposed first prerelease v1.1.0-beta.1; Stable remains 1.0.0. Keep the two branches separate. No public release or tag is confirmed. Continue historical evidence below only after checking this live summary.
+
+---
+
 # Start here — continuation checkpoint
 
 **Current priority:** isolated `release/beta-integrated` first beta candidate; see final integrated checkpoint. No further optional feature work until release gates pass. Historical checkpoints below.
