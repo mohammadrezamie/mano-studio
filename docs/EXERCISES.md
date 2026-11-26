@@ -18,3 +18,6 @@ Format v1: `format=mano-exercise`, `version=1`; `kind=karnaugh` contains values 
 Keyboard / صفحه‌کلید: arrow keys move focus across the visible Karnaugh map; Space cycles the focused value. / کلیدهای جهت‌دار برای حرکت بین سلول‌ها و Space برای تغییر مقدار سلول انتخاب‌شده است.
 
 Developer visual QA: the shipped POS and Moore-reduction files are also used in model-asserted screenshot scenarios for Verify, Analysis and Reduction (both languages, three themes). These are not screenshots of manual acceptance.
+
+## Combinational saved samples
+See [Circuit library](CIRCUIT_LIBRARY.md) for three editable JSON circuits and the new block insertion workflow. The [permanent laboratory policy](PRACTICAL_LAB_POLICY.md) extends saved experiments to every applicable textbook section.
