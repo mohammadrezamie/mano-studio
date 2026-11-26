@@ -63,7 +63,7 @@ def test_invalid_netlist_and_input():
 
 
 def test_catalog_complete():
-    assert len(CIRCUITS)==23
+    assert len(CIRCUITS)==24
     for circuit in CIRCUITS.values():
         assert len(list(circuit.truth_table()))==2**len(circuit.inputs)
 
@@ -121,3 +121,21 @@ def test_parity_and_generated_equations():
         assert odd==sum(bits)%2 and even==1-odd
     assert circuit_equations(CIRCUITS["parity4"])==("odd = A ⊕ B ⊕ C ⊕ D","even = ¬odd","Odd = odd","Even = even")
     assert "¬(" in circuit_equations(CIRCUITS["decoder_nand"])[2]
+
+
+
+@pytest.mark.parametrize("width",[2,3,4])
+def test_lookahead_equivalence_and_document(width):
+    from logic_engine import carry_lookahead_adder
+    from circuit_document import CircuitDocument
+    from carry_lookahead import depths
+    circuit=carry_lookahead_adder(width)
+    ripple=ripple_adder(width)
+    assert circuit.inputs==ripple.inputs
+    assert list(circuit.truth_table())==list(ripple.truth_table())
+    doc=CircuitDocument.from_circuit(circuit)
+    assert list(CircuitDocument.loads(doc.dumps()).compile().truth_table())==list(ripple.truth_table())
+    level=lambda c:depths(c.inputs,tuple((g.output,g.op,g.inputs) for g in c.gates),c.outputs)
+    assert level(circuit)["Cout"]==4
+    assert level(ripple)["Cout"]==2*width+1
+    assert level(circuit)["Cout"]<level(ripple)["Cout"]
