@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QSizePolicy, QPlainTextEdit)
 from boolean_minimizer import circuit_output_values, gray_indices, minimize
 from boolean_synthesis import comparison_rows
+from mux_synthesis import synthesize_mux
 from boolean_analysis import analyze
 from ui.boolean_laws_view import BooleanLawsView
 from logic_exercise import KarnaughExercise
@@ -161,6 +162,7 @@ class KarnaughView(QWidget):
         box.addWidget(build_note)
         self.width.currentIndexChanged.connect(self.reset)
         self.form.currentIndexChanged.connect(self.refresh)
+        self.gate_family.currentIndexChanged.connect(self.refresh_proof)
         self.groups.currentRowChanged.connect(self.highlight)
         self.results.currentChanged.connect(self.refresh_proof)
         self.results.currentChanged.connect(self.refresh_analysis)
@@ -337,6 +339,15 @@ class KarnaughView(QWidget):
         if not visible:
             return
         rows = comparison_rows(self.values,self.form.currentData())
+        if self.gate_family.currentData()=="MUX":
+            try:
+                circuit=synthesize_mux(self.values,self.form.currentData()).compile()
+                rows=tuple((i,value,cover,outputs[0])
+                           for (i,value,cover,_),(_,outputs) in zip(rows,circuit.truth_table()))
+            except (ValueError,RuntimeError):
+                self.proof.setRowCount(0)
+                self.proof_note.setText(self.t("MUX verification failed.","بررسی مدار مالتی‌پلکسر ناموفق بود."))
+                return
         self.proof.setRowCount(len(rows))
         specified = 0
         for r,(index,value,cover,gate) in enumerate(rows):
