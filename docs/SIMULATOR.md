@@ -121,3 +121,16 @@ All 14 sample tests now passed locally in 0.06s, including actual assembler and 
 
 ## Expanded executable Basic Computer examples — 2026-11-26
 Proposed Beta expansion from five to ten saved .mano programs: low-byte mask, two's complement negation, rotate left through E, signed absolute value, and three-word indirect memory copy. Expected instruction counts and register/memory outputs are independently hand-derived. The absolute value exercise explicitly documents the 8000 signed overflow limit; four sign-path oracle cases include zero and the minimum signed word. Both-language menu tests execute the full block-copy example (18 instructions), checking source words, destination words, pointers and count. Existing replacement safety and offline packaging path unchanged. Exact-head core/Qt CI required before merge; no local CPU or Qt execution claimed. Stable and standalone RTL translator unchanged.
+
+#### Expected result matrix for the five proposed additions
+
+| Sample | Instructions | Final AC | E | Key memory result |
+| --- | ---: | ---: | ---: | --- |
+| Bit mask | 4 | F3 | 0 | RESULT = 00F3 |
+| Two's complement | 5 | FFFB | 0 | RESULT = FFFB |
+| Rotate through E | 5 | 0002 | 1 | RESULT = 0002 |
+| Signed absolute value (-7) | 7 | 0007 | 0 | RESULT = 0007 |
+| Three-word block copy | 18 | FFFF | 0 | 200–202 copied to 210–212; SRC=203, DST=213, COUNT=0 |
+
+The absolute-value sample is deliberately a two's-complement teaching example, not a saturating mathematical absolute-value routine: input 8000h remains 8000h because +32768 cannot be represented in signed 16-bit Mano words. Zero and positive inputs use the nonnegative path; negative inputs use CMA/INC. The 18-step copy includes three loop passes, the final ISZ skip, and HLT. Values are assertions, not pre-populated CPU state.
+
