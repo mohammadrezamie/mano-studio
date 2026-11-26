@@ -60,3 +60,6 @@ Read docs/PRACTICAL_LAB_POLICY.md. Full textbook coverage requires useful intera
 
 ## Native document and updates — owner 2026-11-26
 Use .mano as the native versioned application document envelope; retain legacy and academic exports. Expand validated persistence to all applicable lab types; never encode executable content or claim exclusivity/encryption. Optional Windows per-user association, user retains default-app choice. Explicit official GitHub update check/download only, validate digest and exact version/platform; no auto execution without trusted signing and verified upgrade. See docs/NATIVE_FILES_AND_UPDATES.md. First beta remains frozen.
+
+## Permanent owner backlog — 2026-11-26
+Read docs/OWNER_BACKLOG.md and issue #23 each continuation. Maintain all incomplete owner requirements, evidence and acceptance gaps there; never silently drop scope. Keep first beta release track independent, preserve academic translator and legacy exports.
