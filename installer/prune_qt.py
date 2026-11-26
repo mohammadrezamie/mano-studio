@@ -28,7 +28,8 @@ def prune(root, imports=pe_imports):
     root = Path(root)
     if not (root / 'ManoStudio.exe').is_file():
         raise ValueError('Not a frozen Mano Studio application')
-    files = sorted(p for p in root.rglob('*') if p.is_file())
+    files = sorted((p for p in root.rglob('*') if p.is_file()),
+                   key=lambda p: p.relative_to(root).as_posix())
     targets = [p for p in files if p.name.lower() in TARGETS]
     if any('virtualkeyboard' in p.relative_to(root).as_posix().lower() and p not in targets for p in files):
         raise ValueError('Unexpected Virtual Keyboard payload; inspect before pruning')
