@@ -49,7 +49,12 @@ def collect(target, packages, python_prefix, frozen_root):
         seen.add(key)
         folder = target / name
         folder.mkdir(exist_ok=True)
-        (folder / "METADATA.txt").write_text(str(dist.metadata), encoding="utf-8")
+        # Read the installed metadata text, rather than serializing an email
+        # Message whose long Description may contain header-like lines.
+        metadata = dist.read_text("METADATA") or dist.read_text("PKG-INFO")
+        if not isinstance(metadata, str) or not metadata.strip():
+            raise ValueError("Missing distribution metadata: " + name)
+        (folder / "METADATA.txt").write_text(metadata, encoding="utf-8", newline="")
         notices = []
         for file in dist.files or ():
             relative = notice_path(file)

@@ -19,7 +19,7 @@
   <a href="#quick-start">Quick start</a> · <a href="#academic-assignment">Academic core</a> · <a href="#visual-preview">Visual preview</a> · <a href="#development-status">Status</a> · <a href="#documentation">Docs</a>
 </p>
 
-**This branch prepares the actual v0.3.0-beta.1 candidate (PR #22); not yet a release.** Earlier integrated Linux job passed 1,370 tests with one outdated credits assertion, corrected locally (2/2 exact-file tests). Windows installer was canceled before packaging. Full exact-head regression and independently produced internal artifacts remain mandatory. [Recovery guide](docs/BETA_DELIVERY_RECOVERY.md).
+**This branch prepares the actual v0.3.0-beta.1 candidate (PR #22); not yet a release.** Earlier integrated Linux job passed 1,370 tests with one outdated credits assertion, corrected locally (2/2 exact-file tests). The next Windows job successfully froze the EXE but failed collecting dependency metadata; the notice collector has been corrected and tested locally (11 cases). Full exact-head regression and independently produced internal artifacts remain mandatory. [Recovery guide](docs/BETA_DELIVERY_RECOVERY.md).
 
 ## What you can do
 
