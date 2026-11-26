@@ -4,7 +4,7 @@ import sys
 import mano_file
 import state_session
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QPushButton, QMenu
-from native_exercise import load as read_exercise, save as write_exercise
+from native_exercise import load as read_exercise, save as write_exercise, restore as restore_design
 
 
 def add_exercise_actions(view, layout, kind):
@@ -22,11 +22,17 @@ def add_exercise_actions(view, layout, kind):
     def open_path(name):
         try:
             session=None
-            if kind=="state-design" and Path(name).suffix.lower()==".mano":
+            if Path(name).suffix.lower()==".mano":
                 file_kind,payload=mano_file.load(name)
-                if file_kind=="state-run":
+                if kind=="state-design" and file_kind=="state-run":
                     session=state_session.restore(payload)
-            exercise = session.design if session is not None else read_exercise(name, kind)
+                    exercise=session.design
+                elif file_kind==kind:
+                    exercise=restore_design(kind,payload)
+                else:
+                    raise ValueError("Wrong exercise type")
+            else:
+                exercise=read_exercise(name,kind)
         except (OSError, ValueError) as exc:
             QMessageBox.warning(view, t("Cannot open exercise", "باز کردن تمرین ناموفق بود"),
                                 t("Invalid, incompatible or unreadable exercise. Current design is unchanged.",
