@@ -1,6 +1,6 @@
 """Launch Mano Studio with persisted settings and a startup splash."""
 import sys
-from PySide6.QtCore import Qt, QSettings, QRect
+from PySide6.QtCore import Qt, QSettings, QRect, QTimer
 from PySide6.QtGui import QPixmap, QPainter, QColor, QFont
 from PySide6.QtWidgets import QApplication, QSplashScreen
 from ui.theme import PALETTES, apply_theme
@@ -122,6 +122,8 @@ def main():
     window = Workspace(settings)
     window.show()
     splash.finish(window)
+    if len(sys.argv)==2 and not sys.argv[1].startswith('-'):
+        QTimer.singleShot(0,lambda:window.open_path(sys.argv[1]))
     return app.exec()
 
 
