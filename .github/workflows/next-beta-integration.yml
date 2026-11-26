@@ -1,0 +1,67 @@
+name: Next-beta integration
+on:
+  push:
+    branches: [develop/next-beta]
+    paths-ignore:
+      - '**/*.md'
+      - 'docs/**'
+concurrency:
+  group: next-beta-integration
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  focused:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Qt libraries and fonts
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libdbus-1-3 fonts-noto-core fonts-dejavu-core
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Compile and preflight
+        id: preflight
+        run: |
+          python -m compileall -q .
+          python -c "import PySide6"
+          python render_preflight.py
+      - name: Focused model and persistence regression
+        run: >-
+          python -m pytest -q -o faulthandler_timeout=90 --junitxml=next-core.xml
+          tests/test_logic_engine.py tests/test_carry_lookahead.py
+          tests/test_mux_network.py tests/test_mux_synthesis.py
+          tests/test_classic_samples.py tests/test_block_composition.py
+          tests/test_circuit_file.py tests/test_native_file.py
+          tests/test_native_exercise.py tests/test_state_session.py
+          tests/test_databus_lab.py tests/test_databus_file.py
+          tests/test_databus_samples.py tests/test_databus_alu.py
+          tests/test_update_service.py tests/test_update_download.py
+          tests/test_update_progress.py tests/test_localization.py
+          tests/test_learning_catalog.py tests/test_storage_elements.py
+          tests/test_timing_constraints.py tests/test_flipflop_reference.py
+      - name: Focused Qt regressions
+        if: always() && steps.preflight.outcome == 'success'
+        run: >-
+          python -m pytest -q -o faulthandler_timeout=90 --junitxml=next-qt.xml
+          tests/test_timing_view.py tests/test_flipflop_reference_view.py
+          tests/test_storage_view.py tests/test_universal_view.py tests/test_update_view.py
+      - name: Integrated workspace regressions
+        if: always() && steps.preflight.outcome == 'success'
+        run: >-
+          python -m pytest -q -o faulthandler_timeout=90 --junitxml=next-workspace.xml
+          tests/test_workspace.py
+          -k 'lookahead_preset or karnaugh_mux_build or library_and_block_insertion or saved_block_import or databus_lesson or native_databus_save_open or native_state_session or databus_alu_controls or exercise_file_actions'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: next-beta-junit-${{ github.sha }}
+          path: next-*.xml
+          if-no-files-found: ignore
