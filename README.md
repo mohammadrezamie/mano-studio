@@ -129,3 +129,7 @@ Released under the [MIT License](LICENSE). See [references](docs/REFERENCES.md) 
 
 ## Instructor v1.0.0 candidate (not accepted stable)
 This branch prepares the first stable delivery for Monday, 2026-11-30. Priority: standalone RTL-to-Assembly Python file, stability, and premium bilingual presentation. See [instructor acceptance](docs/V1_INSTRUCTOR_ACCEPTANCE.md). Candidate packaging and full tests remain required. Later-generation functionality is promoted only after validation; verified beta artifacts remain independent.
+
+## Public redistribution preflight
+
+The internal v1 Windows archive passed automated smoke and binary integrity checks, but public distribution remains blocked pending Qt license evidence and module review. See [the redistribution preflight](docs/REDISTRIBUTION_PREFLIGHT.md). No public release is approved by this audit.
