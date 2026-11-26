@@ -1,0 +1,6 @@
+{
+  "format": "mano-studio",
+  "version": 1,
+  "kind": "asm",
+  "payload": "ORG 100\nLDA PTR I\nSTA RESULT\nHLT\nPTR, HEX 0200\nRESULT, HEX 0000\nORG 200\nDEC 42\nEND\n"
+}

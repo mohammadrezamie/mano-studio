@@ -2,13 +2,14 @@
 from PySide6.QtCore import Qt, QSignalBlocker
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QComboBox,
     QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView,
-    QPlainTextEdit)
+    QPlainTextEdit, QMessageBox)
 from state_synthesis import design_state_machine
 from state_analysis import analyze_machine
 from state_reduction import reduce_machine
 from state_encoding import encode_reduced
 from logic_exercise import StateExercise
 import state_session
+from session_guard import StateKey, SessionGuard
 from ui.exercise_actions import add_exercise_actions
 from ui.state_graph import StateGraph
 from ui.motion import MotionTabs
@@ -114,6 +115,7 @@ class StateSynthesisView(QWidget):
         self.ff.currentIndexChanged.connect(self.refresh)
         self.input.currentIndexChanged.connect(self.preview)
         self.rebuild()
+        self.session_guard = SessionGuard(self.state_key())
 
     def t(self,en,fa):
         return fa if self.fa else en
@@ -128,7 +130,31 @@ class StateSynthesisView(QWidget):
             self.width.setCurrentIndex(self.width.findData(exercise.bits))
             self.mode.setCurrentIndex(self.mode.findData(exercise.mode))
             self.ff.setCurrentIndex(self.ff.findData(exercise.flipflop))
+        with QSignalBlocker(self.input):
+            self.input.setCurrentIndex(0)
         self.rebuild(rows=exercise.table)
+        self.mark_saved()
+
+    def state_key(self):
+        return StateKey(self.exercise(), self.base, tuple(self.events), self.input.currentData())
+
+    def is_dirty(self):
+        return self.session_guard.is_dirty(self.state_key())
+
+    def mark_saved(self, *, native=True):
+        self.session_guard.mark_saved(self.state_key(), native=native)
+
+    def confirm_close(self):
+        if not self.is_dirty():
+            return True
+        choice = QMessageBox.question(self, self.t("Unsaved state session", "جلسه ماشین حالت ذخیره‌نشده"),
+            self.t("Save the current state design and clock history before closing?",
+                   "طرح ماشین حالت و تاریخچه پالس‌ها پیش از بستن ذخیره شود؟"),
+            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Save)
+        if choice == QMessageBox.StandardButton.Save:
+            return self.save_state_session()
+        return choice == QMessageBox.StandardButton.Discard
 
     def session(self):
         return state_session.snapshot(self.exercise(),self.base,self.events,self.input.currentData())
@@ -144,6 +170,7 @@ class StateSynthesisView(QWidget):
         with QSignalBlocker(self.input):
             self.input.setCurrentIndex(self.input.findData(session.selected))
         self.preview()
+        self.mark_saved()
 
     def rebuild(self,*_,rows=None):
         n=self.width.currentData()
