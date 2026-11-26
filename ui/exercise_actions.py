@@ -49,28 +49,42 @@ def add_exercise_actions(view, layout, kind):
             else:
                 view.apply_exercise(exercise)
 
-    def save_file():
+    def save_file(native_only=False):
+        chosen_filter = t("Mano Studio (*.mano)", "مانو استودیو (*.mano)") if native_only else file_filter
         name, _ = QFileDialog.getSaveFileName(view, t("Save exercise", "ذخیره تمرین"),
-                                               kind+".mano", file_filter)
+                                               kind+".mano", chosen_filter)
         if not name:
-            return
+            return False
         path = Path(name)
         if not path.suffix:
             path = path.with_suffix(".mano")
+        native = path.suffix.lower() == ".mano"
+        if native_only and not native:
+            QMessageBox.warning(view, t("Cannot save exercise", "ذخیره تمرین ناموفق بود"),
+                                t("Use the .mano extension to retain clock history.",
+                                  "برای حفظ تاریخچه پالس‌ها از پسوند .mano استفاده کنید."))
+            return False
         try:
-            if kind=="state-design" and path.suffix.lower()==".mano":
-                state_session.save(path,view.session())
+            if kind == "state-design" and native:
+                state_session.save(path, view.session())
             else:
                 write_exercise(path, view.exercise())
         except (OSError, ValueError):
             QMessageBox.warning(view, t("Cannot save exercise", "ذخیره تمرین ناموفق بود"),
                                 t("Check the destination and permissions. Your current design is unchanged.",
                                   "مسیر و مجوز نوشتن را بررسی کنید. طرح فعلی تغییر نکرده است."))
+            return False
+        if kind == "state-design":
+            view.mark_saved(native=native)
+        return True
+
+    if kind == "state-design":
+        view.save_state_session = lambda: save_file(native_only=True)
 
     view.open_exercise_button = QPushButton(t("Open exercise", "باز کردن تمرین"))
     view.save_exercise_button = QPushButton(t("Save exercise", "ذخیره تمرین"))
     view.open_exercise_button.clicked.connect(open_file)
-    view.save_exercise_button.clicked.connect(save_file)
+    view.save_exercise_button.clicked.connect(lambda checked=False: save_file())
     layout.addWidget(view.open_exercise_button)
     layout.addWidget(view.save_exercise_button)
 

@@ -1567,6 +1567,7 @@ def test_state_synthesis_route_and_clock(workspace,language):
     v.width.setCurrentIndex(2)
     assert v.table.rowCount()==16 and v.state==0
     assert lab.document is original
+    lab.state_design.mark_saved()  # Explicit test teardown; close guard tested separately.
     lab.close()
 
 
@@ -1587,6 +1588,7 @@ def test_state_graph_preview_and_clock(workspace,app,language):
     assert v.graph.state==0 and len(v.graph.edges)==1
     assert v.graph.edges[0].conditions==((0,0),(1,0))
     assert not v.graph.grab().isNull()
+    lab.state_design.mark_saved()  # Explicit test teardown; close guard tested separately.
     lab.close()
 
 
@@ -1607,6 +1609,7 @@ def test_state_analysis_updates_without_clock(workspace,language):
     assert v.state==0 and len(v.trace)==1
     v.views.setCurrentWidget(v.graph)
     assert len(v.trace)==1
+    lab.state_design.mark_saved()  # Explicit test teardown; close guard tested separately.
     lab.close()
 
 
@@ -1625,6 +1628,7 @@ def test_state_reduction_preview_preserves_design(workspace,language):
     assert "R0 | 1 | R0 | 0" in v.reduction_text.toPlainText()
     v.input.setCurrentIndex(1);v.clock.click()
     assert v.state==0 and len(v.trace)==1
+    lab.state_design.mark_saved()  # Explicit test teardown; close guard tested separately.
     lab.close()
 
 
@@ -1642,6 +1646,7 @@ def test_reduced_binary_encoding_preview(workspace,language):
     v.views.setCurrentWidget(v.reduction_text)
     assert "R0 = 0" in v.reduction_text.toPlainText()
     assert v.model is original and v.state==0
+    lab.state_design.mark_saved()  # Explicit test teardown; close guard tested separately.
     lab.close()
 
 
@@ -1727,6 +1732,7 @@ def test_state_table_focus_and_row_sizing(workspace,language):
     v.width.setCurrentIndex(2)
     assert v.table.verticalHeader().sectionResizeMode(0)==QHeaderView.ResizeMode.ResizeToContents
     assert v.table.currentRow()==1 and not v.trace
+    lab.state_design.mark_saved()  # Explicit test teardown; close guard tested separately.
     lab.close()
 
 
@@ -1980,6 +1986,7 @@ def test_native_state_session(workspace,tmp_path,monkeypatch,language):
         view.pulse()
         assert view.state==expected and len(view.trace)==64
     finally:
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Discard)
         lab.close()
 
 
@@ -2053,3 +2060,47 @@ def test_instructor_source_and_splash(workspace,tmp_path,monkeypatch,language,th
     finally:
         dialog.close()
         dialog.deleteLater()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_state_session_close_guard(workspace, tmp_path, monkeypatch, language):
+    from PySide6.QtWidgets import QFileDialog, QMessageBox, QDialog
+    from ui.logic_lab import LogicLab
+    from state_session import load
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab = LogicLab(workspace)
+    view = lab.state_design
+    try:
+        assert not view.is_dirty()
+        view.input.setCurrentIndex(1)
+        view.pulse()
+        expected = view.session()
+        assert view.is_dirty()
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Cancel)
+        assert not view.confirm_close()
+        assert view.session() == expected
+        lab.show()
+        lab.done(QDialog.DialogCode.Rejected)
+        assert lab.isVisible()
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Save)
+        monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: ("", ""))
+        assert not view.confirm_close()
+        assert view.is_dirty()
+        monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: (str(tmp_path / "legacy.json"), ""))
+        monkeypatch.setattr(QMessageBox, "warning", lambda *a: None)
+        assert not view.confirm_close()
+        assert not (tmp_path / "legacy.json").exists()
+        # Explicit legacy export saves design only and must not mark the run clean.
+        view.save_exercise_button.click()
+        assert (tmp_path / "legacy.json").is_file() and view.is_dirty()
+        path = tmp_path / "state.mano"
+        monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: (str(path), ""))
+        assert view.confirm_close()
+        assert load(path) == expected and not view.is_dirty()
+        view.pulse()
+        assert view.is_dirty()
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Discard)
+        assert view.confirm_close()
+    finally:
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Discard)
+        lab.close()

@@ -40,7 +40,7 @@ jobs:
           tests/test_mux_network.py tests/test_mux_synthesis.py
           tests/test_classic_samples.py tests/test_block_composition.py
           tests/test_circuit_file.py tests/test_native_file.py
-          tests/test_native_exercise.py tests/test_state_session.py
+          tests/test_native_exercise.py tests/test_state_session.py tests/test_session_guard.py
           tests/test_databus_lab.py tests/test_databus_file.py
           tests/test_databus_samples.py tests/test_databus_alu.py
           tests/test_update_service.py tests/test_update_download.py
@@ -59,7 +59,7 @@ jobs:
         run: >-
           python -m pytest -q -o faulthandler_timeout=90 --junitxml=next-workspace.xml
           tests/test_workspace.py
-          -k 'lookahead_preset or karnaugh_mux_build or library_and_block_insertion or saved_block_import or databus_lesson or native_databus_save_open or native_state_session or databus_alu_controls or exercise_file_actions or instructor_source_and_splash'
+          -k 'lookahead_preset or karnaugh_mux_build or library_and_block_insertion or saved_block_import or databus_lesson or native_databus_save_open or native_state_session or state_session_close_guard or databus_alu_controls or exercise_file_actions or instructor_source_and_splash'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
