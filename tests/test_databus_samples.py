@@ -18,3 +18,6 @@ def test_saved_experiment(scenario):
     assert len(m.history)==len(scenario["steps"])
     if "bus" in expected:
         assert m.history[-1].bus==expected["bus"]
+    if "flags" in expected:
+        r=m.history[-1].arithmetic
+        assert [r.carry,r.overflow,r.negative,r.zero]==expected["flags"]
