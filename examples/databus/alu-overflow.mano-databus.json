@@ -1,0 +1,72 @@
+{
+  "format": "mano-databus",
+  "version": 1,
+  "id": "alu-overflow",
+  "title": [
+    "ALU signed overflow and store",
+    "سرریز علامت‌دار و ذخیره ALU"
+  ],
+  "task": [
+    "Load R0=7, R1=1, AR=9. Add, store result 8 in RAM[9] and R0; observe C=0, V=1, N=1, Z=0.",
+    "R0=7، R1=1 و AR=9 را بارگذاری کنید. جمع را در RAM[9] و R0 ذخیره و پرچم‌های C=0، V=1، N=1، Z=0 را مشاهده کنید."
+  ],
+  "steps": [
+    {
+      "sources": [
+        "EXT"
+      ],
+      "destinations": [
+        "AR"
+      ],
+      "external": 9
+    },
+    {
+      "sources": [
+        "EXT"
+      ],
+      "destinations": [
+        "R0"
+      ],
+      "external": 7
+    },
+    {
+      "sources": [
+        "EXT"
+      ],
+      "destinations": [
+        "R1"
+      ],
+      "external": 1
+    },
+    {
+      "sources": [
+        "ALU"
+      ],
+      "destinations": [
+        "R0",
+        "RAM"
+      ],
+      "external": 0
+    }
+  ],
+  "expected": {
+    "registers": [
+      9,
+      8,
+      1
+    ],
+    "memory": [
+      [
+        9,
+        8
+      ]
+    ],
+    "bus": "1000",
+    "flags": [
+      0,
+      true,
+      true,
+      false
+    ]
+  }
+}
