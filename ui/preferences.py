@@ -1,10 +1,11 @@
 """Preferences and a user-triggered, nonblocking release check."""
 from PySide6.QtCore import QObject, QThread, Signal, Slot, Qt, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton, QPlainTextEdit, QComboBox, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton, QPlainTextEdit, QComboBox, QFileDialog, QMessageBox, QProgressBar
+from threading import Event
 from update_service import release_info, RELEASES_PAGE, VERSION
 from ui.motion import MotionButton
-from update_download import download
+from update_download import download, DownloadCancelled
 
 
 class UpdateWorker(QObject):
@@ -20,17 +21,29 @@ class UpdateWorker(QObject):
 
 class DownloadWorker(QObject):
     finished = Signal(object, str)
+    progress = Signal(int, int)
 
-    def __init__(self,asset,path):
+    def __init__(self,asset,path,stop):
         super().__init__()
-        self.asset,self.path=asset,path
+        self.asset,self.path,self.stop=asset,path,stop
+        self.last_percent=-1
+
+    def report(self,count,total):
+        # Avoid thousands of queued GUI updates for large assets.
+        percent=count*100//total
+        if percent!=self.last_percent:
+            self.last_percent=percent
+            self.progress.emit(count,total)
 
     @Slot()
     def run(self):
         try:
-            self.finished.emit(download(self.asset,self.path,explicit=True),"")
-        except Exception as exc:
-            self.finished.emit(None,str(exc))
+            path=download(self.asset,self.path,explicit=True,cancelled=self.stop.is_set,progress=self.report)
+            self.finished.emit(path,"")
+        except DownloadCancelled:
+            self.finished.emit(None,"cancelled")
+        except Exception:
+            self.finished.emit(None,"failed")
 
 
 class Preferences(QDialog):
@@ -41,6 +54,7 @@ class Preferences(QDialog):
         self.fa = workspace.language == "fa"
         self.thread = None
         self.asset = None
+        self.stop = None
         self.setWindowTitle(self.text("Settings", "تنظیمات"))
         self.resize(500, 400)
         layout = QVBoxLayout(self)
@@ -94,6 +108,16 @@ class Preferences(QDialog):
         self.download_button.clicked.connect(self.start_download)
         self.download_button.hide()
         layout.addWidget(self.download_button)
+        self.download_progress=QProgressBar()
+        self.download_progress.setRange(0,100)
+        self.download_progress.setAccessibleName(self.text("Installer download progress","پیشرفت دریافت نصب‌کننده"))
+        self.download_progress.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.download_progress.hide()
+        layout.addWidget(self.download_progress)
+        self.cancel_download_button=MotionButton(self.text("Cancel download","لغو دریافت"))
+        self.cancel_download_button.clicked.connect(self.cancel_download)
+        self.cancel_download_button.hide()
+        layout.addWidget(self.cancel_download_button)
         layout.addStretch()
         close = MotionButton(self.text("Close", "بستن"))
         close.clicked.connect(self.accept)
@@ -112,6 +136,7 @@ class Preferences(QDialog):
             return
         self.check.setEnabled(False)
         self.notes.clear()
+        self.download_progress.hide()
         self.notes.hide()
         self.releases.hide()
         self.download_button.hide()
@@ -158,9 +183,15 @@ class Preferences(QDialog):
             return
         self.check.setEnabled(False)
         self.download_button.setEnabled(False)
+        self.stop=Event()
+        self.download_progress.setValue(0)
+        self.download_progress.show()
+        self.cancel_download_button.setEnabled(True)
+        self.cancel_download_button.show()
         self.status.setText(self.text("Downloading and checking SHA-256…","در حال دریافت و بررسی SHA-256…"))
         self.thread=QThread(self)
-        self.worker=DownloadWorker(self.asset,path)
+        self.worker=DownloadWorker(self.asset,path,self.stop)
+        self.worker.progress.connect(self.show_progress)
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
         self.worker.finished.connect(self.download_result)
@@ -169,12 +200,32 @@ class Preferences(QDialog):
         self.thread.finished.connect(self.cleanup)
         self.thread.start()
 
+    @Slot(int,int)
+    def show_progress(self,count,total):
+        if self.stop is None or self.stop.is_set():
+            return
+        # 100% is reserved for successful integrity verification and publication.
+        self.download_progress.setValue(min(99,count*100//total))
+        self.status.setText(self.text("Downloaded: ","دریافت‌شده: ")+f"{count/1048576:.1f} / {total/1048576:.1f} MiB")
+
+    def cancel_download(self):
+        if self.stop is not None:
+            self.stop.set()
+            self.cancel_download_button.setEnabled(False)
+            self.status.setText(self.text("Cancellation requested…","درخواست لغو دریافت…"))
+
     @Slot(object,str)
     def download_result(self,path,error):
-        if error:
+        self.cancel_download_button.hide()
+        if error=="cancelled":
+            self.download_progress.hide()
+            self.status.setText(self.text("Download cancelled; no installer saved.","دریافت لغو شد؛ نصب‌کننده ذخیره نشد."))
+        elif error:
+            self.download_progress.hide()
             self.status.setText(self.text("Download failed or integrity could not be verified. Existing files were not overwritten.",
                 "دریافت ناموفق بود یا سلامت فایل تأیید نشد. فایل‌های موجود بازنویسی نشدند."))
         else:
+            self.download_progress.setValue(100)
             self.status.setText(self.text("Downloaded; SHA-256 matches. Installer not executed. Verify publisher before running.",
                 "فایل دریافت شد و SHA-256 منطبق است. نصب‌کننده اجرا نشده؛ پیش از اجرا ناشر را بررسی کنید.")+"\n"+str(path))
 
@@ -183,6 +234,8 @@ class Preferences(QDialog):
         self.thread.deleteLater()
         self.thread = None
         self.worker = None
+        self.stop = None
+        self.cancel_download_button.hide()
         self.check.setEnabled(True)
         self.download_button.setEnabled(self.asset is not None)
 
