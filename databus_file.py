@@ -1,5 +1,6 @@
 """Native bus experiment checkpoint with bounded, model-replayed history."""
-from databus_lab import Databus, REGISTERS, SOURCES, DESTINATIONS
+from databus_lab import Databus, REGISTERS, SOURCES, DESTINATIONS, event_controls
+from word_arithmetic import OPERATIONS
 import mano_file
 
 
@@ -10,7 +11,7 @@ def words(value, count):
 
 
 def controls(value):
-    if not isinstance(value, dict) or set(value) != {"sources", "destinations", "external"}:
+    if not isinstance(value, dict) or set(value) not in ({"sources", "destinations", "external"}, {"sources", "destinations", "external", "operation", "carry"}):
         raise ValueError("Invalid bus controls")
     for key, allowed in (("sources", SOURCES), ("destinations", DESTINATIONS)):
         pins = value[key]
@@ -19,11 +20,17 @@ def controls(value):
     external = value["external"]
     if type(external) is not int or not 0 <= external < 16:
         raise ValueError("Invalid external word")
-    return tuple(value["sources"]), tuple(value["destinations"]), external
+    operation, carry = value.get("operation", "ADD"), value.get("carry", 0)
+    if operation not in OPERATIONS or type(carry) is not int or carry not in (0,1):
+        raise ValueError("Invalid ALU controls")
+    return event_controls(tuple(value["sources"]), tuple(value["destinations"]), external, operation, carry)
 
 
-def control_record(sources, destinations, external):
-    return {"sources": list(sources), "destinations": list(destinations), "external": external}
+def control_record(sources, destinations, external, operation="ADD", carry=0):
+    obj = {"sources": list(sources), "destinations": list(destinations), "external": external}
+    if operation != "ADD" or type(carry) is not int or carry != 0:
+        obj.update(operation=operation, carry=carry)
+    return obj
 
 
 def snapshot(model, staged):
