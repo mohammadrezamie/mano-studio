@@ -1,5 +1,5 @@
 # First beta candidate — delivery checklist
-Internal test build, not a published release. Target Windows 10/11 x64. Version in this commit: 1.1.0-dev.1. Proposed first public version: v1.1.0-beta.1; separate Stable candidate: 1.0.0. Beta must remain semantically ahead of Stable. after gates; no stable claim.
+Internal test build, not a published release. Target Windows 10/11 x64. Version in this commit: 1.1.0-dev.1. Proposed first public version: v1.1.0-beta.1; separate Stable candidate: 1.0.0. The public Beta must remain semantically ahead of Stable; publish only after every Beta gate passes and the owner approves.
 
 ## Source and scope
 - Standalone RTL-to-ASM source; 25 documented instruction templates; provisional classroom dialect.
@@ -16,4 +16,4 @@ Internal test build, not a published release. Target Windows 10/11 x64. Version 
 - [ ] Confirm final version, exact candidate SHA and release checksums, owner approval. Build again if version or source changes.
 - [ ] Publish only explicitly marked GitHub prerelease with setup, portable, hashes and honest limitations.
 
-No automatic publication. No new feature scope. Source branch integrates #16/#17/#18; each independent branch remains available for diagnosis.
+No automatic publication. No new feature scope. PR #36 integrates the exact reviewed heads of #25, #32, #33 and #34 on the current develop/next-beta baseline; each source PR remains available for diagnosis. PR #36 stays draft until combined tests and Windows visual acceptance pass.
