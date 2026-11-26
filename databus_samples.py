@@ -161,6 +161,152 @@ SAMPLES = [
       "memory": [],
       "bus": "01XX"
     }
+  },
+  {
+    "format": "mano-databus",
+    "version": 1,
+    "id": "alu-overflow",
+    "title": [
+      "ALU signed overflow and store",
+      "سرریز علامت‌دار و ذخیره ALU"
+    ],
+    "task": [
+      "Load R0=7, R1=1, AR=9. Add, store result 8 in RAM[9] and R0; observe C=0, V=1, N=1, Z=0.",
+      "R0=7، R1=1 و AR=9 را بارگذاری کنید. جمع را در RAM[9] و R0 ذخیره و پرچم‌های C=0، V=1، N=1، Z=0 را مشاهده کنید."
+    ],
+    "steps": [
+      {
+        "sources": [
+          "EXT"
+        ],
+        "destinations": [
+          "AR"
+        ],
+        "external": 9
+      },
+      {
+        "sources": [
+          "EXT"
+        ],
+        "destinations": [
+          "R0"
+        ],
+        "external": 7
+      },
+      {
+        "sources": [
+          "EXT"
+        ],
+        "destinations": [
+          "R1"
+        ],
+        "external": 1
+      },
+      {
+        "sources": [
+          "ALU"
+        ],
+        "destinations": [
+          "R0",
+          "RAM"
+        ],
+        "external": 0
+      }
+    ],
+    "expected": {
+      "registers": [
+        9,
+        8,
+        1
+      ],
+      "memory": [
+        [
+          9,
+          8
+        ]
+      ],
+      "bus": "1000",
+      "flags": [
+        0,
+        True,
+        True,
+        False
+      ]
+    }
+  },
+  {
+    "format": "mano-databus",
+    "version": 1,
+    "id": "alu-borrow",
+    "title": [
+      "ALU subtraction and borrow",
+      "تفریق ALU و قرض"
+    ],
+    "task": [
+      "Subtract 5 from 2, write D into RAM[3] and R0; observe C=0 (borrow), V=0, N=1, Z=0.",
+      "۵ را از ۲ کم کنید، D را در RAM[3] و R0 بنویسید؛ پرچم‌های C=0 (قرض)، V=0، N=1، Z=0 را مشاهده کنید."
+    ],
+    "steps": [
+      {
+        "sources": [
+          "EXT"
+        ],
+        "destinations": [
+          "AR"
+        ],
+        "external": 3
+      },
+      {
+        "sources": [
+          "EXT"
+        ],
+        "destinations": [
+          "R0"
+        ],
+        "external": 2
+      },
+      {
+        "sources": [
+          "EXT"
+        ],
+        "destinations": [
+          "R1"
+        ],
+        "external": 5
+      },
+      {
+        "sources": [
+          "ALU"
+        ],
+        "destinations": [
+          "R0",
+          "RAM"
+        ],
+        "external": 0,
+        "operation": "SUB",
+        "carry": 0
+      }
+    ],
+    "expected": {
+      "registers": [
+        3,
+        13,
+        5
+      ],
+      "memory": [
+        [
+          3,
+          13
+        ]
+      ],
+      "bus": "1101",
+      "flags": [
+        0,
+        False,
+        True,
+        False
+      ]
+    }
   }
 ]
 
@@ -173,5 +319,5 @@ def run_sample(model, scenario):
     """Replay a complete example from its reproducible reset state."""
     model.reset()
     for step in scenario["steps"]:
-        model.tick(step["sources"], step["destinations"], step["external"])
+        model.tick(step["sources"], step["destinations"], step["external"], step.get("operation", "ADD"), step.get("carry", 0))
     return model
