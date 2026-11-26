@@ -1,0 +1,17 @@
+# Owner requirements and open delivery backlog
+
+Permanent checklist, 2026-11-26. Canonical tracking issue [#23](https://github.com/mohammadrezamie/mano-studio/issues/23); release gate [#4](https://github.com/mohammadrezamie/mano-studio/issues/4), candidate [#22](https://github.com/mohammadrezamie/mano-studio/pull/22), textbook audit [#13](https://github.com/mohammadrezamie/mano-studio/issues/13). Keep release stabilization independent of next-generation development. Status means verified evidence, not merely a feature name.
+
+| Requirement | Current evidence | Remaining acceptance |
+|---|---|---|
+| First installable Windows beta on GitHub Releases | Exact candidate ecb6647c38a93a4eb9c2171c99c10392abd15e72; installer and portable built, automated smoke passed, downloaded hashes verified | Full exact-head regression, native UX, redistribution review, merge, prerelease and verified assets. No stable release before class review. |
+| Entire Mano book useful for teaching and experimentation | 44 learning routes; partial textbook audit | Reconcile exact edition and section mapping; cover every applicable section with original bilingual learning content, correct mathematics, interactive experiments and independent acceptance evidence. |
+| Famous and useful ready-to-load samples in each section | Six classic combinational circuits, three shared-bus scenarios, three native design examples | Expand to each applicable section, including RTL, CPU, microprogramming, I/O, memory, arithmetic, pipeline and multiprocessor scenarios; record reset, provenance and independent outcomes. |
+| Combine and experiment with real circuits | Editable one-bit combinational insertion, imported saved blocks, fixed four-bit RAM/register bus | Arbitrary typed multi-bit composition, ALU, registers, memory, clocks, legal feedback, event ordering, hierarchy and validation; do not fake physical timing or cross-model wiring. |
+| Exclusive native extension | Versioned .mano supports RTL, ASM, circuit, databus, Karnaugh and state-design in source; legacy formats retained | Extend to CPU and other lab states, multi-component projects, state/trace where useful, unsaved-work protection everywhere, native file association/icon/double-click tests. Extension is not encryption. |
+| Direct GitHub update checking and download | Explicit metadata check and digest-checked download-only source | Actual published asset download; responsive progress/cancel; trusted signing, upgrade/rollback, preserved settings and documents before offering execution. Never background-check or silently install. |
+| Offline bilingual polished UI | Existing source and earlier verified Windows previews | Validate new Qt integrations, Persian shaping/RTL, keyboard, scaling, accessibility, low motion, glass-off, actual screenshots. No decorative fabricated previews. |
+| Academic assignment | Standalone documented Python rtl_translator.py preserved; raw RTL/ASM export | Preserve exact academic contract, review with instructor and keep independent explanation and tests. |
+| Documentation and delivery hygiene | README, CONTINUE, STATUS, guides and issues updated per checkpoint | Maintain evidence-based tracking; do not close unresolved items. |
+
+Suitable libraries may be used when licensing, offline functionality, quality and actual benefit are verified. No new release build for docs-only changes to the frozen release branch. See PRACTICAL_LAB_POLICY.md and NATIVE_FILES_AND_UPDATES.md. No background work is implied.
