@@ -104,10 +104,10 @@ def test_open_assembly_draft_without_running(tmp_path, monkeypatch, language):
         path = tmp_path / "draft.mano"
         mano_file.save(path, "asm", "unfinished !")
         monkeypatch.setattr(QFileDialog, "getOpenFileName", lambda *a: (str(path), ""))
-        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.No)
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Cancel)
         assert not lab.open_cpu_session()
         assert lab.cpu is cpu and lab.cpu.registers() == expected
-        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Yes)
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Discard)
         assert lab.open_cpu_session()
         assert lab.source.toPlainText() == "unfinished !"
         assert not lab.source.isReadOnly() and lab.cpu is None and not lab.is_dirty()
@@ -116,6 +116,41 @@ def test_open_assembly_draft_without_running(tmp_path, monkeypatch, language):
         assert lab.cpu is not None and not lab.cpu.halted
         lab.step()
         assert lab.cpu.halted
+    finally:
+        lab.mark_saved()
+        lab.close()
+        workspace.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_replace_saves_current_cpu_first(tmp_path, monkeypatch, language):
+    app = QApplication.instance() or QApplication([])
+    settings = QSettings(str(tmp_path / "replace.ini"), QSettings.Format.IniFormat)
+    settings.setValue("language", language)
+    workspace = Workspace(settings)
+    lab = ProgramLab(workspace)
+    try:
+        lab.step()
+        cpu, expected = lab.cpu, lab.cpu.registers()
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Save)
+        monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: ("", ""))
+        assert not lab.open_saved_sample("counted-loop")
+        assert lab.cpu is cpu and lab.cpu.registers() == expected
+        saved = tmp_path / "before-sample.mano"
+        monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: (str(saved), ""))
+        assert lab.open_saved_sample("counted-loop")
+        assert cpu_session.load(saved)[2].registers() == expected
+        assert lab.cpu is not cpu and not lab.is_dirty()
+        lab.step()
+        old_cpu = lab.cpu
+        invalid = tmp_path / "invalid.mano"
+        mano_file.save(invalid, "cpu-run", {})
+        monkeypatch.setattr(QFileDialog, "getOpenFileName", lambda *a: (str(invalid), ""))
+        monkeypatch.setattr(QMessageBox, "warning", lambda *a: None)
+        def unexpected(*args):
+            pytest.fail("Invalid document must be rejected before replacement prompt")
+        monkeypatch.setattr(QMessageBox, "question", unexpected)
+        assert not lab.open_cpu_session() and lab.cpu is old_cpu
     finally:
         lab.mark_saved()
         lab.close()
