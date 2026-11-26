@@ -5,6 +5,8 @@ from ui.navigation_rail import NavigationRail
 import csv
 from memory_inspector import parse_address, page_addresses, memory_rows
 import memory_export
+from memory_edit import parse_word, write_word
+from PySide6.QtWidgets import QInputDialog
 from PySide6.QtCore import QTimer, QSignalBlocker
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QPlainTextEdit, QTableWidget, QTableWidgetItem, QHeaderView,
@@ -143,6 +145,9 @@ class ProgramLab(QDialog):
         self.export_memory_button = QPushButton(self.t("Export CSV", "خروجی CSV"))
         self.export_memory_button.clicked.connect(self.export_memory)
         memory_tools.addWidget(self.export_memory_button)
+        self.edit_memory_button = QPushButton(self.t("Edit word", "ویرایش کلمه"))
+        self.edit_memory_button.clicked.connect(self.edit_memory)
+        memory_tools.addWidget(self.edit_memory_button)
         self.memory_page_label = QLabel()
         memory_tools.addWidget(self.memory_page_label)
         memory_layout.addLayout(memory_tools)
@@ -550,6 +555,54 @@ class ProgramLab(QDialog):
                 self.memory.setCurrentCell(row,0)
                 self.memory.scrollToItem(self.memory.item(row,0))
                 break
+        return True
+
+    def edit_memory(self):
+        self.pause()
+        if self.cpu is None or self.history is None:
+            self.status.setText(self.t("Assemble first.", "ابتدا اسمبل کنید."))
+            return False
+        if self.cpu.in_progress:
+            self.status.setText(self.t("Finish or rewind current instruction first.",
+                                      "ابتدا دستور جاری را کامل کنید یا به ابتدای آن بازگردید."))
+            return False
+        try:
+            address = parse_address(self.memory_address.text())
+        except ValueError:
+            self.status.setText(self.t("Enter 000–FFF.", "آدرس 000 تا FFF وارد کنید."))
+            return False
+        old = self.cpu.memory[address]
+        text, accepted = QInputDialog.getText(self, self.t("Edit memory word", "ویرایش کلمه حافظه"),
+            self.t("New HEX word at ", "کلمه هگز جدید در آدرس ") + f"{address:03X} (0000–FFFF)",
+            text=f"{old:04X}")
+        if not accepted:
+            return False
+        try:
+            word = parse_word(text)
+        except ValueError:
+            self.status.setText(self.t("Enter 0000–FFFF.", "کلمه 0000 تا FFFF وارد کنید."))
+            return False
+        if word == old:
+            return False
+        if QMessageBox.question(self, self.t("Change CPU memory?", "تغییر حافظه پردازنده؟"),
+            f"M[{address:03X}]: {old:04X} → {word:04X}\n" +
+            self.t("This starts a new reverse-history segment and may modify program instructions.",
+                   "این کار بخش جدید تاریخچه بازگشت را آغاز می‌کند و ممکن است دستور برنامه را تغییر دهد."),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+            return False
+        try:
+            if not write_word(self.cpu, self.history, address, word):
+                return False
+        except ValueError as error:
+            self.status.setText(error_text(error,self.fa))
+            return False
+        self.addresses.add(address)
+        self.break_resume = None
+        self.refresh()
+        self.inspect_memory()
+        self.status.setText(self.t("Memory updated; reverse history starts here.",
+                                   "حافظه تغییر کرد؛ تاریخچه بازگشت از اینجا آغاز می‌شود."))
         return True
 
     def export_memory(self):

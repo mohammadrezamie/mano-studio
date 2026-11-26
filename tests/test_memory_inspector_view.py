@@ -3,7 +3,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 import pytest
 pytest.importorskip("PySide6")
 from PySide6.QtCore import QSettings
-from PySide6.QtWidgets import QApplication, QFileDialog
+from PySide6.QtWidgets import QApplication, QFileDialog, QInputDialog, QMessageBox
 from ui.workspace import Workspace
 from ui.program_lab import ProgramLab
 
@@ -70,6 +70,39 @@ def test_export_memory_page(tmp_path, monkeypatch, language):
         assert any(row["address_hex"] == "FFF" and row["word_hex"] == "0000" for row in rows)
         assert len(rows) == lab.memory.rowCount()
         assert lab.cpu.registers() == before and lab.cpu.memory == memory and not lab.is_dirty()
+    finally:
+        lab.mark_saved()
+        lab.close()
+        workspace.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_edit_memory_with_real_cpu(tmp_path, monkeypatch, language):
+    import cpu_session
+    app = QApplication.instance() or QApplication([])
+    settings = QSettings(str(tmp_path / "edit.ini"), QSettings.Format.IniFormat)
+    settings.setValue("language", language)
+    settings.setValue("reduced_motion", True)
+    workspace = Workspace(settings)
+    lab = ProgramLab(workspace)
+    try:
+        lab.step()
+        lab.memory_address.setText("FFF")
+        before = lab.cpu.registers()
+        monkeypatch.setattr(QInputDialog, "getText", lambda *a, **kw: ("FFFF", True))
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.No)
+        assert not lab.edit_memory() and lab.cpu.memory[4095] == 0
+        assert lab.history.entries
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Yes)
+        assert lab.edit_memory()
+        assert lab.cpu.memory[4095] == 65535 and lab.cpu.registers() == before
+        assert not lab.history.entries and lab.steps == 1 and lab.is_dirty()
+        path = tmp_path / "edited.mano"
+        monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: (str(path), ""))
+        assert lab.save_cpu_session()
+        assert cpu_session.load(path)[2].memory[4095] == 65535
+        lab.microstep()
+        assert not lab.edit_memory() and lab.cpu.memory[4095] == 65535
     finally:
         lab.mark_saved()
         lab.close()
