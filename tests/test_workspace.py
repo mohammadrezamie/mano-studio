@@ -1835,3 +1835,41 @@ def test_library_and_block_insertion(workspace,monkeypatch,language):
         lab.dirty=False
     finally:
         lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_saved_block_import(workspace,tmp_path,monkeypatch,language):
+    from ui.block_dialog import BlockDialog
+    from PySide6.QtWidgets import QFileDialog,QMessageBox
+    from classic_samples import load_sample
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    base=load_sample("nand-xor")
+    dialog=BlockDialog(base,language=="fa",workspace)
+    try:
+        saved=tmp_path/"majority.mano-logic.json"
+        saved.write_text(load_sample("mux-majority").dumps(),encoding="utf-8")
+        monkeypatch.setattr(QFileDialog,"getOpenFileName",lambda *a:(str(saved),""))
+        dialog.browse()
+        assert dialog.selector.currentData()=="imported"
+        assert tuple(dialog.fields)==("A","B","C")
+        before=dialog.imported
+        invalid=tmp_path/"invalid.json"
+        invalid.write_text("{}",encoding="utf-8")
+        monkeypatch.setattr(QFileDialog,"getOpenFileName",lambda *a:(str(invalid),""))
+        monkeypatch.setattr(QMessageBox,"warning",lambda *a:None)
+        dialog.browse()
+        assert dialog.imported is before
+        monkeypatch.setattr(QFileDialog,"getOpenFileName",lambda *a:("",""))
+        dialog.browse()
+        assert dialog.imported is before
+        dialog.fields["A"].setCurrentIndex(dialog.fields["A"].findData("y"))
+        dialog.fields["B"].setCurrentIndex(dialog.fields["B"].findData("A"))
+        dialog.prefix.setText("majority")
+        dialog.validate()
+        assert dialog.result_document is not None
+        assert dialog.result_document.inputs==("A","B","majority_C")
+        for bits,out in dialog.result_document.compile().truth_table():
+            a,b,c=bits
+            assert out==(a^b,int((a^b)+a+c>=2))
+    finally:
+        dialog.close()
