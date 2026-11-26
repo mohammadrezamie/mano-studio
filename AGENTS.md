@@ -1,4 +1,16 @@
 # Mano Studio — development handoff
+
+## Current controlling owner policy — 2026-11-26
+
+This instruction supersedes conflicting historical deadlines, version targets, beta-only timing restrictions, development-only restrictions and academic-defense expansion requirements.
+
+- Maintain exactly two permanent tracks in parallel: Stable (#4) and Beta (#23). Publish each independently when its applicable acceptance gates are met; Beta publication is optional and must be explicitly marked prerelease. Do not make Stable wait for the entire textbook or Beta scope.
+- No mandatory v1.0.0 or fixed release date. The existing internal v1.0.0 candidate and verified artifacts remain valid historical evidence; choose the public version appropriate to the accepted scope and release history. Never rename an unverified artifact to imply stability.
+- Stable means a genuinely reliable, polished, integrated application: verified exact-revision correctness, UI usability in Persian and English, offline behavior, standalone Windows install/upgrade/uninstall, security, redistribution and artifact authenticity. Freeze or defer unverified features rather than lower acceptance standards.
+- The academic deliverable is exactly the standalone root `rtl_translator.py`: one downloadable Python file, standard library only, no sibling imports, Qt, simulator or network. Keep the desktop app calling this same core. The owner will independently learn the line-by-line explanation and prepare the defense. Do not prioritize additional defense tutorials, separate academic applications or presentation workflows over product development. Existing useful docs/examples remain available.
+- Primary effort: build, integrate, improve and test the actual desktop application, premium readable bilingual UX and practical labs. Keep documentation concise and evidence-backed, not a substitute for implementation. Preserve zero-manual-prerequisite Setup and offline-first operation.
+- Do not claim a release until actual publication and verification; retain all existing acceptance and security gates. No new fixed deadline, public version tag or release is created by this policy update.
+
 Read README.md, docs/PROJECT.md, docs/RTL.md, docs/ROADMAP.md and docs/STATUS.md before changing code. Inspect current branch, open issues and recent commits. Repository is the source of truth, not chat history. Continue the first unfinished priority; do not restart or claim untested work is done.
 Keep rtl_translator.py standalone, pure Python standard library, readable and commented for academic defense. UI must call this same engine; retain readable source in repository. Never silently translate unsupported microoperations. Add tests for every rule. Keep English/Persian UI, RTL layout for Persian but LTR code. Update STATUS.md with completed work, test commands/results, blockers and next step in every substantive PR. Use small branches/PRs; do not publish a release until Windows installer is tested. No secrets, telemetry, or unverified academic endorsements. Ask owner for instructor-specific RTL syntax if available; otherwise use documented provisional dialect.
 
@@ -45,3 +57,16 @@ Owner rejects M monogram as generic. Brand must be distinctive, non-letter, code
 Owner reconfirmed bilingual parity: new user-facing labels, explanations, errors and accessibility text must ship in English and Persian together; persist language, RTL shell/LTR technical data. Include regression in both locales; native visual review remains separate.
 
 Post-merge 2026-11-25 override: PR #9 is closed and merged; never resume its old branch. Inspect main and current open PRs, continue separate focused branches. Main 9eb19971 verified 928 tests each Windows/Ubuntu and both screenshot artifacts. Continue quality/beta-visual-review while open. No implicit authorization for another merge or publication.
+
+
+## Current owner override — permanent dual track and living README (2026-11-25)
+
+Supersedes the historic development-only, closed PR #9 and rejected-M instructions above. Owner now requests an early Windows beta while future development continues independently. Inspect the active release issue #4 / PR #19 and curriculum issue #13 / develop/next-beta; do not inject unverified future features into the frozen release candidate. Retain beta-only publication gates and exact-head verification. Use the approved candidate M-chip identity (see release branch brand system), not the retired mark.
+
+Read docs/DOCUMENTATION_POLICY.md before any work. Keep README.md live: every meaningful change must update README and affected documentation in the same work cycle, not at the end of the project. Maintain branch-aware release/feature claims, current verified evidence, minimal truthful images and English-first presentation with concise Persian academic guidance. Update STATUS, CONTINUE, issues and relevant guides; record a no-impact rationale only for internal changes that do not affect README claims. No fabricated screenshots, no stale links, no gratuitous release CI restart.
+
+## Two-channel organization — 2026-11-26
+Stable plan #4 and Beta plan #23 are the only permanent product plans. Read docs/DEVELOPMENT_CHANNELS.md first; its owner-approved channel naming supersedes old plan names. All existing open issues are categorized, historical issue bodies preserved, active PRs titled by track. PR #19 closed as superseded after Git ancestry verification; no branch or history deleted. #22 retained as fallback, #24/#26 Stable, #25/#27 Beta, #20 shared documentation. No runtime edits, release publication or acceptance claim. Continue both plans independently.
+
+## Permanent owner requirement — easy standalone installation (2026-11-26)
+Both Stable and Beta require a one-step offline Windows Setup, no manual Python/Qt/pip or other prerequisite installation, no reinstall of compatible shared prerequisites, and no global PATH changes or destructive upgrades. Private bundled libraries are intentional for isolation. See docs/STANDALONE_INSTALLATION.md. This is a mandatory release gate (#4/#23/#10), not a completed native acceptance claim. #26 commit 3180a91c6d92e96e6648fe991cd9f10e7b49ea60 adds sanitized installed-process PATH, loaded private Python/Qt/SSL DLL checks and actual SSL version report; 3 local path tests passed in 0.04s with exact blobs e8fe55b4827bc00fef9493861d6ee8ba1d6ad567 and 2fa08d4579a9a0f0ee71402e40e94828c65c34be. Windows diagnostic and clean/pre-equipped VM tests pending. #25 and #27 reconciled without deleting changes, verified mergeable at ec309ca1842855c5b2fd62690f867166e1902722 and 9e805a5c52f488c81a5ae4a10d5e541f77997236. No product PR merged or release published.

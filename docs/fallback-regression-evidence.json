@@ -1,0 +1,127 @@
+{
+  "windows": {
+    "sha256": "37d78aae923ef4fcc6563c025ce5b4aa0a858412f188855947a78a4eb47baaff",
+    "tests": 1376,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "case_seconds": 10951.123,
+    "slowest_modules": [
+      {
+        "module": "tests.test_workspace",
+        "seconds": 10909.002,
+        "percent": 99.62
+      },
+      {
+        "module": "tests.test_logic_workflow",
+        "seconds": 6.749,
+        "percent": 0.06
+      },
+      {
+        "module": "tests.test_arithmetic_algorithms",
+        "seconds": 4.426,
+        "percent": 0.04
+      },
+      {
+        "module": "tests.test_state_assignment_oracle",
+        "seconds": 3.432,
+        "percent": 0.03
+      },
+      {
+        "module": "tests.test_microprogram",
+        "seconds": 3.398,
+        "percent": 0.03
+      },
+      {
+        "module": "tests.test_state_encoding",
+        "seconds": 3.293,
+        "percent": 0.03
+      },
+      {
+        "module": "tests.test_state_synthesis",
+        "seconds": 3.167,
+        "percent": 0.03
+      },
+      {
+        "module": "tests.test_visual_review",
+        "seconds": 3.077,
+        "percent": 0.03
+      },
+      {
+        "module": "tests.test_floating_arithmetic",
+        "seconds": 1.945,
+        "percent": 0.02
+      },
+      {
+        "module": "tests.test_boolean_minimizer",
+        "seconds": 1.912,
+        "percent": 0.02
+      }
+    ]
+  },
+  "ubuntu": {
+    "sha256": "3ce3ce9033d9888e2016b9d39d0fc6278d2e8a082eaf0037d1c336b441daa140",
+    "tests": 1376,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "case_seconds": 2324.656,
+    "slowest_modules": [
+      {
+        "module": "tests.test_workspace",
+        "seconds": 2300.322,
+        "percent": 98.95
+      },
+      {
+        "module": "tests.test_logic_workflow",
+        "seconds": 4.19,
+        "percent": 0.18
+      },
+      {
+        "module": "tests.test_arithmetic_algorithms",
+        "seconds": 2.797,
+        "percent": 0.12
+      },
+      {
+        "module": "tests.test_state_assignment_oracle",
+        "seconds": 2.308,
+        "percent": 0.1
+      },
+      {
+        "module": "tests.test_state_encoding",
+        "seconds": 2.253,
+        "percent": 0.1
+      },
+      {
+        "module": "tests.test_state_synthesis",
+        "seconds": 2.143,
+        "percent": 0.09
+      },
+      {
+        "module": "tests.test_microprogram",
+        "seconds": 2.023,
+        "percent": 0.09
+      },
+      {
+        "module": "tests.test_boolean_minimizer",
+        "seconds": 1.29,
+        "percent": 0.06
+      },
+      {
+        "module": "tests.test_floating_arithmetic",
+        "seconds": 1.141,
+        "percent": 0.05
+      },
+      {
+        "module": "tests.test_state_analysis",
+        "seconds": 0.935,
+        "percent": 0.04
+      }
+    ]
+  },
+  "same_test_identities": true,
+  "windows_only": 0,
+  "ubuntu_only": 0,
+  "regression_evidence_clean": true,
+  "public_release_approved": false
+}

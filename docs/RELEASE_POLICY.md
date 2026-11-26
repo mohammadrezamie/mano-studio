@@ -1,4 +1,16 @@
 # Product comfort and pre-release policy
+
+## Current controlling owner policy — 2026-11-26
+
+This instruction supersedes conflicting historical deadlines, version targets, beta-only timing restrictions, development-only restrictions and academic-defense expansion requirements.
+
+- Maintain exactly two permanent tracks in parallel: Stable (#4) and Beta (#23). Publish each independently when its applicable acceptance gates are met; Beta publication is optional and must be explicitly marked prerelease. Do not make Stable wait for the entire textbook or Beta scope.
+- No mandatory v1.0.0 or fixed release date. The existing internal v1.0.0 candidate and verified artifacts remain valid historical evidence; choose the public version appropriate to the accepted scope and release history. Never rename an unverified artifact to imply stability.
+- Stable means a genuinely reliable, polished, integrated application: verified exact-revision correctness, UI usability in Persian and English, offline behavior, standalone Windows install/upgrade/uninstall, security, redistribution and artifact authenticity. Freeze or defer unverified features rather than lower acceptance standards.
+- The academic deliverable is exactly the standalone root `rtl_translator.py`: one downloadable Python file, standard library only, no sibling imports, Qt, simulator or network. Keep the desktop app calling this same core. The owner will independently learn the line-by-line explanation and prepare the defense. Do not prioritize additional defense tutorials, separate academic applications or presentation workflows over product development. Existing useful docs/examples remain available.
+- Primary effort: build, integrate, improve and test the actual desktop application, premium readable bilingual UX and practical labs. Keep documentation concise and evidence-backed, not a substitute for implementation. Preserve zero-manual-prerequisite Setup and offline-first operation.
+- Do not claim a release until actual publication and verification; retain all existing acceptance and security gates. No new fixed deadline, public version tag or release is created by this policy update.
+
 Owner decisions, 2026-11-24. Applies to all development branches and supersedes older release targets.
 ## Calm by design
 Mano Glass is the visual identity, but avoid visual noise, excessive glow, flashing, constantly moving backgrounds, and decorative loops. Use restrained gradients, high-contrast opaque editor surfaces, whitespace and consistent hierarchy. Animation is purposeful and only active on interaction or during a simulation. Keep the live lab separate from the normal editing workflow. Offer three themes (Light, Dark, Night), a persisted reduced-motion switch that disables nonessential transitions and bus animation, and a persisted glass-effects switch for a plain, readable fallback. Respect OS reduced-motion when feasible. No artificial splash delays.
