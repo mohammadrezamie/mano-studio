@@ -204,6 +204,9 @@ Existing candidate routes: `multiprocessor, crossbar, synchronization, coherence
 - [ ] C13.07 — Cache coherence, invalidation/writeback and consistency distinctions
 - [ ] C13.08 — Concurrent timing, performance and comparison of interconnects
 
+## Practical laboratory and sample coverage
+Every applicable section must also satisfy [PRACTICAL_LAB_POLICY.md](PRACTICAL_LAB_POLICY.md): reusable experiment, ready-to-load sample, independent expected output, edit/save/reset, and supported composability evidence. First combinational examples and block insertion are documented in CIRCUIT_LIBRARY.md; not full section or cross-model acceptance.
+
 ## Cross-cutting closure gates
 
 - [ ] Reconcile exact instructor edition, sections, figures, formulas, examples and exercise categories with stable IDs.
