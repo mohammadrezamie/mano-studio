@@ -449,8 +449,13 @@ class LogicLab(QDialog):
         menu=QMenu(library)
         menu.addAction(self.t("Insert circuit block","درج بلوک مدار"),self.insert_block)
         menu.addSeparator()
+        chapters={}
         for sample in SAMPLES:
-            menu.addAction(sample["title"][self.fa],lambda checked=False,key=sample["id"]:self.open_sample(key))
+            chapter=sample["section"][:3]
+            if chapter not in chapters:
+                chapters[chapter]=menu.addMenu(self.t("Chapter "+str(int(chapter[1:])),
+                    "فصل "+str(int(chapter[1:]))))
+            chapters[chapter].addAction(sample["title"][self.fa],lambda checked=False,key=sample["id"]:self.open_sample(key))
         library.setMenu(menu)
         self.document_buttons.append(library)
         actions.addWidget(library)
