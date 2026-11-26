@@ -76,3 +76,15 @@ def test_wrong_native_kind(tmp_path):
     mano_file.save(path, 'asm', SOURCE)
     with pytest.raises(ValueError):
         cpu_session.load(path)
+
+
+@pytest.mark.parametrize("invalid", [False, 0.0, None])
+def test_corrupt_memory_does_not_replace_checkpoint(tmp_path, invalid):
+    cpu = setup()
+    path = tmp_path / "good.mano"
+    cpu_session.save(path, SOURCE, cpu, 0, set())
+    before = path.read_bytes()
+    cpu.memory[-1] = invalid
+    with pytest.raises(ValueError):
+        cpu_session.save(path, SOURCE, cpu, 0, set())
+    assert path.read_bytes() == before

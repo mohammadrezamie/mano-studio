@@ -155,3 +155,23 @@ def test_replace_saves_current_cpu_first(tmp_path, monkeypatch, language):
         lab.mark_saved()
         lab.close()
         workspace.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_empty_assembly_remains_editable_draft(tmp_path, monkeypatch, language):
+    app = QApplication.instance() or QApplication([])
+    settings = QSettings(str(tmp_path / "empty.ini"), QSettings.Format.IniFormat)
+    settings.setValue("language", language)
+    workspace = Workspace(settings)
+    lab = ProgramLab(workspace, "; empty")
+    try:
+        assert lab.cpu is None and lab.history is None
+        assert not lab.source.isReadOnly()
+        path = tmp_path / "empty.mano"
+        monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: (str(path), ""))
+        assert lab.save_cpu_session()
+        assert mano_file.load(path) == ("asm", "; empty")
+    finally:
+        lab.mark_saved()
+        lab.close()
+        workspace.close()
