@@ -1,0 +1,28 @@
+{
+  "format": "mano-studio",
+  "version": 1,
+  "kind": "state-design",
+  "payload": {
+    "bits": 1,
+    "mode": "Moore",
+    "flipflop": "T",
+    "table": [
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        0,
+        1
+      ]
+    ]
+  }
+}
