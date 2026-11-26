@@ -30,6 +30,8 @@ from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
 import cpu_session
+import mano_file
+from cpu_guard import CpuGuard
 from program_samples import SAMPLES, load_sample
 from ui.workspace import code_editor
 from ui.datapath_view import DatapathView
@@ -88,7 +90,7 @@ class ProgramLab(QDialog):
         session_menu.addAction(self.t("Save CPU session", "ذخیره جلسه پردازنده"), self.save_cpu_session)
         self.session_button.setMenu(session_menu)
         controls.addWidget(self.session_button)
-        for en, fa, slot in [("Assemble / Reset","اسمبل و بازنشانی",self.load),
+        for en, fa, slot in [("Assemble / Reset","اسمبل و بازنشانی",self.reset_program),
             ("Back","گام قبل",self.back),("Step","گام بعد",self.step),("Run","اجرا",self.run),
             ("Pause","توقف موقت",self.pause)]:
             b = QPushButton(self.t(en,fa))
@@ -208,6 +210,7 @@ class ProgramLab(QDialog):
         self.inspector.currentChanged.connect(self.update_cpu_context)
         self.source.textChanged.connect(self.invalidate)
         self.load()
+        self.cpu_guard = CpuGuard(self.source.toPlainText(), self.cpu, self.history)
         self.update_cpu_context()
 
     def update_cpu_context(self,*_):
@@ -268,15 +271,41 @@ class ProgramLab(QDialog):
         self.memory.setRowCount(0)
         self.status.setText(self.t("Source changed. Assemble again.","کد تغییر کرد؛ دوباره اسمبل کنید."))
 
+    def is_dirty(self):
+        return self.cpu_guard.is_dirty(self.source.toPlainText(), self.cpu, self.history)
+
+    def mark_saved(self):
+        self.cpu_guard.mark_saved(self.source.toPlainText(), self.cpu, self.history)
+
+    def confirm_close(self):
+        self.pause()
+        if not self.is_dirty():
+            return True
+        choice = QMessageBox.question(self, self.t("Unsaved CPU workspace", "فضای پردازنده ذخیره‌نشده"),
+            self.t("Save the current program and execution state before continuing?",
+                   "برنامه و وضعیت اجرای فعلی پیش از ادامه ذخیره شوند؟"),
+            QMessageBox.StandardButton.Save | QMessageBox.StandardButton.Discard | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Save)
+        if choice == QMessageBox.StandardButton.Save:
+            return self.save_cpu_session()
+        return choice == QMessageBox.StandardButton.Discard
+
+    def reset_program(self):
+        if self.cpu is not None and not self.confirm_close():
+            return
+        self.load()
+
     def save_cpu_session(self):
         self.pause()
-        if self.cpu is None or self.history is None or self.cpu.in_progress:
+        if self.cpu is not None and (self.history is None or self.cpu.in_progress):
             QMessageBox.warning(self, self.t("Cannot save session", "ذخیره جلسه ناموفق"),
                 self.t("Assemble and finish or rewind the current instruction before saving.",
                        "ابتدا اسمبل کنید و دستور جاری را کامل کنید یا به ابتدای آن بازگردید."))
             return False
-        name, _ = QFileDialog.getSaveFileName(self, self.t("Save CPU session", "ذخیره جلسه پردازنده"),
-            "cpu.mano", self.t("Mano Studio (*.mano)", "مانو استودیو (*.mano)"))
+        draft = self.cpu is None
+        title = self.t("Save assembly draft", "ذخیره پیش‌نویس اسمبلی") if draft else self.t("Save CPU session", "ذخیره جلسه پردازنده")
+        name, _ = QFileDialog.getSaveFileName(self, title,
+            "draft.mano" if draft else "cpu.mano", self.t("Mano Studio (*.mano)", "مانو استودیو (*.mano)"))
         if not name:
             return False
         path = Path(name)
@@ -287,12 +316,16 @@ class ProgramLab(QDialog):
                 self.t("Use the .mano extension.", "از پسوند .mano استفاده کنید."))
             return False
         try:
-            cpu_session.save(path, self.source.toPlainText(), self.cpu, self.history.steps, self.history.breakpoints)
+            if draft:
+                mano_file.save(path, "asm", self.source.toPlainText())
+            else:
+                cpu_session.save(path, self.source.toPlainText(), self.cpu, self.history.steps, self.history.breakpoints)
         except (OSError, ValueError):
             QMessageBox.warning(self, self.t("Cannot save session", "ذخیره جلسه ناموفق"),
                 self.t("Session could not be saved.", "جلسه ذخیره نشد."))
             return False
-        self.status.setText(self.t("CPU session saved.", "جلسه پردازنده ذخیره شد."))
+        self.mark_saved()
+        self.status.setText(self.t("Assembly draft saved.", "پیش‌نویس اسمبلی ذخیره شد.") if draft else self.t("CPU session saved.", "جلسه پردازنده ذخیره شد."))
         return True
 
     def install_cpu_session(self, restored):
@@ -308,6 +341,7 @@ class ProgramLab(QDialog):
         self.machine.setPlainText(program.listing())
         self.refresh()
         self.select_address(cpu.pc)
+        self.mark_saved()
         self.status.setText(self.t("Session restored; reverse history starts here.",
                                    "جلسه بازیابی شد؛ تاریخچه بازگشت از اینجا آغاز می‌شود."))
 
@@ -353,6 +387,7 @@ class ProgramLab(QDialog):
                 return False
         self.source.setPlainText(source)
         self.load()
+        self.mark_saved()
         self.status.setText(sample.task[self.fa])
         return True
 
@@ -581,5 +616,5 @@ class ProgramLab(QDialog):
         if self.cpu:self.arithmetic.set_operands(self.cpu.ac,self.cpu.dr,self.cpu.e)
 
     def done(self,result):
-        self.pause()
-        super().done(result)
+        if self.confirm_close():
+            super().done(result)
