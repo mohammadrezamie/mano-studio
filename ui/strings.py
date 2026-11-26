@@ -1,7 +1,5 @@
 """Centralized UI text; code tokens always remain untranslated."""
 FA = {
-    "Translator source": "سورس مترجم",
-    "Translator source unavailable": "فایل سورس مترجم در دسترس نیست",
     "Choose file": "انتخاب فایل",
     "Save input": "ذخیره ورودی",
     "Save input as": "ذخیره ورودی با نام جدید",
