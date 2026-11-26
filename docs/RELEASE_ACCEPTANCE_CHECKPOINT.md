@@ -1,5 +1,17 @@
 # Release acceptance checkpoint — 2026-11-26
 
+## Current controlling owner policy — 2026-11-26
+
+This instruction supersedes conflicting historical deadlines, version targets, beta-only timing restrictions, development-only restrictions and academic-defense expansion requirements.
+
+- Maintain exactly two permanent tracks in parallel: Stable (#4) and Beta (#23). Publish each independently when its applicable acceptance gates are met; Beta publication is optional and must be explicitly marked prerelease. Do not make Stable wait for the entire textbook or Beta scope.
+- No mandatory v1.0.0 or fixed release date. The existing internal v1.0.0 candidate and verified artifacts remain valid historical evidence; choose the public version appropriate to the accepted scope and release history. Never rename an unverified artifact to imply stability.
+- Stable means a genuinely reliable, polished, integrated application: verified exact-revision correctness, UI usability in Persian and English, offline behavior, standalone Windows install/upgrade/uninstall, security, redistribution and artifact authenticity. Freeze or defer unverified features rather than lower acceptance standards.
+- The academic deliverable is exactly the standalone root `rtl_translator.py`: one downloadable Python file, standard library only, no sibling imports, Qt, simulator or network. Keep the desktop app calling this same core. The owner will independently learn the line-by-line explanation and prepare the defense. Do not prioritize additional defense tutorials, separate academic applications or presentation workflows over product development. Existing useful docs/examples remain available.
+- Primary effort: build, integrate, improve and test the actual desktop application, premium readable bilingual UX and practical labs. Keep documentation concise and evidence-backed, not a substitute for implementation. Preserve zero-manual-prerequisite Setup and offline-first operation.
+- Do not claim a release until actual publication and verification; retain all existing acceptance and security gates. No new fixed deadline, public version tag or release is created by this policy update.
+
+
 This evidence ledger is separate from the frozen release branches. The owner targets Monday 2026-11-30 for v1.0.0 instructor delivery. Internal candidates are not public releases. Full-book coverage is not a delivery gate.
 
 | Evidence | Beta #22 | v1 #24 |
