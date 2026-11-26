@@ -5,6 +5,7 @@ from ui.navigation_rail import NavigationRail
 import csv
 from memory_inspector import parse_address, page_addresses, memory_rows
 import memory_export
+from word_decode import decode_word
 from memory_edit import parse_word, write_word
 from PySide6.QtWidgets import QInputDialog
 from PySide6.QtCore import QTimer, QSignalBlocker
@@ -118,8 +119,9 @@ class ProgramLab(QDialog):
         lower = QSplitter(Qt.Orientation.Horizontal)
         self.registers = QTableWidget(0, 2)
         self.registers.setHorizontalHeaderLabels([self.t("Register","ثبات"), self.t("Value (HEX)","مقدار هگز")])
-        self.memory = QTableWidget(0, 2)
-        self.memory.setHorizontalHeaderLabels([self.t("Address","آدرس"), self.t("Word (HEX)","کلمه هگز")])
+        self.memory = QTableWidget(0, 3)
+        self.memory.setHorizontalHeaderLabels([self.t("Address","آدرس"), self.t("Word (HEX)","کلمه هگز"),
+            self.t("If instruction","اگر دستور باشد")])
         for table in (self.registers,self.memory):
             table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
@@ -536,6 +538,10 @@ class ProgramLab(QDialog):
         for row,(address,word) in enumerate(rows):
             self.memory.setItem(row,0,QTableWidgetItem(f"{address:03X}"))
             self.memory.setItem(row,1,QTableWidgetItem(f"{word:04X}"))
+            decoded = decode_word(word)
+            item = QTableWidgetItem(decoded or self.t("Unsupported", "پشتیبانی‌نشده"))
+            item.setToolTip(self.t("Interpretation only; a memory word may be data.", "فقط تفسیر؛ کلمه حافظه ممکن است داده باشد."))
+            self.memory.setItem(row,2,item)
 
     def inspect_memory(self):
         if self.cpu is None:
