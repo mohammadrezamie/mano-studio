@@ -104,6 +104,7 @@ class DatabusView(QWidget):
         layout.addWidget(self.trace,1)
         self.refresh()
         self.update_task()
+        self.saved_checkpoint=databus_file.snapshot(self.model,self.controls())
 
     def t(self,en,fa):
         return fa if self.fa else en
@@ -156,6 +157,7 @@ class DatabusView(QWidget):
             control.setChecked(False)
         self.external.setValue(0)
         self.refresh()
+        self.saved_checkpoint=databus_file.snapshot(self.model,self.controls())
 
     def install_checkpoint(self,model,staged):
         self.model=model
@@ -175,6 +177,7 @@ class DatabusView(QWidget):
         self.external.blockSignals(False)
         self.refresh()
         self.update_task()
+        self.saved_checkpoint=databus_file.snapshot(self.model,self.controls())
 
     def open_file(self):
         name,_=QFileDialog.getOpenFileName(self,self.t("Open experiment","باز کردن آزمایش"),"",
@@ -204,13 +207,27 @@ class DatabusView(QWidget):
             QMessageBox.warning(self,self.t("Cannot save","ذخیره ناموفق"),
                 self.t("The experiment could not be saved.","آزمایش ذخیره نشد."))
             return False
+        self.saved_checkpoint=databus_file.snapshot(self.model,self.controls())
         self.status.setText(self.t("Experiment saved.","آزمایش ذخیره شد."))
         return True
 
     def confirm_reset(self):
-        pristine=not self.model.history and not any(self.model.registers.values()) and not any(self.model.memory.read(a) for a in range(16)) and self.controls()==((),(),0)
-        return pristine or QMessageBox.question(self,self.t("Reset experiment","بازنشانی آزمایش"),
+        return not self.is_dirty() or QMessageBox.question(self,self.t("Reset experiment","بازنشانی آزمایش"),
             self.t("Discard the current bus experiment and reset RAM/registers?","آزمایش فعلی کنار گذاشته و RAM و ثبات‌ها بازنشانی شوند؟"))==QMessageBox.StandardButton.Yes
+
+    def is_dirty(self):
+        return databus_file.snapshot(self.model,self.controls())!=self.saved_checkpoint
+
+    def confirm_close(self):
+        if not self.is_dirty():
+            return True
+        choice=QMessageBox.question(self,self.t("Unsaved experiment","آزمایش ذخیره‌نشده"),
+            self.t("Save your bus experiment before closing?","آزمایش گذرگاه پیش از بستن ذخیره شود؟"),
+            QMessageBox.StandardButton.Save|QMessageBox.StandardButton.Discard|QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Save)
+        if choice==QMessageBox.StandardButton.Save:
+            return self.save_file()
+        return choice==QMessageBox.StandardButton.Discard
 
     def reset(self):
         if self.confirm_reset():
