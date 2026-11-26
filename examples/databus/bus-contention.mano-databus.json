@@ -1,0 +1,50 @@
+{
+  "format": "mano-databus",
+  "version": 1,
+  "id": "bus-contention",
+  "title": [
+    "Conflicting bus drivers",
+    "تداخل راه‌اندازهای گذرگاه"
+  ],
+  "task": [
+    "Drive 0101 and 0110 together; observe 01XX without loading destinations.",
+    "دو مقدار 0101 و 0110 را هم‌زمان روی گذرگاه قرار دهید؛ 01XX را بدون بارگذاری مشاهده کنید."
+  ],
+  "steps": [
+    {
+      "sources": [
+        "EXT"
+      ],
+      "destinations": [
+        "R0"
+      ],
+      "external": 5
+    },
+    {
+      "sources": [
+        "EXT"
+      ],
+      "destinations": [
+        "R1"
+      ],
+      "external": 6
+    },
+    {
+      "sources": [
+        "R0",
+        "R1"
+      ],
+      "destinations": [],
+      "external": 0
+    }
+  ],
+  "expected": {
+    "registers": [
+      0,
+      5,
+      6
+    ],
+    "memory": [],
+    "bus": "01XX"
+  }
+}
