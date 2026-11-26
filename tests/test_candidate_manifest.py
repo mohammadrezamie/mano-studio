@@ -255,3 +255,29 @@ def test_reject_unsafe_windows_archive_path(candidate):
     rewrite_zip(z, add={"ManoStudio/CON.txt": b"reserved"})
     with pytest.raises(ValueError, match="Unsafe Windows"):
         validate(root, SHA)
+
+
+@pytest.mark.parametrize("filename,field,value", [
+    ("redistribution-preflight.json", "public_release_approved", True),
+    ("redistribution-preflight.json", "manual_review_required", False),
+    ("runtime-evidence.json", "public_release_approved", True),
+    ("runtime-evidence.json", "manual_review_required", False),
+    ("wheel-evidence.json", "independent_authenticity_verified", True),
+    ("wheel-evidence.json", "redistribution_approved", True),
+])
+def test_reject_review_evidence_that_claims_approval(candidate, filename, field, value):
+    root, _, _ = candidate
+    path = root / "portable-output" / filename
+    report = json.loads(path.read_text())
+    report[field] = value
+    path.write_text(json.dumps(report), encoding="utf-8")
+    (root / "installer" / "output" / filename).write_text(json.dumps(report), encoding="utf-8")
+    with pytest.raises(ValueError):
+        validate(root, SHA)
+
+
+def test_reject_dependency_constraints_changed_after_build(candidate):
+    root, _, _ = candidate
+    (root / "installer" / "output" / "windows-candidate-constraints.txt").write_text("PySide6==9.9.9\\n")
+    with pytest.raises(ValueError, match="constraints differ"):
+        validate(root, SHA)
