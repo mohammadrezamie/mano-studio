@@ -5,7 +5,7 @@ from update_service import VERSION, check_updates, version_key
 
 
 def _check(tags):
-    payload = [{"tag_name": tag, "draft": False} for tag in tags]
+    payload = [{"tag_name": tag, "draft": False, "prerelease": "-" in tag} for tag in tags]
     return check_updates(explicit=True,
         opener=lambda *a, **k: io.BytesIO(json.dumps(payload).encode()))
 
