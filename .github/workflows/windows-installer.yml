@@ -1,4 +1,4 @@
-name: Windows development installer
+name: Windows candidate installer
 on:
   workflow_dispatch:
   pull_request:
@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   installer:
-    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && (github.head_ref == 'release/first-beta-candidate' || github.head_ref == 'release/beta-integrated' || github.head_ref == 'release/beta-final-prep'))
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && (github.head_ref == 'release/first-beta-candidate' || github.head_ref == 'release/beta-integrated' || github.head_ref == 'release/beta-final-prep' || github.head_ref == 'release/v1-candidate'))
     runs-on: windows-latest
     timeout-minutes: 120
     env:
@@ -49,7 +49,7 @@ jobs:
       # Full Windows and Ubuntu regression remain independent release gates in Tests.
       # This job produces internal artifacts only and must not repeat the long GUI suite.
       - name: Verify packaging contracts and academic credits
-        run: python -m pytest -q tests/test_candidate_manifest.py tests/test_windows_build_contract.py tests/test_localization.py tests/test_collect_notices.py
+        run: python -m pytest -q tests/test_candidate_manifest.py tests/test_windows_build_contract.py tests/test_localization.py tests/test_collect_notices.py tests/test_version_policy.py tests/test_academic_source.py tests/test_translator_isolation.py tests/test_visual_tokens.py
       - name: Build portable development application
         shell: pwsh
         run: ./installer/build.ps1 -PortableOnly
