@@ -66,3 +66,7 @@ Read docs/OWNER_BACKLOG.md and issue #23 each continuation. Maintain all incompl
 
 ## Owner deadline override — 2026-11-26
 First stable instructor target is Monday 2026-11-30 (v1.0.0), conditional on actual evidence. This supersedes the earlier no-stable-before-class timing rule, not quality gates. Read docs/V1_DELIVERY_PLAN.md and issue #4 before continuation. Keep next-generation work independent and do not relabel beta binaries. Stable packaging guards must be deliberately revised on a separate candidate after beta validation.
+
+
+## Owner visual-first delivery direction — 2026-11-26
+The instructor's mandatory assignment is RTL-to-Assembly. Preserve one readable standalone standard-library Python file rtl_translator.py; no changes to its isolation or language. Prioritize excellent visual presentation and actual stability from v1.0.0 onward; optional new functionality can be promoted until the deadline only after independent verification and exact integrated acceptance. Retain distinct release and next-generation tracks. The owner permits suitable technologies, libraries and visual assets and no arbitrary package-size limit, subject to offline behavior, licensing and quality. See docs/V1_INSTRUCTOR_ACCEPTANCE.md and #4/#24. Do not merge unverified features merely to increase scope.

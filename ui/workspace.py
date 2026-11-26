@@ -91,9 +91,22 @@ class Workspace(QMainWindow):
         brand.setObjectName("brand")
         self.brand_mark = BrandMark(self.theme)
         header.addWidget(self.brand_mark)
-        header.addWidget(brand)
-        header.addWidget(self.label("Build. Translate. Learn.", "subtitle"))
+        identity = QVBoxLayout()
+        identity.setSpacing(2)
+        identity_row = QHBoxLayout()
+        identity_row.addWidget(brand)
+        version = QLabel("v" + VERSION)
+        version.setObjectName("versionChip")
+        version.setLayoutDirection(LTR)
+        identity_row.addWidget(version)
+        identity_row.addStretch()
+        identity.addLayout(identity_row)
+        identity.addWidget(self.label("Build. Translate. Learn.", "subtitle"))
+        header.addLayout(identity)
         header.addStretch()
+        self.academic_button = self.button("Translator source", self.open_academic_source)
+        self.academic_button.setObjectName("academicAction")
+        header.addWidget(self.academic_button)
         self.languages = QComboBox()
         self.languages.addItem("English", "en")
         self.languages.addItem("فارسی", "fa")
@@ -164,11 +177,12 @@ class Workspace(QMainWindow):
         for title, editor in [("RTL input", self.editor), ("Assembly output", self.output)]:
             pane = QFrame()
             pane.setObjectName("editorPanel")
+            pane.setProperty("workspacePane", True)
             box = QVBoxLayout(pane)
             box.setContentsMargins(10, 8, 10, 10)
             heading = QHBoxLayout()
             title_label=QLabel(self.t(title))
-            title_label.setObjectName("section")
+            title_label.setObjectName("workspaceHeading")
             if editor is self.editor:self.input_title=title_label
             else:self.output_title=title_label
             heading.addWidget(title_label)
@@ -313,7 +327,7 @@ class Workspace(QMainWindow):
         widget.clicked.connect(lambda checked=False: action())
         self.labels.append((widget, key))
         names = {"Open RTL":"open","Choose file":"open","Translate":"translate","Export ASM":"export",
-                 "Settings":"settings","Undo":"undo","Redo":"redo","Instruction reference":"search"}
+                 "Settings":"settings","Undo":"undo","Redo":"redo","Instruction reference":"search","Translator source":"codes"}
         if key in names:
             self.icon_buttons.append((widget,names[key]))
         return widget
@@ -653,6 +667,21 @@ class Workspace(QMainWindow):
         self.centralWidget().enabled = enabled
         self.centralWidget().snap()
         self.centralWidget().update()
+
+    def academic_dialog(self):
+        from ui.academic_view import AcademicSourceDialog
+        return AcademicSourceDialog(self,self.theme,self.language=="fa")
+
+    def open_academic_source(self):
+        try:
+            dialog=self.academic_dialog()
+        except (OSError,UnicodeError,ValueError):
+            QMessageBox.warning(self,self.t("File error"),self.t("Translator source unavailable"))
+            return
+        try:
+            dialog.exec()
+        finally:
+            dialog.deleteLater()
 
     def open_preferences(self):
         from ui.preferences import Preferences

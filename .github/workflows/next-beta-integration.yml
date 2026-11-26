@@ -47,6 +47,7 @@ jobs:
           tests/test_update_progress.py tests/test_localization.py
           tests/test_learning_catalog.py tests/test_storage_elements.py
           tests/test_timing_constraints.py tests/test_flipflop_reference.py
+          tests/test_academic_source.py tests/test_source_metrics.py
       - name: Focused Qt regressions
         if: always() && steps.preflight.outcome == 'success'
         run: >-
@@ -58,7 +59,7 @@ jobs:
         run: >-
           python -m pytest -q -o faulthandler_timeout=90 --junitxml=next-workspace.xml
           tests/test_workspace.py
-          -k 'lookahead_preset or karnaugh_mux_build or library_and_block_insertion or saved_block_import or databus_lesson or native_databus_save_open or native_state_session or databus_alu_controls or exercise_file_actions'
+          -k 'lookahead_preset or karnaugh_mux_build or library_and_block_insertion or saved_block_import or databus_lesson or native_databus_save_open or native_state_session or databus_alu_controls or exercise_file_actions or instructor_source_and_splash'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

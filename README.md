@@ -129,3 +129,6 @@ Released under the [MIT License](LICENSE). See [references](docs/REFERENCES.md) 
 
 ## First stable instructor delivery target
 Monday 2026-11-30: see [v1.0 delivery plan](docs/V1_DELIVERY_PLAN.md) and [issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4). The verified installable beta remains separate from the conditional stable target and ongoing next-generation scope. Reproducible source counts: `python source_metrics.py HEAD`.
+
+
+Visual-first instructor presentation and exact standalone source access are shared with the independent [v1 candidate PR #24](https://github.com/mohammadrezamie/mano-studio/pull/24). See [acceptance criteria](docs/V1_INSTRUCTOR_ACCEPTANCE.md). The next-generation version and native file dispatch remain independent.
