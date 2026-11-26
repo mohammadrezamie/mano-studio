@@ -4,6 +4,7 @@ from ui.motion import MotionTabs
 from ui.navigation_rail import NavigationRail
 import csv
 from memory_inspector import parse_address, page_addresses, memory_rows
+import memory_export
 from PySide6.QtCore import QTimer, QSignalBlocker
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QPlainTextEdit, QTableWidget, QTableWidgetItem, QHeaderView,
@@ -139,6 +140,9 @@ class ProgramLab(QDialog):
         self.clear_memory_button = QPushButton(self.t("Accessed only", "فقط آدرس‌های استفاده‌شده"))
         self.clear_memory_button.clicked.connect(self.clear_memory_page)
         memory_tools.addWidget(self.clear_memory_button)
+        self.export_memory_button = QPushButton(self.t("Export CSV", "خروجی CSV"))
+        self.export_memory_button.clicked.connect(self.export_memory)
+        memory_tools.addWidget(self.export_memory_button)
         self.memory_page_label = QLabel()
         memory_tools.addWidget(self.memory_page_label)
         memory_layout.addLayout(memory_tools)
@@ -546,6 +550,27 @@ class ProgramLab(QDialog):
                 self.memory.setCurrentCell(row,0)
                 self.memory.scrollToItem(self.memory.item(row,0))
                 break
+        return True
+
+    def export_memory(self):
+        if self.cpu is None:
+            self.status.setText(self.t("Assemble first.", "ابتدا اسمبل کنید."))
+            return False
+        self.pause()
+        name, _ = QFileDialog.getSaveFileName(self, self.t("Export visible memory", "خروجی حافظه نمایان"),
+            "memory.csv", self.t("CSV files (*.csv)", "فایل CSV (*.csv)"))
+        if not name:
+            return False
+        path = Path(name)
+        if not path.suffix:
+            path = path.with_suffix(".csv")
+        try:
+            memory_export.save(path, self.cpu.memory, self.addresses, self.inspected_address)
+        except (OSError, ValueError):
+            QMessageBox.warning(self, self.t("Export failed", "خروجی ناموفق"),
+                self.t("Memory report could not be saved.", "گزارش حافظه ذخیره نشد."))
+            return False
+        self.status.setText(self.t("Memory report saved.", "گزارش حافظه ذخیره شد."))
         return True
 
     def clear_memory_page(self):
