@@ -52,12 +52,12 @@ Existing candidate routes: `components, registers-counter` (partial evidence; no
 | --- | --- | --- |
 | C02.01 | unreviewed | Functional gate shapes and pin anchors exist; device families, actual manufacturer pinouts and electrical limits still open. |
 | C02.02 | partial | logic_engine presets include 2-to-4, 3-to-8 enabled decoders, active-low 2-to-4, one-hot and priority encoders. Existing test_enabled_decoder, test_encoder_validity and test_priority_encoder; wider variants and device-specific enables/polarities remain. |
-| C02.03 | partial | 2-to-1 and 4-to-1 MUX, 1-to-2 DEMUX, existing exhaustive tests; broader selection and arbitrary function realization remain. |
+| C02.03 | partial | 2-to-1 and 4-to-1 MUX, 1-to-2 DEMUX, existing exhaustive tests; Shannon MUX synthesis for 2–4 variables implemented (MUX_SYNTHESIS.md, nine exact local generator tests); shared-engine/UI checks pending, physical packages and broader selection remain. |
 | C02.04 | partial | Half/full adders/subtractors and ripple4 existing tests; new lookahead4 structural generator, 10 exact local tests/672 vectors (CARRY_LOOKAHEAD.md), real engine and Qt cases pending. Physical timing and broader arithmetic composition open. |
 | C02.05 | partial | 2/4-bit unsigned comparator with test_magnitude_comparator; signed/cascaded variants and physical IC detail open. |
 | C02.06 | partial | sequential_logic contains REG4, SHIFT4, UNIVERSAL4 and clocked tests; more register variants and timing remain. |
 | C02.07 | partial | COUNT4, UPDOWN4, RING4, JOHNSON4 implemented and existing tests; arbitrary modulus, ripple counter, physical timing remain. |
-| C02.08 | unreviewed | Inspect existing memory-chip and memory-array routes and tests before assigning evidence. |
+| C02.08 | partial | Inspected memory_model.py (e0a227bb), memory_organization.py (fa324ced), both UI routes and 18 existing array organization test cases. Ideal RAM/ROM active-low controls and RAM bank/word expansion implemented; source/test inspection only, no new integrated run. ROM programming, physical pinouts and timing remain. |
 
 This review identifies existing source/test cases, not new integrated execution of those cases. Exact edition mapping and acceptance remain open.
 
