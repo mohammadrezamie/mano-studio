@@ -7,11 +7,11 @@ import tempfile
 MAGIC = "mano-studio"
 SUFFIX = ".mano"
 MAX_BYTES = 2_000_000
-KINDS = {"rtl", "asm", "circuit"}
+KINDS = {"rtl", "asm", "circuit", "databus"}
 
 
 def encode(kind, payload):
-    if kind not in KINDS or (kind in ("rtl", "asm") and not isinstance(payload, str)) or (kind == "circuit" and not isinstance(payload, dict)):
+    if kind not in KINDS or (kind in ("rtl", "asm") and not isinstance(payload, str)) or (kind in ("circuit", "databus") and not isinstance(payload, dict)):
         raise ValueError("Unsupported Mano document")
     text = json.dumps({"format": MAGIC, "version": 1, "kind": kind, "payload": payload},
                       ensure_ascii=False, allow_nan=False, indent=2) + "\n"
