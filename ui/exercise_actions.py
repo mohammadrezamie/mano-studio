@@ -1,6 +1,8 @@
 """Bilingual exercise file actions shared by Chapter 1 design tools."""
 from pathlib import Path
 import sys
+import mano_file
+import state_session
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QPushButton, QMenu
 from native_exercise import load as read_exercise, save as write_exercise
 
@@ -19,7 +21,12 @@ def add_exercise_actions(view, layout, kind):
 
     def open_path(name):
         try:
-            exercise = read_exercise(name, kind)
+            session=None
+            if kind=="state-design" and Path(name).suffix.lower()==".mano":
+                file_kind,payload=mano_file.load(name)
+                if file_kind=="state-run":
+                    session=state_session.restore(payload)
+            exercise = session.design if session is not None else read_exercise(name, kind)
         except (OSError, ValueError) as exc:
             QMessageBox.warning(view, t("Cannot open exercise", "باز کردن تمرین ناموفق بود"),
                                 t("Invalid, incompatible or unreadable exercise. Current design is unchanged.",
@@ -31,7 +38,10 @@ def add_exercise_actions(view, layout, kind):
                                       QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                       QMessageBox.StandardButton.No)
         if answer == QMessageBox.StandardButton.Yes:
-            view.apply_exercise(exercise)
+            if session is not None:
+                view.apply_session(session)
+            else:
+                view.apply_exercise(exercise)
 
     def save_file():
         name, _ = QFileDialog.getSaveFileName(view, t("Save exercise", "ذخیره تمرین"),
@@ -42,7 +52,10 @@ def add_exercise_actions(view, layout, kind):
         if not path.suffix:
             path = path.with_suffix(".mano")
         try:
-            write_exercise(path, view.exercise())
+            if kind=="state-design" and path.suffix.lower()==".mano":
+                state_session.save(path,view.session())
+            else:
+                write_exercise(path, view.exercise())
         except (OSError, ValueError):
             QMessageBox.warning(view, t("Cannot save exercise", "ذخیره تمرین ناموفق بود"),
                                 t("Check the destination and permissions. Your current design is unchanged.",
