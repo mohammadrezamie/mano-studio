@@ -1771,3 +1771,28 @@ def test_lookahead_preset(workspace,language):
         assert not lab.diagram.grab().isNull()
     finally:
         lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_karnaugh_mux_build(workspace,monkeypatch,language):
+    from ui.logic_lab import LogicLab
+    from PySide6.QtWidgets import QMessageBox
+    from boolean_minimizer import minimize
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    try:
+        original=lab.document
+        lab.select_tool("karnaugh")
+        view=lab.karnaugh
+        view.gate_family.setCurrentIndex(view.gate_family.findData("MUX"))
+        solution=minimize(view.values,view.form.currentData())
+        monkeypatch.setattr(QMessageBox,"question",lambda *a,**k:QMessageBox.StandardButton.No)
+        view.build_button.click()
+        assert lab.document is original
+        monkeypatch.setattr(QMessageBox,"question",lambda *a,**k:QMessageBox.StandardButton.Yes)
+        view.build_button.click()
+        assert tuple(out[0] for _,out in lab.circuit.truth_table())==tuple(solution.evaluate(i) for i in range(len(view.values)))
+        lab.undo_edit()
+        assert lab.document==original and not lab.dirty
+    finally:
+        lab.close()
