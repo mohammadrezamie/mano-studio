@@ -29,3 +29,6 @@ Three saved stepwise examples are documented in [DATABUS_LAB.md](DATABUS_LAB.md)
 
 ## Native design samples
 Open Saved examples in Karnaugh or State machine design. [Majority](../examples/design/majority.mano), [overlapping 101](../examples/design/overlap-101.mano), and [parity](../examples/design/parity.mano) are original editable .mano design documents. FSM starts at reset Q=0 on load; Y is sampled before each edge, including current X in Mealy. For 101, check sequence 10101 produces detections at edges 3 and 5. Parity Y equals the parity of the bits consumed before the edge. Existing legacy files remain supported. 32 actual local tests passed; UI execution pending.
+
+## Resume FSM simulation
+Save exercise as .mano to preserve runtime state, selected X and last 64 input events. Reopen to continue clock stepping. Legacy design-only files and shipped examples still begin at reset Q=0. Derived outputs are recomputed. Confirm replacement before loading; save before closing or editing the table (close-time FSM unsaved prompt remains pending).
