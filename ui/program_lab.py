@@ -7,7 +7,7 @@ import re
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QPlainTextEdit, QTableWidget, QTableWidgetItem, QHeaderView,
-    QAbstractItemView, QSplitter, QSpinBox, QLineEdit, QTabWidget, QFileDialog, QMessageBox, QWidget)
+    QAbstractItemView, QSplitter, QSpinBox, QLineEdit, QTabWidget, QFileDialog, QMessageBox, QWidget, QMenu)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QTextCursor
 from execution_history import ExecutionHistory
@@ -29,6 +29,7 @@ from ui.omega_view import OmegaView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
+from program_samples import SAMPLES, load_sample
 from ui.workspace import code_editor
 from ui.datapath_view import DatapathView
 
@@ -74,8 +75,13 @@ class ProgramLab(QDialog):
         panes.setSizes([500, 500])
         layout.addWidget(panes, 2)
         controls = QHBoxLayout()
-        for en, fa, slot in [("Load example","مثال جمع",self.example),
-            ("Assemble / Reset","اسمبل و بازنشانی",self.load),
+        self.examples_button = QPushButton(self.t("Saved examples", "نمونه‌های ذخیره‌شده"))
+        menu = QMenu(self.examples_button)
+        for sample in SAMPLES:
+            menu.addAction(sample.title[self.fa], lambda checked=False, key=sample.key: self.open_saved_sample(key))
+        self.examples_button.setMenu(menu)
+        controls.addWidget(self.examples_button)
+        for en, fa, slot in [("Assemble / Reset","اسمبل و بازنشانی",self.load),
             ("Back","گام قبل",self.back),("Step","گام بعد",self.step),("Run","اجرا",self.run),
             ("Pause","توقف موقت",self.pause)]:
             b = QPushButton(self.t(en,fa))
@@ -254,6 +260,31 @@ class ProgramLab(QDialog):
         self.registers.setRowCount(0)
         self.memory.setRowCount(0)
         self.status.setText(self.t("Source changed. Assemble again.","کد تغییر کرد؛ دوباره اسمبل کنید."))
+
+    def open_saved_sample(self, key):
+        # Validate before changing the live program or any execution state.
+        try:
+            sample, source = load_sample(key)
+            if not assemble(source).ok:
+                raise ValueError("Invalid saved program")
+        except (OSError, ValueError):
+            QMessageBox.warning(self, self.t("Cannot open example", "باز کردن نمونه ناموفق بود"),
+                self.t("The saved program is invalid or unreadable. Current program is unchanged.",
+                       "برنامه ذخیره‌شده نامعتبر یا خواندنی نیست. برنامه فعلی تغییر نکرد."))
+            return False
+        self.pause()
+        if self.source.toPlainText().strip():
+            answer = QMessageBox.question(self, self.t("Replace program?", "جایگزینی برنامه؟"),
+                self.t("Replace the current program and reset its execution?",
+                       "برنامه فعلی جایگزین و اجرای آن بازنشانی شود؟"),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No)
+            if answer != QMessageBox.StandardButton.Yes:
+                return False
+        self.source.setPlainText(source)
+        self.load()
+        self.status.setText(sample.task[self.fa])
+        return True
 
     def example(self):
         self.source.setPlainText(EXAMPLE)
