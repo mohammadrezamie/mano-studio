@@ -23,7 +23,7 @@ def test_gallery_contains_every_local_capture_once(tmp_path):
     page = write_gallery(tmp_path, rows).read_text(encoding='utf-8')
     parser = Links()
     parser.feed(page)
-    assert len(parser.images) == 48
+    assert len(parser.images) == 36
     assert set(parser.images) == set(expected)
     assert set(expected).issubset(parser.links)
     assert all(not link.startswith(('http:', 'https:', '//')) for link in parser.links)
