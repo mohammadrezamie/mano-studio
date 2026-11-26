@@ -21,6 +21,11 @@ New-Item -ItemType Directory -Force $notices | Out-Null
 # Preserve notices shipped in the installed distributions; legal review is still required before public release.
 python installer/collect_notices.py $notices
 if ($LASTEXITCODE -ne 0) { throw 'Notice collection failed.' }
+$qtTexts = Join-Path $notices 'qt-license-texts'
+New-Item -ItemType Directory -Force $qtTexts | Out-Null
+foreach ($name in @('LGPL-3.0-only.txt','GPL-3.0-only.txt','README.md')) {
+    Copy-Item -LiteralPath (Join-Path $PSScriptRoot "licenses\$name") -Destination $qtTexts
+}
 }
 if (-not (Test-Path 'dist\ManoStudio\ManoStudio.exe')) { throw 'Frozen app missing.' }
 if ($PortableOnly) { exit 0 }
