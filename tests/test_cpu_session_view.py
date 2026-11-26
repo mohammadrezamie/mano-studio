@@ -43,5 +43,6 @@ def test_cpu_session_dialog(tmp_path, monkeypatch, language):
         assert not lab.save_cpu_session()
         assert path.read_bytes() == before
     finally:
+        lab.mark_saved()
         lab.close()
         workspace.close()

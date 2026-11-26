@@ -54,6 +54,7 @@ def smoke_test(report_path):
             computer.arithmetic.a.setText("7FFF")
             computer.arithmetic.b.setText("0001")
             assert computer.arithmetic.result.word == 0x8000 and computer.arithmetic.result.overflow
+            computer.mark_saved()
             computer.close()
             from asm_to_rtl import reverse_translate
             assert reverse_translate("LDA 100 I\nHLT").ok
