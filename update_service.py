@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import json
 import re
 from urllib.request import Request, urlopen
+from update_download import Asset, asset_from_release
 
 RELEASES_URL = "https://api.github.com/repos/mohammadrezamie/mano-studio/releases"
 RELEASES_PAGE = "https://github.com/mohammadrezamie/mano-studio/releases"
@@ -22,6 +23,7 @@ class ReleaseInfo:
     tag: str
     notes: str
     installer_size: int | None
+    asset: Asset | None = None
 
 
 def release_info(*, explicit=False, opener=urlopen):
@@ -51,6 +53,7 @@ def release_info(*, explicit=False, opener=urlopen):
             notes = notes[:8000] if isinstance(notes, str) else ""
             assets = item.get("assets", [])
             size = None
+            asset = None
             # Metadata only: never trust a release asset as an executable.
             # A single setup asset gives an indicative download size.
             if isinstance(assets, list):
@@ -62,7 +65,8 @@ def release_info(*, explicit=False, opener=urlopen):
                           and type(a.get("size")) is int and a["size"] > 0]
                 if len(setups) == 1:
                     size = setups[0]["size"]
-            candidates.append((key, ReleaseInfo(tag, notes, size)))
+                    asset = asset_from_release(tag, setups[0])
+            candidates.append((key, ReleaseInfo(tag, notes, size, asset)))
     return max(candidates, key=lambda candidate: candidate[0])[1] if candidates else None
 
 
