@@ -4,7 +4,7 @@ Set-Location (Join-Path $PSScriptRoot '..')
 if (-not [Environment]::Is64BitProcess) { throw 'Use 64-bit Python and PowerShell.' }
 $version = (python -c "from update_service import VERSION; print(VERSION)").Trim()
 if ($LASTEXITCODE -ne 0 -or $version -notmatch '^\d+\.\d+\.\d+-(dev|alpha|beta|rc)(\.\d+)?) {
-    throw 'Only explicitly marked 0.x development/prerelease builds are allowed.'
+    throw 'Only explicitly marked development/prerelease builds are allowed.'
 }
 $icon = Join-Path $PWD 'build\mano-studio.ico'
 if (-not $ReuseFrozen) {
