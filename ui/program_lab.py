@@ -495,6 +495,14 @@ class ProgramLab(QDialog):
             self.registers.setRowCount(0)
             self.memory.setRowCount(0)
             return
+        if not self.program.words:
+            self.machine.clear()
+            self.datapath.set_state(None)
+            self.registers.setRowCount(0)
+            self.memory.setRowCount(0)
+            self.status.setText(self.t("No memory words assembled. Edit the draft.",
+                                       "هیچ کلمه‌ای اسمبل نشد؛ پیش‌نویس را ویرایش کنید."))
+            return
         self.machine.setPlainText(self.program.listing())
         self.cpu = CPU(self.program.words, self.program.entry)
         self.assembled_source = self.source.toPlainText()

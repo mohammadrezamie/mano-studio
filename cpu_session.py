@@ -6,14 +6,11 @@ and no execution starts on load. Reverse history begins anew after restore.
 from assembler import assemble
 from simulator import CPU
 import mano_file
+from cpu_memory_image import integer, sparse_memory, expand_sparse
 
 WIDTHS = {"PC": 12, "AR": 12, "AC": 16, "DR": 16, "IR": 16, "TR": 16,
           "INPR": 8, "OUTR": 8, "E": 1, "FGI": 1, "FGO": 1, "IEN": 1,
           "R": 1, "I": 1, "SC": 4}
-
-
-def integer(value, maximum):
-    return type(value) is int and 0 <= value <= maximum
 
 
 def restore(obj):
@@ -31,15 +28,7 @@ def restore(obj):
     if (any(not integer(registers[k], (1 << w) - 1) for k, w in WIDTHS.items())
             or registers["SC"] != 0 or type(registers["HALTED"]) is not bool):
         raise ValueError("Invalid instruction-boundary registers")
-    memory = obj["memory"]
-    if not isinstance(memory, list) or len(memory) > 4096:
-        raise ValueError("Invalid CPU memory")
-    words = {}
-    for row in memory:
-        if (not isinstance(row, list) or len(row) != 2 or not integer(row[0], 4095)
-                or not integer(row[1], 65535) or row[1] == 0 or row[0] in words):
-            raise ValueError("Invalid or duplicate sparse memory word")
-        words[row[0]] = row[1]
+    words = expand_sparse(obj["memory"])
     steps, breaks = obj["steps"], obj["breakpoints"]
     if not integer(steps, 10000) or not isinstance(breaks, list) or len(breaks) > 4096:
         raise ValueError("Invalid CPU debugger state")
@@ -55,7 +44,7 @@ def snapshot(source, cpu, steps, breakpoints):
     if cpu.in_progress:
         raise ValueError("Finish or rewind the current instruction before saving")
     obj = {"source": source, "registers": cpu.registers(),
-           "memory": [[a, w] for a, w in enumerate(cpu.memory) if w],
+           "memory": sparse_memory(cpu.memory),
            "steps": steps, "breakpoints": sorted(breakpoints)}
     restore(obj)
     return obj
