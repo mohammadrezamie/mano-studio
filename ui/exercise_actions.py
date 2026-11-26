@@ -1,6 +1,7 @@
 """Bilingual exercise file actions shared by Chapter 1 design tools."""
 from pathlib import Path
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QPushButton
+import sys
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QPushButton, QMenu
 from native_exercise import load as read_exercise, save as write_exercise
 
 
@@ -13,8 +14,10 @@ def add_exercise_actions(view, layout, kind):
 
     def open_file():
         name, _ = QFileDialog.getOpenFileName(view, t("Open exercise", "باز کردن تمرین"), "", file_filter)
-        if not name:
-            return
+        if name:
+            open_path(name)
+
+    def open_path(name):
         try:
             exercise = read_exercise(name, kind)
         except (OSError, ValueError) as exc:
@@ -51,3 +54,20 @@ def add_exercise_actions(view, layout, kind):
     view.save_exercise_button.clicked.connect(save_file)
     layout.addWidget(view.open_exercise_button)
     layout.addWidget(view.save_exercise_button)
+
+    # The same original saved files are shipped with the offline examples.
+    samples = {
+        "karnaugh": (("majority", "Three-input majority", "اکثریت سه‌ورودی"),),
+        "state-design": (
+            ("overlap-101", "Overlapping 101 detector", "آشکارساز هم‌پوشان 101"),
+            ("parity", "Odd parity detector", "تشخیص تعداد فرد بیت یک"),
+        ),
+    }
+    root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
+    view.sample_exercise_button = QPushButton(t("Saved examples", "نمونه‌های ذخیره‌شده"))
+    menu = QMenu(view.sample_exercise_button)
+    for key, en, fa in samples.get(kind, ()):
+        path = root / "examples" / "design" / (key + ".mano")
+        menu.addAction(t(en, fa), lambda checked=False, p=path: open_path(p))
+    view.sample_exercise_button.setMenu(menu)
+    layout.addWidget(view.sample_exercise_button)
