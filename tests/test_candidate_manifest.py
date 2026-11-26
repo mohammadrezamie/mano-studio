@@ -50,7 +50,7 @@ def candidate(tmp_path):
     setup = root / "installer" / "output"
     constraints = root / "installer" / "windows-candidate-constraints.txt"
     constraints.parent.mkdir(parents=True, exist_ok=True)
-    constraints.write_text("PySide6==6.12.0\\n", encoding="utf-8")
+    constraints.write_text("PySide6==6.12.0\n", encoding="utf-8")
     reports = {
         "redistribution-preflight.json": {"flags": ["fixture review required"], "manual_review_required": True, "public_release_approved": False},
         "runtime-evidence.json": {"kind": "runtime-evidence", "flags": [], "manual_review_required": True, "public_release_approved": False},
@@ -59,8 +59,8 @@ def candidate(tmp_path):
     for folder in (portable, setup):
         folder.mkdir(parents=True)
         (folder / "commit.txt").write_text("SHA=" + SHA)
-        (folder / "portable-smoke.txt").write_text("PASS\\n")
-        (folder / "build-dependencies.txt").write_text("PySide6==6.12.0\\n")
+        (folder / "portable-smoke.txt").write_text("PASS\n")
+        (folder / "build-dependencies.txt").write_text("PySide6==6.12.0\n")
         (folder / "windows-candidate-constraints.txt").write_bytes(constraints.read_bytes())
         for name, report in reports.items():
             (folder / name).write_text(json.dumps(report), encoding="utf-8")
