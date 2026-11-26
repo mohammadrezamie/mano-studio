@@ -208,3 +208,44 @@ def test_incremental_memory_refresh_and_invalid_assembly(tmp_path, language):
         lab.mark_saved()
         lab.close()
         workspace.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_selected_memory_address_is_edit_target(tmp_path, monkeypatch, language):
+    app = QApplication.instance() or QApplication([])
+    settings = QSettings(str(tmp_path / "selection.ini"), QSettings.Format.IniFormat)
+    settings.setValue("language", language)
+    settings.setValue("reduced_motion", True)
+    workspace = Workspace(settings)
+    lab = ProgramLab(workspace)
+    try:
+        lab.memory_address.setText("FFF")
+        assert lab.inspect_memory()
+        row = next(i for i in range(lab.memory.rowCount())
+                   if lab.memory.item(i, 0).text() == "FFE")
+        lab.memory.setCurrentCell(row, 1)
+        assert lab.memory_address.text() == "FFE"
+        assert lab.inspected_address == 4095
+        before = lab.cpu.registers()
+        original = lab.cpu.memory[4095]
+        monkeypatch.setattr(QInputDialog, "getText", lambda *a, **kw: ("1234", True))
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Yes)
+        assert lab.edit_memory()
+        assert lab.cpu.memory[4094] == 0x1234
+        assert lab.cpu.memory[4095] == original
+        assert lab.cpu.registers() == before
+        lab.memory_address.setText("ABC")
+        lab.refresh_memory()
+        assert lab.memory_address.text() == "ABC"
+        # Re-clicking the current row explicitly selects that address again.
+        lab.memory.cellClicked.emit(lab.memory.currentRow(), 0)
+        assert lab.memory_address.text() == "FFE"
+        lab.clear_memory_page()
+        assert lab.memory_address.text() == ""
+        lab.mark_saved()
+        assert lab.begin_source_edit()
+        assert lab.memory_address.text() == ""
+    finally:
+        lab.mark_saved()
+        lab.close()
+        workspace.close()

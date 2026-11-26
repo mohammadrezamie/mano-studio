@@ -2111,3 +2111,28 @@ def test_state_session_close_guard(workspace, tmp_path, monkeypatch, language):
     finally:
         monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Discard)
         lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_visual_polish_compact(workspace,language):
+    from PySide6.QtGui import QFontDatabase
+    from PySide6.QtCore import Qt
+    from ui.typography import POINT_SIZE,choose_family
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    workspace.resize(1024,768)
+    workspace.show()
+    QApplication.processEvents()
+    font=QApplication.instance().font()
+    default=QFontDatabase.systemFont(QFontDatabase.SystemFont.GeneralFont).family()
+    arabic=QFontDatabase.families(QFontDatabase.WritingSystem.Arabic) if language=="fa" else ()
+    assert font.family()==choose_family(language,QFontDatabase.families(),arabic,default)
+    assert font.pointSizeF()==POINT_SIZE[language]
+    assert workspace.width()==1024 and workspace.height()==768
+    assert workspace.editor.width()>250 and workspace.output.width()>250
+    assert workspace.academic_button.isVisible()
+    for editor in (workspace.editor,workspace.output):
+        assert editor.font().pointSize()==12
+        assert editor.layoutDirection()==Qt.LayoutDirection.LeftToRight
+    workspace.editor.setPlainText("AC <- M[100]")
+    workspace.run_translation()
+    assert workspace.output.toPlainText()=="LDA 100"

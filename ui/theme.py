@@ -11,7 +11,7 @@ SYNTAX = {
 }
 SPACING = (4, 8, 12, 16, 24, 32)
 RADIUS = {"small":6,"control":9,"panel":14,"shell":16}
-TYPE = {"caption":12,"body":13,"section":15,"title":21,"hero":28}
+TYPE = {"caption":13,"body":14,"section":16,"title":22,"hero":28}
 
 STATUS = {
     "dark": ("#9ed9b8", "#ffb5ab"),
