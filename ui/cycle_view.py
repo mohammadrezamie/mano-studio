@@ -1,4 +1,4 @@
-"""Read-only timing-group inspection of real CPU events."""
+"""Interactive timing-group stepping and inspection backed by real CPU events."""
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QTableWidget,QTableWidgetItem,QHeaderView,QAbstractItemView,QSplitter,QPushButton
 
@@ -16,6 +16,8 @@ class CycleView(QWidget):
         self.back_button=QPushButton(self.t("Previous timing","زمان قبلی"))
         self.step_button=QPushButton(self.t("Next timing","زمان بعدی"))
         self.step_button.setObjectName("primary")
+        self.back_button.setAccessibleName(self.t("Previous timing group", "گروه زمانی قبلی"))
+        self.step_button.setAccessibleName(self.t("Next timing group", "گروه زمانی بعدی"))
         if backward:self.back_button.clicked.connect(backward)
         if forward:self.step_button.clicked.connect(forward)
         controls.addWidget(self.back_button);controls.addWidget(self.step_button)
@@ -26,17 +28,23 @@ class CycleView(QWidget):
         self.groups.setHorizontalHeaderLabels([self.t("Timing","زمان"),self.t("Phase","مرحله"),"RTL"])
         self.groups.horizontalHeader().setSectionResizeMode(2,QHeaderView.ResizeMode.Stretch)
         self.groups.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.groups.setAccessibleName(self.t("Recorded timing groups", "گروه‌های زمانی ثبت‌شده"))
         self.detail=QTableWidget(0,3)
         self.detail.setHorizontalHeaderLabels([self.t("Register","ثبات"),self.t("Before","قبل"),self.t("After","بعد")])
         self.detail.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.detail.setAccessibleName(self.t("Register state changes", "تغییرات وضعیت ثبات‌ها"))
         for table in (self.groups,self.detail):
             table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
             table.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
             split.addWidget(table)
         split.setSizes([530,300]);layout.addWidget(split,1)
         self.bus=ControlBusView(fa);layout.addWidget(self.bus)
-        self.controls=QLabel();self.controls.setWordWrap(True);layout.addWidget(self.controls)
-        self.memory=QLabel();self.memory.setWordWrap(True);layout.addWidget(self.memory)
+        self.controls=QLabel();self.controls.setWordWrap(True)
+        self.controls.setAccessibleName(self.t("Active control signals", "سیگنال‌های کنترلی فعال"))
+        layout.addWidget(self.controls)
+        self.memory=QLabel();self.memory.setWordWrap(True)
+        self.memory.setAccessibleName(self.t("Memory reads and writes", "خواندن و نوشتن حافظه"))
+        layout.addWidget(self.memory)
         self.groups.currentCellChanged.connect(lambda row,*_:self.select(row))
         self.show_event(None)
     def t(self,en,fa):return fa if self.fa else en

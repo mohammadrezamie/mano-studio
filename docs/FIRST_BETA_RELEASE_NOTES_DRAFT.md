@@ -1,15 +1,15 @@
-# DRAFT — Mano Studio v0.3.0-beta.1
+# DRAFT — Mano Studio v1.1.0-beta.1
 
-Do not publish until the actual final source version, Windows artifacts, hashes, tests, native acceptance and licensing/attribution gates are verified. This draft is not a GitHub release. The currently active development candidate remains 0.3.0-dev.1.
+Do not publish until the actual final source version, Windows artifacts, hashes, tests, native acceptance and licensing/attribution gates are verified. This draft is not a GitHub release. The currently active development candidate is 1.1.0-dev.1. The Beta line intentionally remains ahead of the separate Stable 1.0.0 candidate.
 
 ## English
 Mano Studio is a bilingual, offline educational desktop environment inspired by Morris Mano's Computer System Architecture. The first beta focuses on the academic RTL-to-Assembly workflow and selected interactive learning tools.
 
 Planned content in the first beta:
-- RTL editor, visual builder, symbol pad, localized diagnostics and text export.
+- RTL editor, guided instruction builder, symbol pad and keyboardless hexadecimal entry, localized diagnostics and text export.
 - Standalone Python translator with 25 documented instruction templates.
 - English/Persian interface, persistent preferences, three themes, optional glass and motion.
-- Basic Computer assembler and CPU inspection, selected logic circuits and textbook exercises.
+- Basic Computer assembler and CPU inspection, ten bilingual saved CPU programs, a read-only live timing-cycle inspector, selected logic circuits and textbook exercises.
 - M-chip visual identity and academic acknowledgment.
 
 Planned distribution: Windows x64 Setup, portable ZIP and SHA-256 checksums, subject to verified build. No automatic installation of updates. Beta coverage is partial, not a complete implementation of the entire textbook; instructor-specific RTL conventions remain subject to confirmation. Do not describe the binary as signed unless verified.

@@ -11,6 +11,8 @@ from ui.splash import splash_pixmap
 from update_service import VERSION
 from academic_source import read_source
 from visual_review import image_info
+from instructor_evidence import validate
+from instructor_gallery import write_gallery
 
 
 def capture(output):
@@ -59,6 +61,8 @@ def capture(output):
                         window.close()
                         window.deleteLater()
                         app.processEvents()
+    validate(output, records)
+    write_gallery(output, records)
     (output/"manifest.json").write_text(json.dumps({"version":VERSION,"evidence":"actual Qt offscreen; native visual acceptance pending","captures":records},indent=2),encoding="utf-8")
 
 
