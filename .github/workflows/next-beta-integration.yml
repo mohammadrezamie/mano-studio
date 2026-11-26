@@ -1,7 +1,7 @@
 name: Next-beta integration
 on:
   push:
-    branches: [develop/next-beta]
+    branches: [develop/next-beta, integration/first-beta]
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
@@ -15,7 +15,7 @@ permissions:
   contents: read
 jobs:
   focused:
-    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'fix/beta-native-document-integrity' || github.event.pull_request.head.ref == 'feature/cpu-sample-ui-acceptance' || github.event.pull_request.head.ref == 'develop/visual-polish'))
+    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'fix/beta-native-document-integrity' || github.event.pull_request.head.ref == 'feature/cpu-sample-ui-acceptance' || github.event.pull_request.head.ref == 'develop/visual-polish' || github.event.pull_request.head.ref == 'feature/cycle-view-acceptance' || github.event.pull_request.head.ref == 'feature/instruction-builder-acceptance' || github.event.pull_request.head.ref == 'feature/cpu-arithmetic-memory-examples' || github.event.pull_request.head.ref == 'integration/first-beta'))
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -48,15 +48,15 @@ jobs:
           tests/test_databus_lab.py tests/test_databus_file.py
           tests/test_databus_samples.py tests/test_databus_alu.py
           tests/test_update_service.py tests/test_release_channel.py tests/test_update_download.py
-          tests/test_update_progress.py tests/test_localization.py
+          tests/test_update_progress.py tests/test_candidate_manifest.py tests/test_windows_build_contract.py tests/test_localization.py
           tests/test_learning_catalog.py tests/test_storage_elements.py
           tests/test_timing_constraints.py tests/test_flipflop_reference.py
-          tests/test_academic_source.py tests/test_source_metrics.py tests/test_program_samples.py tests/test_cpu_session.py tests/test_cpu_memory_image.py tests/test_cpu_memory_workflow.py tests/test_cpu_guard.py tests/test_cpu_documents.py tests/test_replacement_guard.py tests/test_memory_inspector.py tests/test_memory_navigation.py tests/test_memory_refresh.py tests/test_memory_export.py tests/test_memory_edit.py tests/test_word_decode.py
+          tests/test_source_metrics.py tests/test_program_samples.py tests/test_cpu_session.py tests/test_cpu_memory_image.py tests/test_cpu_memory_workflow.py tests/test_cpu_guard.py tests/test_cpu_documents.py tests/test_replacement_guard.py tests/test_memory_inspector.py tests/test_memory_navigation.py tests/test_memory_refresh.py tests/test_memory_export.py tests/test_memory_edit.py tests/test_word_decode.py
       - name: Focused Qt regressions
         if: always() && steps.preflight.outcome == 'success'
         run: >-
           python -m pytest -q -o faulthandler_timeout=90 --junitxml=next-qt.xml
-          tests/test_timing_view.py tests/test_flipflop_reference_view.py
+          tests/test_timing_view.py tests/test_cycle_view.py tests/test_instruction_builder_acceptance.py tests/test_flipflop_reference_view.py
           tests/test_storage_view.py tests/test_universal_view.py tests/test_update_view.py tests/test_program_samples_view.py tests/test_program_samples_ui.py tests/test_cpu_session_view.py tests/test_cpu_guard_view.py tests/test_memory_inspector_view.py
       - name: Integrated workspace regressions
         if: always() && steps.preflight.outcome == 'success'

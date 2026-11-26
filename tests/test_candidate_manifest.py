@@ -35,7 +35,7 @@ def rewrite_zip(path, remove=(), replace=None, add=None):
 @pytest.fixture
 def candidate(tmp_path):
     root = tmp_path
-    (root / "update_service.py").write_text('VERSION = "0.3.0-dev.1"\n')
+    (root / "update_service.py").write_text('VERSION = "1.1.0-dev.1"\n')
     academic = b"# academic source\n"
     license_text = b"MIT license fixture\n"
     example = b"AC <- M[100]\nS <- 0\n"
@@ -54,7 +54,7 @@ def candidate(tmp_path):
         (folder / "portable-smoke.txt").write_text("PASS\n")
         (folder / "build-dependencies.txt").write_text("PySide6==6.8.0\n")
     (setup / "installed-smoke.txt").write_text("PASS\n")
-    z = portable / "ManoStudio-v0.3.0-dev.1-Windows-x64.zip"
+    z = portable / "ManoStudio-v1.1.0-dev.1-Windows-x64.zip"
     app = pe()
     python_license = b"Python PSF license fixture\n"
     notice = b"PySide6 license fixture\n"
@@ -85,7 +85,7 @@ def candidate(tmp_path):
         "kind": "installed-payload-comparison", "result": "PASS", "files": len(payload),
         "payload_sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest(), "native_acceptance": False,
     }))
-    exe = setup / "ManoStudio-Setup-v0.3.0-dev.1-x64.exe"
+    exe = setup / "ManoStudio-Setup-v1.1.0-dev.1-x64.exe"
     exe.write_bytes(pe(0x14c))
     checksum(z)
     checksum(exe)

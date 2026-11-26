@@ -29,7 +29,7 @@ def test_bilingual_examples_menu_opens_validated_sample_without_running(
         actions = lab.examples_button.menu().actions()
         assert [action.text() for action in actions] == [
             sample.title[0 if language == "en" else 1] for sample in SAMPLES]
-        assert len(actions) == 5
+        assert len(actions) == 10
         sample, source = load_sample("addition")
         monkeypatch.setattr(QMessageBox, "question",
                             lambda *a, **k: QMessageBox.StandardButton.Yes)
@@ -134,6 +134,28 @@ def test_invalid_sample_never_replaces_current_program(
         assert lab.source.toPlainText() == source
         assert lab.cpu is cpu and lab.history is history
         assert not lab.is_dirty()
+    finally:
+        lab.mark_saved()
+        lab.close()
+        workspace.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_block_copy_sample_from_menu(tmp_path, monkeypatch, language):
+    app, workspace, lab = make_lab(tmp_path, language)
+    try:
+        monkeypatch.setattr(QMessageBox, "question", lambda *a, **k: QMessageBox.StandardButton.Yes)
+        sample, source = load_sample("block-copy")
+        index = next(i for i, item in enumerate(SAMPLES) if item.key == sample.key)
+        lab.examples_button.menu().actions()[index].trigger()
+        assert lab.source.toPlainText() == source and lab.steps == 0
+        assert lab.status.text() == sample.task[language == "fa"]
+        for _ in range(sample.steps):
+            assert not lab.cpu.halted
+            lab.step()
+        assert lab.cpu.halted and lab.steps == 18
+        assert lab.cpu.ac == 0xFFFF
+        assert all(lab.cpu.memory[address] == value for address, value in sample.memory)
     finally:
         lab.mark_saved()
         lab.close()

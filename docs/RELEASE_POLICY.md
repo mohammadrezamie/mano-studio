@@ -60,3 +60,8 @@ Owner requests expedited initial prerelease with high quality. Isolated release/
 Target instructor-ready v1.0.0 on Monday 2026-11-30. Earlier beta-only timing policy is superseded, while evidence gates remain. Existing build.ps1 and candidate_manifest.py reject stable versions intentionally; stable candidate preparation must revise these guards and release-specific version tests, then rebuild and verify exact new head. See V1_DELIVERY_PLAN.md. No beta artifact renaming.
 
 </details>
+
+
+## Owner clarification — Beta must stay ahead of Stable (2026-11-27)
+
+The owner explicitly requires the Beta line to remain semantically ahead of the Stable line. The current Stable candidate remains **1.0.0**; the ongoing next-generation Beta development line is **1.1.0-dev.1**, with the proposed first public prerelease **v1.1.0-beta.1**. This supersedes older draft references to v0.3.0-beta.1; no public GitHub release or tag has been published as of this checkpoint. Keep `develop/next-beta` independent from `release/v1-candidate`. Stable receives only separately reviewed and accepted fixes; Beta feature work is never copied into Stable automatically. The existing updater policy is channel-isolated: Stable accepts newer final releases only, while Beta accepts newer beta/RC releases only. When 1.1.0 is eventually promoted to Stable, the next Beta development line advances to 1.2.0-dev.1. These version numbers do not waive any testing, security, licensing, native acceptance or owner-approval gate.

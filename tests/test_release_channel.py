@@ -39,3 +39,14 @@ def test_release_selection(current, tag, prerelease, expected):
     {'tag_name': 'invalid', 'draft': False, 'prerelease': False}])
 def test_malformed(item):
     assert eligible_release(item, '1.0.0') is None
+
+
+def test_next_beta_line_stays_ahead_of_stable_and_channel_isolated():
+    development = "1.1.0-dev.1"
+    beta = {"tag_name": "v1.1.0-beta.1", "draft": False, "prerelease": True}
+    stable = {"tag_name": "v1.0.1", "draft": False, "prerelease": False}
+    assert channel(development) == "beta"
+    assert version_key(development) > version_key("1.0.0")
+    assert eligible_release(beta, development) == version_key("v1.1.0-beta.1")
+    assert eligible_release(beta, "1.0.0") is None
+    assert eligible_release(stable, development) is None

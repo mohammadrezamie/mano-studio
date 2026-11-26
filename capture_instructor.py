@@ -9,8 +9,9 @@ from PySide6.QtWidgets import QApplication
 from ui.workspace import Workspace
 from ui.splash import splash_pixmap
 from update_service import VERSION
-from academic_source import read_source
 from visual_review import image_info
+from instructor_evidence import validate
+from instructor_gallery import write_gallery
 
 
 def capture(output):
@@ -44,21 +45,14 @@ def capture(output):
                             window.show()
                             app.processEvents()
                             save(window.grab(),f"{stem}-workspace-{width}.png")
-                        dialog=window.academic_dialog()
-                        try:
-                            dialog.show()
-                            app.processEvents()
-                            assert dialog.raw==read_source() and dialog.editor.isReadOnly()
-                            save(dialog.grab(),f"{stem}-academic-source.png")
-                        finally:
-                            dialog.close()
-                            dialog.deleteLater()
                         save(splash_pixmap(theme,glass,VERSION,language=="fa"),f"{stem}-splash.png")
                     finally:
                         window.editor.document().setModified(False)
                         window.close()
                         window.deleteLater()
                         app.processEvents()
+    validate(output, records)
+    write_gallery(output, records)
     (output/"manifest.json").write_text(json.dumps({"version":VERSION,"evidence":"actual Qt offscreen; native visual acceptance pending","captures":records},indent=2),encoding="utf-8")
 
 

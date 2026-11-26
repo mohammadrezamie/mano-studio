@@ -14,3 +14,9 @@ def test_windows_pyinstaller_data_arguments_use_windows_separator():
     ):
         assert f"--add-data '{source};{destination}'" in command
         assert f"--add-data '{source}:{destination}'" not in command
+
+
+def test_prerelease_guard_accepts_forward_beta_line_only():
+    script = BUILD_SCRIPT.read_text(encoding="utf-8")
+    assert r"$version -notmatch '^\d+\.\d+\.\d+-(dev|alpha|beta|rc)(\.\d+)?$'" in script
+    assert "Only explicitly marked development/prerelease builds are allowed." in script

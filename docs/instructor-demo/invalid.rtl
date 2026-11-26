@@ -1,0 +1,4 @@
+# These are intentionally invalid in the documented instruction-level dialect.
+AC <- M[1000]
+AR <- PC
+M[100] <- PC, PC <- 101 + 1

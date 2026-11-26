@@ -1,0 +1,47 @@
+name: Visual polish acceptance
+on:
+  push:
+    branches: [develop/visual-polish, integration/first-beta]
+  pull_request:
+    branches: [develop/visual-polish, develop/next-beta]
+    types: [opened, synchronize, reopened, ready_for_review]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.event_name == 'pull_request' && format('visual-polish-pr-{0}', github.event.pull_request.number) || github.ref }}
+  cancel-in-progress: true
+jobs:
+  visual:
+    if: github.event_name == 'push' || github.event.pull_request.base.ref == 'develop/visual-polish' || github.event.pull_request.head.ref == 'integration/first-beta'
+    runs-on: windows-latest
+    timeout-minutes: 35
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Configure native fonts
+        shell: pwsh
+        run: |
+          "QT_QPA_FONTDIR=$(Join-Path $env:WINDIR 'Fonts')" >> $env:GITHUB_ENV
+      - run: python render_preflight.py
+      - name: Verify capture evidence, typography and academic isolation
+        run: python -m pytest -q tests/test_instructor_evidence.py tests/test_instructor_gallery.py tests/test_typography.py tests/test_instructor_demo.py tests/test_visual_tokens.py tests/test_translator_isolation.py
+      - name: Verify compact layouts and unchanged academic workflow
+        run: python -m pytest -q -o faulthandler_timeout=60 tests/test_workspace.py -k 'visual_polish_compact or instructor_source_and_splash'
+      - name: Verify explicit memory selection and safe editing
+        run: python -m pytest -q -o faulthandler_timeout=60 tests/test_memory_inspector_view.py
+      - name: Capture all instructor views and validate exact coverage
+        run: python capture_instructor.py visual-polish-preview
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ManoStudio-visual-polish-preview
+          path: visual-polish-preview/
+          if-no-files-found: error
+          retention-days: 14
