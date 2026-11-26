@@ -1,0 +1,49 @@
+{
+  "format": "mano-logic",
+  "version": 2,
+  "inputs": [
+    "A",
+    "B"
+  ],
+  "gates": [
+    {
+      "output": "n1",
+      "op": "NAND",
+      "inputs": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "output": "n2",
+      "op": "NAND",
+      "inputs": [
+        "A",
+        "n1"
+      ]
+    },
+    {
+      "output": "n3",
+      "op": "NAND",
+      "inputs": [
+        "B",
+        "n1"
+      ]
+    },
+    {
+      "output": "y",
+      "op": "NAND",
+      "inputs": [
+        "n2",
+        "n3"
+      ]
+    }
+  ],
+  "outputs": [
+    [
+      "Y",
+      "y"
+    ]
+  ],
+  "positions": []
+}
