@@ -44,3 +44,8 @@ def test_boolean_law_search():
 def test_flipflop_reference_search():
     for query in ("excitation","characteristic","تحریک","مشخصه"):
         assert any(t.id=="sequential" for t in search_tools(query,1))
+
+
+def test_storage_timing_search():
+    for query in ("latch","asynchronous","setup hold","لچ","ناهمگام"):
+        assert any(t.id=="sequential" for t in search_tools(query,1))
