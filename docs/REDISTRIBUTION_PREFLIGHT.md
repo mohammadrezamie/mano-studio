@@ -61,3 +61,21 @@ Sources checked: Qt 6.12.1 release https://www.qt.io/blog/qt-6.12.1-released ; Q
 
 ## Windows ZIP namespace hardening — 2026-11-26
 Separate child review of #26, preserving the existing candidate and its CI. The audit now rejects case-folded aliases (including implicit parent directories), file/directory conflicts, duplicate entries, unsafe Windows characters, reserved device names, trailing dots/spaces and special file modes before reading inventory. Conservative case-folding is not a complete NTFS namespace model; no extraction or executable launch. Local 24 tests passed (0.05s), including audit integration. Re-audited exact portable artifact 15141312025: 327 ZIP entries accepted, 111 binary hashes verified, 8 distribution records and the same six Qt notice flags; report exactly equals archived preflight JSON. Manual review remains required, public approval false. No app runtime, academic translator, installer payload or dependency changes; integrate only after review. Actual latest candidate remains unchanged.
+
+## Upstream security and redistribution refresh — 2026-11-27
+
+The latest exact internal candidate remains source 6754956372fdf7cf7760c462ac012cb06a1fd868 (the archive/path-audit-only follow-up does not rebuild it). Its archived runtime evidence reports Python 3.14.10, installed OpenSSL DLLs embedded as 3.5.9, build-interpreter SSL as 3.5.0, and three review flags. Its redistribution report records 111 binaries, eight package records and six unresolved `qt-lgpl-text-not-identified` flags: PySide6, PySide6_Addons, PySide6_Essentials, PySide6_Pdf, PySide6_WebEngine and shiboken6. The setup is unsigned; clean-VM verification and native acceptance are false. No release approval.
+
+Qt Framework 6.12.1 was released on 24 Nov and includes more than 500 fixes, but the official Qt for Python development notes on 26 Nov still say PySide6 6.12.1 is being prepared, while the official wheel index still lists PySide6 6.12.0. Do not mix Qt 6.12.1 C++ binaries with PySide6 6.12.0 bindings. The candidate includes Qt 6.12.0 Core and Network; CVE-2026-105924 lists Qt 6.12.0 as affected and Qt 6.12.1 as fixed. CVE-2026-116337 also requires exact module/API reachability review. Wait for an aligned official PySide6 release or fully evaluate a separately supported alternative; then rebuild from pinned, provenance-checked packages and repeat the full tests and runtime scan.
+
+OpenSSL 3.5.10 is officially scheduled for 1 Dec 2026 as a security-fix release. The current runtime 3.5.9 and build SSL 3.5.0 evidence must not be hand-corrected by replacing individual DLLs. Wait for the official release and a compatible Python build/package, then rebuild and verify the actual loaded runtime and all embedded binaries.
+
+The Windows archive namespace gate is now included in this PR at commit 2b7c341. Its 24 local fixtures passed; the prior 327-entry portable archive, 111 binary hashes and eight distribution records were rechecked, with the six Qt flags unchanged. This hardening does not resolve license/source obligations or certify NTFS behavior, signing, security or legal compliance. Exact-head CI and a new candidate build are required.
+
+Official evidence checked 2026-11-27:
+- Qt 6.12.1 release: https://www.qt.io/blog/qt-6.12.1-released
+- PySide6 official wheel index: https://download.qt.io/official_releases/QtForPython/pyside6/
+- Qt for Python development notes (26 Nov): https://wiki.qt.io/Qt_for_Python_Development_Notes
+- CVE-2026-105924: https://www.qt.io/blog/security-advisory-cve-2026-105924
+- CVE-2026-116337: https://www.qt.io/blog/security-issue-cve-2026-116337
+- OpenSSL 3.5.10 schedule: https://www.openwall.com/lists/oss-security/2026/11/24/14
