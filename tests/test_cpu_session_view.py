@@ -27,10 +27,10 @@ def test_cpu_session_dialog(tmp_path, monkeypatch, language):
         lab.step()
         later = lab.cpu.registers()
         monkeypatch.setattr(QFileDialog, "getOpenFileName", lambda *a: (str(path), ""))
-        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.No)
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Cancel)
         assert not lab.open_cpu_session()
         assert lab.cpu.registers() == later
-        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Yes)
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Discard)
         assert lab.open_cpu_session()
         assert lab.cpu.registers() == expected and lab.cpu.memory == memory
         assert lab.steps == 1 and lab.history.breakpoints == {3}
