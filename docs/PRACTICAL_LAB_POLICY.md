@@ -22,4 +22,4 @@ For each mapped textbook section, record:
 
 Permanent constraints: offline, Persian/English parity, shared engine and normal editor formats, internationally recognizable functional symbols, no unsupported physical-timing claims, no new dependencies without benefit. Preserve standalone rtl_translator.py. Release track remains independent.
 
-Native project persistence: use the versioned .mano envelope for all future applicable lab documents; extend by explicitly validated kinds, preserve backward compatibility and independent sample oracles. Current kinds rtl/asm/circuit only. See NATIVE_FILES_AND_UPDATES.md.
+Native project persistence: use the versioned .mano envelope for all future applicable lab documents; extend by explicitly validated kinds, preserve backward compatibility and independent sample oracles. Current kinds rtl/asm/circuit/databus; other laboratory types remain open. See NATIVE_FILES_AND_UPDATES.md.
