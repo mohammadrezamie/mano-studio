@@ -18,6 +18,7 @@ from instruction_catalog import TEMPLATES, build_rtl
 from example_catalog import EXAMPLES, computer_source
 from ui.strings import FA, HELP, NAMES, EN_NAMES
 from ui.theme import PALETTES, SYNTAX, apply_theme
+from ui.typography import apply_ui_font
 from ui.icons import icon
 from ui.brand import BrandMark, brand_icon
 from ui.credits import COPYRIGHT, REPOSITORY, THANKS, PURPOSE, LICENSE_NOTE, ACADEMIC_ACKNOWLEDGMENT, COURSE, INSTITUTION, REFERENCE
@@ -66,6 +67,7 @@ class Workspace(QMainWindow):
         self.language = settings.value("language", "en")
         if self.language not in ("en", "fa"):
             self.language = "en"
+        apply_ui_font(QApplication.instance(), self.language)
         self.theme = settings.value("theme", "dark")
         if self.theme not in PALETTES:
             self.theme = "dark"
@@ -638,6 +640,7 @@ class Workspace(QMainWindow):
     def change_language(self):
         self.language = self.languages.currentData()
         self.settings.setValue("language", self.language)
+        apply_ui_font(QApplication.instance(), self.language)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.relabel()
         self.update_document_title()
