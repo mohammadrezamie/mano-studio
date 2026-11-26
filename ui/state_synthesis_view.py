@@ -8,6 +8,7 @@ from state_analysis import analyze_machine
 from state_reduction import reduce_machine
 from state_encoding import encode_reduced
 from logic_exercise import StateExercise
+import state_session
 from ui.exercise_actions import add_exercise_actions
 from ui.state_graph import StateGraph
 from ui.motion import MotionTabs
@@ -129,6 +130,21 @@ class StateSynthesisView(QWidget):
             self.ff.setCurrentIndex(self.ff.findData(exercise.flipflop))
         self.rebuild(rows=exercise.table)
 
+    def session(self):
+        return state_session.snapshot(self.exercise(),self.base,self.events,self.input.currentData())
+
+    def apply_session(self,session):
+        self.apply_exercise(session.design)
+        self.base=session.base
+        self.events=list(session.inputs)
+        self.state=session.state
+        n=self.model.bits
+        self.trace=[f"{q:0{n}b}, {x} → {nxt:0{n}b}, {y}" for q,x,nxt,y in session.trace]
+        self.history.setPlainText("\n".join(self.trace))
+        with QSignalBlocker(self.input):
+            self.input.setCurrentIndex(self.input.findData(session.selected))
+        self.preview()
+
     def rebuild(self,*_,rows=None):
         n=self.width.currentData()
         size=2**n
@@ -235,6 +251,8 @@ class StateSynthesisView(QWidget):
     def reset_state(self,*_):
         self.state=0
         self.trace=[]
+        self.events=[]
+        self.base=0
         self.history.clear()
         self.preview()
 
@@ -256,6 +274,9 @@ class StateSynthesisView(QWidget):
         n=self.model.bits
         x=self.input.currentData()
         nxt,y=self.model.step(self.state,x)
+        if len(self.events)==64:
+            self.base=self.model.step(self.base,self.events.pop(0))[0]
+        self.events.append(x)
         self.trace.append(f"{self.state:0{n}b}, {x} → {nxt:0{n}b}, {y}")
         self.trace=self.trace[-64:]
         self.history.setPlainText("\n".join(self.trace))
