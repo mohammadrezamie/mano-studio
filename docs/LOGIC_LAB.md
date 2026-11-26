@@ -66,3 +66,7 @@ Executed locally in Linux Python 3.13: 157 tests passed in 3.09s (`python -m pyt
 
 ## Universal gate realization — next-beta
 The existing Karnaugh tool now builds editable mixed, NAND-only or NOR-only circuits, preserving the minimized function and verifying all truth-table rows before replacement. Exact converter blob tested with an independent evaluator/test-double interfaces: 438 circuits, 6,740 rows. Integrated actual-engine and bilingual UI regression authored, not executed. See UNIVERSAL_GATES.md and TEXTBOOK_AUDIT.md C01.04 (partial); hazard analysis and global shared-gate optimization remain open. 44 catalog entries unchanged.
+
+
+## Chapter 2 carry look-ahead checkpoint — 2026-11-26
+Bounded fan-in look-ahead netlist generator widths 2–4, 4-bit preset in shared engine. 10 local pure-generator tests passed (0.05s), exact blobs d0c9c93e61f96a0646d68af43a19b39ad7ff1813 / 178b8b541b05fecc29004b9c360f547c1dc99feb; independent Boolean evaluator verified all 672 input vectors and each intermediate carry. Ideal gate levels for Cout 4 versus 9 in ripple, 32 versus 20 gates. Existing engine equivalence/document tests, bilingual UI/search and two screenshot requirements authored, not executed. 24 presets, 44 learning entries unchanged. No physical delay or minimum-size claim; see CARRY_LOOKAHEAD.md. C02 audit partial. First beta #22 unchanged; installer had reached portable build at inspection.
