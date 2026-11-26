@@ -28,6 +28,8 @@ from ui.state_synthesis_view import StateSynthesisView
 from boolean_synthesis import synthesize
 from universal_gates import universalize
 from mux_synthesis import synthesize_mux
+from classic_samples import SAMPLES, load_sample
+from ui.block_dialog import BlockDialog
 from ui.virtual_memory_view import AddressTranslationView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES, STATUS
@@ -442,6 +444,15 @@ class LogicLab(QDialog):
             self.document_buttons.append(button)
             if en=="Undo edit":
                 self.undo_button=button
+        library=QPushButton(self.t("Library / blocks","نمونه‌ها / بلوک‌ها"))
+        menu=QMenu(library)
+        menu.addAction(self.t("Insert circuit block","درج بلوک مدار"),self.insert_block)
+        menu.addSeparator()
+        for sample in SAMPLES:
+            menu.addAction(sample["title"][self.fa],lambda checked=False,key=sample["id"]:self.open_sample(key))
+        library.setMenu(menu)
+        self.document_buttons.append(library)
+        actions.addWidget(library)
         self.canvas_edit=QPushButton(self.t("Edit on canvas","ویرایش روی نقشه"))
         self.canvas_edit.setCheckable(True)
         self.canvas_edit.toggled.connect(self.toggle_canvas_edit)
@@ -728,6 +739,27 @@ class LogicLab(QDialog):
         if self.history:
             document,dirty=self.history.pop()
             self.install_document(document,dirty,preserve=True)
+
+    def insert_block(self):
+        if self.stack.currentIndex()==1:
+            return
+        dialog=BlockDialog(self.document,self.fa,self)
+        if dialog.exec()==QDialog.DialogCode.Accepted and dialog.result_document is not None:
+            self.history.append((self.document,self.dirty))
+            self.history=self.history[-30:]
+            self.install_document(dialog.result_document,True,preserve=True)
+
+    def open_sample(self,key):
+        if self.stack.currentIndex()==1:
+            return
+        document=load_sample(key)
+        if not self.confirm_discard():
+            return
+        self.history.append((self.document,self.dirty))
+        self.history=self.history[-30:]
+        self.install_document(document,False)
+        sample=next(s for s in SAMPLES if s["id"]==key)
+        self.description.setText(sample["title"][self.fa]+" · "+sample["task"][self.fa])
 
     def open_circuit(self):
         if not self.confirm_discard():
