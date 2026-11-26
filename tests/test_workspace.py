@@ -1981,3 +1981,39 @@ def test_native_state_session(workspace,tmp_path,monkeypatch,language):
         assert view.state==expected and len(view.trace)==64
     finally:
         lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_databus_alu_controls(workspace,tmp_path,monkeypatch,language):
+    from ui.logic_lab import LogicLab
+    from PySide6.QtWidgets import QFileDialog,QMessageBox
+    from databus_file import load
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    try:
+        v=lab.databus
+        v.examples.setCurrentIndex(v.examples.findData("alu-borrow"))
+        v.load_example()
+        for _ in range(4):
+            v.next_step()
+        assert v.model.registers["R0"]==13
+        assert v.model.memory.read(3)==13
+        assert v.operation.currentText()=="SUB"
+        assert v.trace.item(3,4).text()=="0 / 0 / 1 / 0"
+        path=tmp_path/"alu.mano"
+        monkeypatch.setattr(QFileDialog,"getSaveFileName",lambda *a:(str(path),""))
+        assert v.save_file()
+        model,staged=load(path)
+        assert staged[-2:]==("SUB",0)
+        assert model.history==v.model.history
+        v.operation.setCurrentText("ADC")
+        v.carry.setChecked(True)
+        assert v.is_dirty()
+        monkeypatch.setattr(QFileDialog,"getOpenFileName",lambda *a:(str(path),""))
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Yes)
+        v.open_file()
+        assert v.operation.currentText()=="SUB" and not v.carry.isChecked()
+        assert not v.is_dirty()
+    finally:
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Discard)
+        lab.close()
