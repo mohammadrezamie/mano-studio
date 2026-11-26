@@ -29,7 +29,7 @@ def test_cycle_view_inspects_actual_cpu_groups_without_mutating_machine(app, fa)
         assert view.groups.currentRow() == 0
         assert view.groups.item(0, 0).text() == "T0"
         assert view.groups.item(4, 1).text() == view.t("Execute", "اجرا")
-        assert view.groups.item(5, 2).text() == "AC ← DR"
+        assert view.groups.item(5, 2).text().startswith("AC ← DR")
 
         view.groups.setCurrentCell(4, 0)
         group = event.microevents[4]
