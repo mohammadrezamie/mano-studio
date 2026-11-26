@@ -31,6 +31,7 @@ class Databus:
         self.registers = dict.fromkeys(REGISTERS, 0)
         self.memory = MemoryArray(4, 4, 1, 1)
         self.history = []
+        self.events = []
 
     def preview(self, sources, external=0):
         sources = tuple(sources)
@@ -42,6 +43,7 @@ class Databus:
         return resolve_bus(4, [words[s] for s in sources])
 
     def tick(self, sources, destinations, external=0):
+        sources = tuple(sources)
         destinations = tuple(destinations)
         if any(d not in DESTINATIONS for d in destinations) or len(set(destinations)) != len(destinations):
             raise ValueError("Invalid destination selection")
@@ -64,4 +66,6 @@ class Databus:
         result = Cycle(before, tuple(after.values()), address, bus.bits, write)
         self.history.append(result)
         self.history = self.history[-64:]
+        self.events.append((sources, destinations, external))
+        self.events = self.events[-64:]
         return result
