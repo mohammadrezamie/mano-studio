@@ -64,8 +64,9 @@ def test_symbol_pad_and_builder_hex_pad_construct_program_without_keyboard(
             "AC", "PC", "AR", "DR", "E", "IR", "TR", "INPR", "OUTR",
             "IEN", "FGI", "FGO", "S", "M[", "]", "[", "←", "=", "+",
             "∧", "¬", "(", ")", ":", ",", "IF", "THEN", "CIR", "CIL",
-            "Space", "Enter", "Backspace", "Undo", "Redo",
         }
+        required.update(workspace.t(label) for label in
+                        ("Space", "Enter", "Backspace", "Undo", "Redo"))
         assert required.issubset(pad_buttons)
 
         workspace.editor.clear()
