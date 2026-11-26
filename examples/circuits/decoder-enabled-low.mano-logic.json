@@ -1,0 +1,80 @@
+{
+  "format": "mano-logic",
+  "version": 2,
+  "inputs": [
+    "A1",
+    "A0",
+    "EN"
+  ],
+  "gates": [
+    {
+      "output": "n1",
+      "op": "NOT",
+      "inputs": [
+        "A1"
+      ]
+    },
+    {
+      "output": "n0",
+      "op": "NOT",
+      "inputs": [
+        "A0"
+      ]
+    },
+    {
+      "output": "d0",
+      "op": "NAND",
+      "inputs": [
+        "n1",
+        "n0",
+        "EN"
+      ]
+    },
+    {
+      "output": "d1",
+      "op": "NAND",
+      "inputs": [
+        "n1",
+        "A0",
+        "EN"
+      ]
+    },
+    {
+      "output": "d2",
+      "op": "NAND",
+      "inputs": [
+        "A1",
+        "n0",
+        "EN"
+      ]
+    },
+    {
+      "output": "d3",
+      "op": "NAND",
+      "inputs": [
+        "A1",
+        "A0",
+        "EN"
+      ]
+    }
+  ],
+  "outputs": [
+    [
+      "Y0",
+      "d0"
+    ],
+    [
+      "Y1",
+      "d1"
+    ],
+    [
+      "Y2",
+      "d2"
+    ],
+    [
+      "Y3",
+      "d3"
+    ]
+  ],
+  "positions": []
+}
