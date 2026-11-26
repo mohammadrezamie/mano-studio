@@ -13,6 +13,7 @@ import re
 from rtl_translator import translate
 from asm_to_rtl import reverse_translate
 from update_service import VERSION
+import mano_file
 from instruction_catalog import TEMPLATES, build_rtl
 from example_catalog import EXAMPLES, computer_source
 from ui.strings import FA, HELP, NAMES, EN_NAMES
@@ -251,7 +252,7 @@ class Workspace(QMainWindow):
         return ".asm" if self.direction=="forward" else ".rtl"
 
     def input_filter(self):
-        return "RTL (*.rtl *.txt);;All files (*)" if self.direction=="forward" else "Assembly (*.asm *.txt);;All files (*)"
+        return "Mano Studio (*.mano);;"+("RTL (*.rtl *.txt);;All files (*)" if self.direction=="forward" else "Assembly (*.asm *.txt);;All files (*)")
 
     def refresh_direction_labels(self):
         reverse=self.direction=="reverse"
@@ -697,10 +698,37 @@ class Workspace(QMainWindow):
             self.replace_document("")
 
     def open_file(self):
-        if not self.confirm_discard():
-            return
         name, _ = QFileDialog.getOpenFileName(self, self.t("Choose file"), self.last_directory(), self.input_filter())
-        if not name:
+        if name:
+            self.open_path(name)
+
+    def open_path(self,name):
+        path=Path(name)
+        if path.suffix.lower()==".mano":
+            try:
+                kind,payload=mano_file.load(path)
+                if kind=="circuit":
+                    import json
+                    from circuit_document import CircuitDocument
+                    from ui.logic_lab import LogicLab
+                    document=CircuitDocument.loads(json.dumps(payload))
+                    lab=LogicLab(self)
+                    lab.select_tool("gates")
+                    lab.install_document(document,False)
+                    lab.exec()
+                    lab.deleteLater()
+                    return
+            except (OSError,UnicodeError,ValueError):
+                QMessageBox.warning(self,self.t("File error"),"Invalid Mano Studio file" if self.language!="fa" else "فایل مانو استودیو نامعتبر است")
+                return
+            if not self.confirm_discard():
+                return
+            self.set_direction("forward" if kind=="rtl" else "reverse")
+            self.settings.setValue("last_directory",str(path.parent))
+            self.replace_document(payload,path=path)
+            self.run_translation()
+            return
+        if not self.confirm_discard():
             return
         try:
             path = Path(name)
@@ -720,19 +748,22 @@ class Workspace(QMainWindow):
         return self.write_document(self.path)
 
     def save_as(self):
-        suggested = str(self.path) if self.path else str(Path(self.last_directory()) / ((self.active_example.key if self.active_example else "untitled") + self.input_suffix()))
-        name, _ = QFileDialog.getSaveFileName(self, self.t("Save input as"), suggested, self.input_filter())
+        suggested = str(self.path) if self.path else str(Path(self.last_directory()) / ((self.active_example.key if self.active_example else "untitled") + ".mano"))
+        name, selected = QFileDialog.getSaveFileName(self, self.t("Save input as"), suggested, self.input_filter())
         if not name:
             return False
         path = Path(name)
         if not path.suffix:
-            path = path.with_suffix(self.input_suffix())
+            path = path.with_suffix(".mano" if selected.startswith("Mano Studio") else self.input_suffix())
         return self.write_document(path)
 
     def write_document(self, path):
         try:
-            path.write_text(self.editor.toPlainText(), encoding="utf-8")
-        except (OSError, UnicodeError) as exc:
+            if path.suffix.lower()==".mano":
+                mano_file.save(path,"rtl" if self.direction=="forward" else "asm",self.editor.toPlainText())
+            else:
+                path.write_text(self.editor.toPlainText(), encoding="utf-8")
+        except (OSError, UnicodeError, ValueError) as exc:
             QMessageBox.warning(self, self.t("File error"), error_text(exc,self.language=="fa"))
             return False
         self.path = path
