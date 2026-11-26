@@ -1,0 +1,143 @@
+{
+  "format": "mano-logic",
+  "version": 2,
+  "inputs": [
+    "A1",
+    "A0",
+    "B1",
+    "B0"
+  ],
+  "gates": [
+    {
+      "output": "e1",
+      "op": "XNOR",
+      "inputs": [
+        "A1",
+        "B1"
+      ]
+    },
+    {
+      "output": "e0",
+      "op": "XNOR",
+      "inputs": [
+        "A0",
+        "B0"
+      ]
+    },
+    {
+      "output": "na1",
+      "op": "NOT",
+      "inputs": [
+        "A1"
+      ]
+    },
+    {
+      "output": "na0",
+      "op": "NOT",
+      "inputs": [
+        "A0"
+      ]
+    },
+    {
+      "output": "nb1",
+      "op": "NOT",
+      "inputs": [
+        "B1"
+      ]
+    },
+    {
+      "output": "nb0",
+      "op": "NOT",
+      "inputs": [
+        "B0"
+      ]
+    },
+    {
+      "output": "lt1",
+      "op": "AND",
+      "inputs": [
+        "na1",
+        "B1"
+      ]
+    },
+    {
+      "output": "lt0",
+      "op": "AND",
+      "inputs": [
+        "na0",
+        "B0"
+      ]
+    },
+    {
+      "output": "gt1",
+      "op": "AND",
+      "inputs": [
+        "A1",
+        "nb1"
+      ]
+    },
+    {
+      "output": "gt0",
+      "op": "AND",
+      "inputs": [
+        "A0",
+        "nb0"
+      ]
+    },
+    {
+      "output": "lp",
+      "op": "AND",
+      "inputs": [
+        "e1",
+        "lt0"
+      ]
+    },
+    {
+      "output": "gp",
+      "op": "AND",
+      "inputs": [
+        "e1",
+        "gt0"
+      ]
+    },
+    {
+      "output": "l",
+      "op": "OR",
+      "inputs": [
+        "lt1",
+        "lp"
+      ]
+    },
+    {
+      "output": "e",
+      "op": "AND",
+      "inputs": [
+        "e1",
+        "e0"
+      ]
+    },
+    {
+      "output": "g",
+      "op": "OR",
+      "inputs": [
+        "gt1",
+        "gp"
+      ]
+    }
+  ],
+  "outputs": [
+    [
+      "LT",
+      "l"
+    ],
+    [
+      "EQ",
+      "e"
+    ],
+    [
+      "GT",
+      "g"
+    ]
+  ],
+  "positions": []
+}
