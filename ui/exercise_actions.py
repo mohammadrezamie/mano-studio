@@ -1,7 +1,7 @@
 """Bilingual exercise file actions shared by Chapter 1 design tools."""
 from pathlib import Path
 from PySide6.QtWidgets import QFileDialog, QMessageBox, QPushButton
-from logic_exercise import read_exercise, write_exercise
+from native_exercise import load as read_exercise, save as write_exercise
 
 
 def add_exercise_actions(view, layout, kind):
@@ -9,7 +9,7 @@ def add_exercise_actions(view, layout, kind):
     def t(en, fa):
         return fa if view.fa else en
 
-    file_filter = t("Mano exercise (*.mano-exercise.json)", "تمرین مانو (*.mano-exercise.json)") + ";;JSON (*.json)"
+    file_filter = t("Mano Studio (*.mano)", "مانو استودیو (*.mano)") + ";;" + t("Legacy exercise (*.mano-exercise.json)", "تمرین قدیمی (*.mano-exercise.json)") + ";;JSON (*.json)"
 
     def open_file():
         name, _ = QFileDialog.getOpenFileName(view, t("Open exercise", "باز کردن تمرین"), "", file_filter)
@@ -32,12 +32,12 @@ def add_exercise_actions(view, layout, kind):
 
     def save_file():
         name, _ = QFileDialog.getSaveFileName(view, t("Save exercise", "ذخیره تمرین"),
-                                               kind+".mano-exercise.json", file_filter)
+                                               kind+".mano", file_filter)
         if not name:
             return
         path = Path(name)
         if not path.suffix:
-            path = path.with_suffix(".mano-exercise.json")
+            path = path.with_suffix(".mano")
         try:
             write_exercise(path, view.exercise())
         except (OSError, ValueError):
