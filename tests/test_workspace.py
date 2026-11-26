@@ -1752,3 +1752,22 @@ def test_lab_motion_preference_shared_by_cpu_and_logic(workspace, language):
     finally:
         cpu.close()
         logic.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_lookahead_preset(workspace,language):
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    try:
+        lab.selector.setCurrentIndex(lab.selector.findData("lookahead4"))
+        assert len(lab.buttons)==9 and lab.table.rowCount()==512
+        assert len(lab.circuit.outputs)==5
+        for pin in ("A0","A1","A2","A3","Cin"):
+            lab.buttons[pin].setChecked(True)
+        assert lab.circuit.result(lab.inputs)=={"S0":0,"S1":0,"S2":0,"S3":0,"Cout":1}
+        assert "gp3" in lab.equations.toPlainText() and "c4" in lab.equations.toPlainText()
+        assert not lab.dirty
+        assert not lab.diagram.grab().isNull()
+    finally:
+        lab.close()
