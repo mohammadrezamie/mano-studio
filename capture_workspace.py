@@ -61,6 +61,24 @@ def capture_active_states(app,window,output,language):
             v.details.setCurrentWidget(v.reference)
         capture(logic,"sequential","sr-forbidden",sr_reference,
             lambda:logic.sequential.reference.characteristic.item(3,3).text()==("ممنوع" if language=="fa" else "Forbidden"))
+        def latch_unknown():
+            v=logic.sequential
+            v.details.setCurrentWidget(v.storage)
+            l=v.storage
+            l.selector.setCurrentIndex(l.selector.findData("SR_NOR"))
+            l.reset()
+            l.buttons["S"].setChecked(True);l.buttons["R"].setChecked(True);l.apply()
+            l.buttons["S"].setChecked(False);l.buttons["R"].setChecked(False);l.apply()
+        capture(logic,"sequential","latch-unknown",latch_unknown,
+            lambda:logic.sequential.storage.state.q is None and logic.sequential.storage.history.rowCount()==2)
+        def async_preset():
+            v=logic.sequential
+            v.details.setCurrentWidget(v.storage)
+            l=v.storage
+            l.selector.setCurrentIndex(l.selector.findData("D_ASYNC"))
+            l.reset();l.buttons["PREbar"].setChecked(False);l.apply()
+        capture(logic,"sequential","async-preset",async_preset,
+            lambda:logic.sequential.storage.state.q==1 and logic.sequential.storage.previous_clock==0)
         logic.sequential.details.setCurrentIndex(0)
         capture(logic,"cache","conflict",logic.cache.example,lambda:logic.cache.model.accesses==6 and logic.cache.model.misses==6)
         paging=logic.address_translation.paging
