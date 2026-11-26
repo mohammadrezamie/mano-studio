@@ -1796,3 +1796,42 @@ def test_karnaugh_mux_build(workspace,monkeypatch,language):
         assert lab.document==original and not lab.dirty
     finally:
         lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_library_and_block_insertion(workspace,monkeypatch,language):
+    from ui.logic_lab import LogicLab
+    from ui.block_dialog import BlockDialog
+    from PySide6.QtWidgets import QDialog,QMessageBox
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    try:
+        lab.selector.setCurrentIndex(lab.selector.findData("half_adder"))
+        before=lab.document
+        monkeypatch.setattr(BlockDialog,"exec",lambda self:QDialog.DialogCode.Rejected)
+        lab.insert_block()
+        assert lab.document is before
+        def accept(dialog):
+            dialog.selector.setCurrentIndex(dialog.selector.findData("half_adder"))
+            dialog.prefix.setText("h2")
+            dialog.fields["A"].setCurrentIndex(dialog.fields["A"].findData("sum"))
+            dialog.validate()
+            assert dialog.result_document is not None
+            return QDialog.DialogCode.Accepted
+        monkeypatch.setattr(BlockDialog,"exec",accept)
+        lab.insert_block()
+        assert lab.dirty and len(lab.document.gates)==4
+        assert lab.document.inputs==("A","B","h2_B")
+        lab.undo_edit()
+        assert lab.document==before and not lab.dirty
+        lab.open_sample("nand-xor")
+        assert len(lab.document.gates)==4 and all(g.op=="NAND" for g in lab.document.gates)
+        assert lab.circuit.result({"A":1,"B":0})=={"Y":1}
+        lab.dirty=True
+        current=lab.document
+        monkeypatch.setattr(QMessageBox,"question",lambda *a,**k:QMessageBox.StandardButton.No)
+        lab.open_sample("mux-majority")
+        assert lab.document is current
+        lab.dirty=False
+    finally:
+        lab.close()
