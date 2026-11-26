@@ -1,4 +1,4 @@
-param([switch]$PortableOnly, [switch]$ReuseFrozen)
+param([switch]$PortableOnly, [switch]$ReuseFrozen, [switch]$LeanPdf)
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 if (-not [Environment]::Is64BitProcess) { throw 'Use 64-bit Python and PowerShell.' }
@@ -16,6 +16,10 @@ if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed.' }
 $dist = Join-Path $PWD 'dist\ManoStudio'
 python -m installer.prune_qt $dist
 if ($LASTEXITCODE -ne 0) { throw 'Qt payload pruning failed.' }
+if ($LeanPdf) {
+    python -m installer.prune_pdf $dist --apply
+    if ($LASTEXITCODE -ne 0) { throw 'Experimental Qt PDF pruning rejected.' }
+}
 $notices = Join-Path $dist 'third-party-notices'
 New-Item -ItemType Directory -Force $notices | Out-Null
 # Preserve notices shipped in the installed distributions; legal review is still required before public release.

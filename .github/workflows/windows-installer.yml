@@ -58,7 +58,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Candidate dependency conflict.' }
       - name: Verify redistribution tooling
         if: github.head_ref == 'quality/redistribution-gate'
-        run: python -m pytest -q tests/test_wheel_evidence.py tests/test_redistribution_gate.py tests/test_prune_qt.py tests/test_runtime_evidence.py tests/test_standalone_probe.py
+        run: python -m pytest -q tests/test_wheel_evidence.py tests/test_redistribution_gate.py tests/test_prune_qt.py tests/test_prune_pdf.py tests/test_runtime_evidence.py tests/test_standalone_probe.py
       - name: Configure Windows fonts for offscreen Qt
         shell: pwsh
         run: |
@@ -86,7 +86,11 @@ jobs:
           retention-days: 14
       - name: Build portable candidate application
         shell: pwsh
-        run: ./installer/build.ps1 -PortableOnly
+        env:
+          LEAN_PDF_EXPERIMENT: ${{ github.head_ref == 'quality/redistribution-gate' }}
+        run: |
+          if ($env:LEAN_PDF_EXPERIMENT -eq 'true') { ./installer/build.ps1 -PortableOnly -LeanPdf }
+          else { ./installer/build.ps1 -PortableOnly }
       - name: Smoke test frozen portable application
         shell: pwsh
         run: |
