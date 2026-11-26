@@ -48,6 +48,13 @@ def capture_active_states(app,window,output,language):
             v.selector.setCurrentIndex(v.selector.findData("D"))
             v.reset();v.buttons["D"].setChecked(True);v.pulse()
             v.buttons["D"].setChecked(False);v.pulse()
+        def lookahead():
+            logic.selector.setCurrentIndex(logic.selector.findData("lookahead4"))
+            for pin in ("A0","A1","A2","A3","Cin"):
+                logic.buttons[pin].setChecked(True)
+            logic.diagram.fit()
+        capture(logic,"gates","lookahead-carry",lookahead,
+            lambda:logic.circuit.result(logic.inputs)=={"S0":0,"S1":0,"S2":0,"S3":0,"Cout":1})
         capture(logic,"sequential","clocked",logic_wave,lambda:logic.sequential.model.value==0 and len(logic.sequential.waveform.rows)>=5)
         def excitation_reference():
             v=logic.sequential
