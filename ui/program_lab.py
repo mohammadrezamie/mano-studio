@@ -5,6 +5,7 @@ from ui.navigation_rail import NavigationRail
 import csv
 from memory_inspector import parse_address, page_addresses, memory_rows
 import memory_export
+from memory_navigation import adjacent_page
 from word_decode import decode_word
 from memory_edit import parse_word, write_word
 from PySide6.QtWidgets import QInputDialog
@@ -136,23 +137,36 @@ class ProgramLab(QDialog):
         self.memory_address = QLineEdit()
         self.memory_address.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.memory_address.setPlaceholderText("000–FFF")
+        self.memory_address.setAccessibleName(self.t("Memory address", "آدرس حافظه"))
         self.memory_address.returnPressed.connect(self.inspect_memory)
         memory_tools.addWidget(self.memory_address)
         self.inspect_memory_button = QPushButton(self.t("Inspect address", "مشاهده آدرس"))
         self.inspect_memory_button.clicked.connect(self.inspect_memory)
         memory_tools.addWidget(self.inspect_memory_button)
+        self.previous_memory_button = QPushButton(self.t("Previous page", "صفحه قبل"))
+        self.previous_memory_button.clicked.connect(lambda: self.move_memory_page(-1))
+        memory_tools.addWidget(self.previous_memory_button)
+        self.next_memory_button = QPushButton(self.t("Next page", "صفحه بعد"))
+        self.next_memory_button.clicked.connect(lambda: self.move_memory_page(1))
+        memory_tools.addWidget(self.next_memory_button)
+        memory_layout.addLayout(memory_tools)
+        memory_actions = QHBoxLayout()
         self.clear_memory_button = QPushButton(self.t("Accessed only", "فقط آدرس‌های استفاده‌شده"))
         self.clear_memory_button.clicked.connect(self.clear_memory_page)
-        memory_tools.addWidget(self.clear_memory_button)
+        memory_actions.addWidget(self.clear_memory_button)
         self.export_memory_button = QPushButton(self.t("Export CSV", "خروجی CSV"))
         self.export_memory_button.clicked.connect(self.export_memory)
-        memory_tools.addWidget(self.export_memory_button)
+        memory_actions.addWidget(self.export_memory_button)
         self.edit_memory_button = QPushButton(self.t("Edit word", "ویرایش کلمه"))
         self.edit_memory_button.clicked.connect(self.edit_memory)
-        memory_tools.addWidget(self.edit_memory_button)
+        memory_actions.addWidget(self.edit_memory_button)
         self.memory_page_label = QLabel()
-        memory_tools.addWidget(self.memory_page_label)
-        memory_layout.addLayout(memory_tools)
+        memory_actions.addWidget(self.memory_page_label)
+        self.memory_page_label.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        memory_actions.addStretch(1)
+        memory_layout.addLayout(memory_actions)
+        self.memory.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.registers.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         memory_layout.addWidget(lower,1)
         self.inspector.addTab(memory_panel,self.t("Registers & memory","ثبات‌ها و حافظه"))
         trace_page=QWidget()
@@ -327,7 +341,7 @@ class ProgramLab(QDialog):
         self.machine.clear()
         self.datapath.set_state(None)
         self.registers.setRowCount(0)
-        self.memory.setRowCount(0)
+        self.refresh_memory()
         self.set_source_locked(False)
 
     def begin_source_edit(self):
@@ -537,7 +551,22 @@ class ProgramLab(QDialog):
         self.memory_address.clear()
         self.memory_page_label.clear()
 
+    def move_memory_page(self, direction):
+        if self.cpu is None:
+            return False
+        address = adjacent_page(self.inspected_address, direction)
+        if address is None:
+            return False
+        self.memory_address.setText(f"{address:03X}")
+        return self.inspect_memory()
+
     def refresh_memory(self):
+        self.previous_memory_button.setEnabled(self.cpu is not None and adjacent_page(self.inspected_address, -1) is not None)
+        self.next_memory_button.setEnabled(self.cpu is not None and adjacent_page(self.inspected_address, 1) is not None)
+        self.inspect_memory_button.setEnabled(self.cpu is not None)
+        self.clear_memory_button.setEnabled(self.cpu is not None and self.inspected_address is not None)
+        self.export_memory_button.setEnabled(self.cpu is not None)
+        self.edit_memory_button.setEnabled(self.cpu is not None)
         if self.cpu is None:
             self.memory.setRowCount(0)
             return
