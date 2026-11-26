@@ -220,3 +220,6 @@ Current inventory: 104 topic families across 13 chapters, plus six closure gates
 
 ## Saved sample extension
 C02.02 enabled active-low decoder, C02.04 two-bit add/subtract, C02.05 two-bit comparator: 56 saved-file truth rows independently checked; section closure and actual UI execution remain pending. Saved custom block import added, no stateful cross-model composition yet.
+
+## First stateful composition evidence
+C02.06, C02.08 and Chapter 4 bus/register transfer: fixed four-bit RAM/register composition with exact-head local 18 tests and three saved scenarios. Section closure, arbitrary wiring, user scenario save/load, edition and GUI acceptance remain open. See DATABUS_LAB.md.
