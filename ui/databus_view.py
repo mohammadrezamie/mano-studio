@@ -2,9 +2,11 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QGridLayout,QLabel,
     QCheckBox,QSpinBox,QPushButton,QComboBox,QTableWidget,QTableWidgetItem,
-    QHeaderView,QAbstractItemView,QMessageBox)
+    QHeaderView,QAbstractItemView,QMessageBox,QFileDialog)
 from databus_lab import Databus,SOURCES,DESTINATIONS
 from databus_samples import SAMPLES,sample
+import databus_file
+from pathlib import Path
 
 
 class DatabusView(QWidget):
@@ -32,6 +34,14 @@ class DatabusView(QWidget):
             if en=="Next example step":
                 self.next_button=button
         layout.addLayout(row)
+        files=QHBoxLayout()
+        for en,fa_text,fn in (("Open experiment","باز کردن آزمایش",self.open_file),
+                               ("Save experiment","ذخیره آزمایش",self.save_file)):
+            button=QPushButton(self.t(en,fa_text))
+            button.clicked.connect(fn)
+            files.addWidget(button)
+        files.addStretch()
+        layout.addLayout(files)
         self.task=QLabel()
         self.task.setWordWrap(True)
         layout.addWidget(self.task)
@@ -147,8 +157,59 @@ class DatabusView(QWidget):
         self.external.setValue(0)
         self.refresh()
 
+    def install_checkpoint(self,model,staged):
+        self.model=model
+        self.scenario=None
+        self.step_index=0
+        sources,destinations,external=staged
+        for name,control in self.drivers.items():
+            control.blockSignals(True)
+            control.setChecked(name in sources)
+            control.blockSignals(False)
+        for name,control in self.loads.items():
+            control.blockSignals(True)
+            control.setChecked(name in destinations)
+            control.blockSignals(False)
+        self.external.blockSignals(True)
+        self.external.setValue(external)
+        self.external.blockSignals(False)
+        self.refresh()
+        self.update_task()
+
+    def open_file(self):
+        name,_=QFileDialog.getOpenFileName(self,self.t("Open experiment","باز کردن آزمایش"),"",
+            "Mano Studio (*.mano)")
+        if not name:
+            return
+        try:
+            model,staged=databus_file.load(name)
+        except (OSError,UnicodeError,ValueError):
+            QMessageBox.warning(self,self.t("Invalid experiment","آزمایش نامعتبر"),
+                self.t("Cannot open this bus experiment.","این آزمایش گذرگاه باز نمی‌شود."))
+            return
+        if self.confirm_reset():
+            self.install_checkpoint(model,staged)
+
+    def save_file(self):
+        name,_=QFileDialog.getSaveFileName(self,self.t("Save experiment","ذخیره آزمایش"),
+            "bus-experiment.mano","Mano Studio (*.mano)")
+        if not name:
+            return False
+        path=Path(name)
+        if path.suffix.lower()!=".mano":
+            path=Path(str(path)+".mano")
+        try:
+            databus_file.save(path,self.model,self.controls())
+        except (OSError,UnicodeError,ValueError):
+            QMessageBox.warning(self,self.t("Cannot save","ذخیره ناموفق"),
+                self.t("The experiment could not be saved.","آزمایش ذخیره نشد."))
+            return False
+        self.status.setText(self.t("Experiment saved.","آزمایش ذخیره شد."))
+        return True
+
     def confirm_reset(self):
-        return not self.model.history or QMessageBox.question(self,self.t("Reset experiment","بازنشانی آزمایش"),
+        pristine=not self.model.history and not any(self.model.registers.values()) and not any(self.model.memory.read(a) for a in range(16)) and self.controls()==((),(),0)
+        return pristine or QMessageBox.question(self,self.t("Reset experiment","بازنشانی آزمایش"),
             self.t("Discard the current bus experiment and reset RAM/registers?","آزمایش فعلی کنار گذاشته و RAM و ثبات‌ها بازنشانی شوند؟"))==QMessageBox.StandardButton.Yes
 
     def reset(self):
