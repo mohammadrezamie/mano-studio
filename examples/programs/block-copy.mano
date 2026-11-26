@@ -1,0 +1,6 @@
+{
+  "format": "mano-studio",
+  "version": 1,
+  "kind": "asm",
+  "payload": "ORG 100\nLOOP, LDA SRC I\nSTA DST I\nISZ SRC\nISZ DST\nISZ COUNT\nBUN LOOP\nHLT\nSRC, HEX 200\nDST, HEX 210\nCOUNT, DEC -3\nORG 200\nHEX 1234\nHEX A5A5\nHEX FFFF\nORG 210\nHEX 0000\nHEX 0000\nHEX 0000\nEND\n"
+}

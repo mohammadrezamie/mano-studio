@@ -17,7 +17,7 @@ def test_native_samples(sample):
 
 def test_exact_catalog_and_native_files():
     keys = [sample.key for sample in SAMPLES]
-    assert len(keys) == len(set(keys)) == 5
+    assert len(keys) == len(set(keys)) == 10
     assert {p.stem for p in (ROOT / 'examples/programs').glob('*.mano')} == set(keys)
 
 
@@ -49,3 +49,19 @@ def test_cpu_expected_results(sample):
     assert cpu.halted and cpu.step() is None
     assert (cpu.ac, cpu.e) == (sample.ac, sample.e)
     assert all(cpu.memory[address] == expected for address, expected in sample.memory)
+
+
+@pytest.mark.parametrize("value,expected,steps", [(0, 0, 5), (7, 7, 5), (0xFFF9, 7, 7), (0x8000, 0x8000, 7)])
+def test_absolute_value_sign_paths(value, expected, steps):
+    from assembler import assemble
+    from simulator import CPU
+    _, source = load_sample("absolute-value", ROOT)
+    program = assemble(source)
+    assert program.ok
+    cpu = CPU(program.words, program.entry)
+    cpu.memory[program.symbols["VALUE"]] = value
+    for _ in range(steps):
+        assert not cpu.halted
+        assert cpu.step() is not None
+    assert cpu.halted and cpu.ac == expected
+    assert cpu.memory[program.symbols["RESULT"]] == expected
