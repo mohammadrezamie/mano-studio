@@ -27,6 +27,7 @@ from ui.karnaugh_view import KarnaughView
 from ui.state_synthesis_view import StateSynthesisView
 from boolean_synthesis import synthesize
 from universal_gates import universalize
+from mux_synthesis import synthesize_mux
 from ui.virtual_memory_view import AddressTranslationView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
 from ui.theme import PALETTES, STATUS
@@ -519,10 +520,14 @@ class LogicLab(QDialog):
                 self.t("Apply or cancel the staged circuit edit first.","ابتدا ویرایش مدار را اعمال یا لغو کنید."))
             return
         try:
-            document=synthesize(self.karnaugh.values,self.karnaugh.form.currentData())
             family=self.karnaugh.gate_family.currentData()
-            if family!="mixed":
-                document=universalize(document,family)
+            values,form=self.karnaugh.values,self.karnaugh.form.currentData()
+            if family=="MUX":
+                document=synthesize_mux(values,form)
+            else:
+                document=synthesize(values,form)
+                if family!="mixed":
+                    document=universalize(document,family)
         except ValueError:
             QMessageBox.warning(self,self.t("Cannot build circuit","ساخت مدار ممکن نیست"),
                 self.t("The selected realization exceeds the supported circuit limits or has invalid inputs.",
