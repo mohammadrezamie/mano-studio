@@ -1,0 +1,124 @@
+{
+  "format": "mano-logic",
+  "version": 2,
+  "inputs": [
+    "A1",
+    "A0",
+    "B1",
+    "B0",
+    "M"
+  ],
+  "gates": [
+    {
+      "output": "x0",
+      "op": "XOR",
+      "inputs": [
+        "B0",
+        "M"
+      ]
+    },
+    {
+      "output": "x1",
+      "op": "XOR",
+      "inputs": [
+        "B1",
+        "M"
+      ]
+    },
+    {
+      "output": "p0",
+      "op": "XOR",
+      "inputs": [
+        "A0",
+        "x0"
+      ]
+    },
+    {
+      "output": "g0",
+      "op": "AND",
+      "inputs": [
+        "A0",
+        "x0"
+      ]
+    },
+    {
+      "output": "s0",
+      "op": "XOR",
+      "inputs": [
+        "p0",
+        "M"
+      ]
+    },
+    {
+      "output": "h0",
+      "op": "AND",
+      "inputs": [
+        "p0",
+        "M"
+      ]
+    },
+    {
+      "output": "c1",
+      "op": "OR",
+      "inputs": [
+        "g0",
+        "h0"
+      ]
+    },
+    {
+      "output": "p1",
+      "op": "XOR",
+      "inputs": [
+        "A1",
+        "x1"
+      ]
+    },
+    {
+      "output": "g1",
+      "op": "AND",
+      "inputs": [
+        "A1",
+        "x1"
+      ]
+    },
+    {
+      "output": "s1",
+      "op": "XOR",
+      "inputs": [
+        "p1",
+        "c1"
+      ]
+    },
+    {
+      "output": "h1",
+      "op": "AND",
+      "inputs": [
+        "p1",
+        "c1"
+      ]
+    },
+    {
+      "output": "c2",
+      "op": "OR",
+      "inputs": [
+        "g1",
+        "h1"
+      ]
+    }
+  ],
+  "outputs": [
+    [
+      "S1",
+      "s1"
+    ],
+    [
+      "S0",
+      "s0"
+    ],
+    [
+      "Cout",
+      "c2"
+    ]
+  ],
+  "positions": []
+}
