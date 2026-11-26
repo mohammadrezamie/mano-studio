@@ -1,13 +1,12 @@
 """Launch Mano Studio with persisted settings and a startup splash."""
 import sys
-from PySide6.QtCore import Qt, QSettings, QRect
-from PySide6.QtGui import QPixmap, QPainter, QColor, QFont
+from PySide6.QtCore import Qt, QSettings
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QApplication, QSplashScreen
 from ui.theme import PALETTES, apply_theme
 from ui.strings import FA
-from ui.glass import paint_backdrop
-from ui.brand import brand_icon, render_mark
-from ui.credits import THANKS, COPYRIGHT
+from ui.brand import brand_icon
+from ui.splash import splash_pixmap
 
 from update_service import VERSION
 
@@ -94,26 +93,7 @@ def main():
     apply_theme(app, theme, glass_enabled)
     app.setWindowIcon(brand_icon(theme,glass_enabled))
     bg, panel, raised, fg, muted, accent, border = PALETTES[theme]
-    pix = QPixmap(640, 310)
-    pix.fill(QColor(bg))
-    painter = QPainter(pix)
-    painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-    paint_backdrop(painter, pix.rect(), theme, glass_enabled)
-    painter.setPen(QColor(accent))
-    painter.setFont(QFont("Segoe UI", 30, QFont.Weight.Bold))
-    render_mark(painter,QRect(35,28,84,84),theme,glass_enabled)
-    painter.setPen(QColor(accent))
-    painter.drawText(135, 85, "MANO STUDIO")
-    painter.setPen(QColor(fg))
-    painter.setFont(QFont("Segoe UI", 13))
-    painter.drawText(35, 125, FA["Build. Translate. Learn."] if language == "fa" else "Build. Translate. Learn.")
-    painter.setPen(QColor(muted))
-    painter.drawText(35, 165, VERSION)
-    painter.drawText(35, 200, FA["Academic project · Morris Mano Basic Computer"] if language == "fa" else "Academic project · Morris Mano Basic Computer")
-    painter.setFont(QFont("Segoe UI",10))
-    painter.drawText(QRect(35,222,570,48),int(Qt.TextFlag.TextWordWrap) | int(Qt.AlignmentFlag.AlignVCenter) | int(Qt.AlignmentFlag.AlignRight if language=="fa" else Qt.AlignmentFlag.AlignLeft),THANKS[language=="fa"])
-    painter.drawText(35,285,COPYRIGHT)
-    painter.end()
+    pix = splash_pixmap(theme,glass_enabled,VERSION,language=="fa")
     splash = QSplashScreen(pix)
     splash.show()
     splash.showMessage(FA["Loading workspace…"] if language == "fa" else "Loading workspace…", Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter, QColor(fg))
