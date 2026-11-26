@@ -63,3 +63,6 @@ Use .mano as the native versioned application document envelope; retain legacy a
 
 ## Permanent owner backlog — 2026-11-26
 Read docs/OWNER_BACKLOG.md and issue #23 each continuation. Maintain all incomplete owner requirements, evidence and acceptance gaps there; never silently drop scope. Keep first beta release track independent, preserve academic translator and legacy exports.
+
+## Owner deadline override — 2026-11-26
+First stable instructor target is Monday 2026-11-30 (v1.0.0), conditional on actual evidence. This supersedes the earlier no-stable-before-class timing rule, not quality gates. Read docs/V1_DELIVERY_PLAN.md and issue #4 before continuation. Keep next-generation work independent and do not relabel beta binaries. Stable packaging guards must be deliberately revised on a separate candidate after beta validation.
