@@ -50,6 +50,7 @@ def stylesheet(theme, glass_enabled=True):
     rim = "rgba(255,255,255,245)" if light else "rgba(153,179,255,100)"
     gradient = f"qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 {shine},stop:0.18 {glass},stop:1 {glass})"
     action = "qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #80dfff,stop:1 #d2b1ff)" if theme == "dark" and glass_enabled else accent
+    editor_glass = f"qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 {raised},stop:0.18 {panel},stop:1 {panel})" if glass_enabled else panel
     if not glass_enabled:
         glass,rim,gradient = panel,border,panel
     return f"""
@@ -58,7 +59,12 @@ def stylesheet(theme, glass_enabled=True):
     QWidget#glassRoot {{ background: transparent; }}
     QFrame#glassBar {{ background: {gradient}; border: 1px solid {rim}; border-radius: {RADIUS["shell"]}px; }}
     QFrame#editorPanel {{ background: {panel}; border: 1px solid {border}; border-radius: {RADIUS["panel"]}px; }}
+    QFrame#editorPanel[workspacePane="true"] {{ background: {editor_glass}; border-radius: {RADIUS["panel"]}px; }}
     QLabel {{ background: transparent; }}
+    QLabel#workspaceHeading {{ font-size: {TYPE["section"]}px; font-weight: 600; color: {fg}; padding: 3px 2px; }}
+    QLabel#versionChip {{ background: {raised}; color: {accent}; border: 1px solid {border}; border-radius: 7px; padding: 2px 7px; font-size: {TYPE["caption"]}px; font-weight: 600; }}
+    QPushButton#academicAction {{ color: {accent}; border-color: {accent}; font-weight: 600; }}
+    QPushButton#academicAction:hover {{ background: {raised}; border-color: {fg}; }}
     QLabel#brand {{ font-size: {TYPE["title"]}px; font-weight: 600; color: {fg}; }}
     QLabel#hero {{ font-size: {TYPE["hero"]}px; font-weight: 600; color: {fg}; }}
     QLabel#metric {{ font-size: 24px; font-weight: 600; color: {fg}; }}
