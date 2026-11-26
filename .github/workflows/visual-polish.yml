@@ -1,7 +1,7 @@
 name: Visual polish acceptance
 on:
   push:
-    branches: [develop/visual-polish, quality/instructor-evidence-rebased]
+    branches: [develop/visual-polish]
   pull_request:
     branches: [develop/visual-polish]
     types: [opened, synchronize, reopened, ready_for_review]
