@@ -1,0 +1,13 @@
+# Multiplexer realization using Shannon expansion — Chapter 2
+
+Logic Lab → Karnaugh map → MUX · Shannon → Build editable circuit. The selected SOP/POS minimizer first resolves X cells; the MUX implementation preserves that exact completion. The Verify tab compares the selected MUX gate output with the cover. Existing confirmation and undo remain available. Mixed, NAND and NOR alternatives remain; no additional route or file format.
+
+For select bit A, F = (NOT A AND F[A=0]) OR (A AND F[A=1]). Recursively expand in MSB-first A–D order. Identical cofactors reuse a signal; equal branches collapse. A constant uses A and its complement, because the current editor has no constant primitive. Each remaining MUX stage is expanded into two ANDs and an OR, with shared inverters. The schematic therefore uses existing gate symbols rather than a new IC symbol or physical package. This is deterministic functional synthesis, not global gate-count optimization or physical timing simulation.
+
+در نقشه کارنو، گزینه مالتی‌پلکسر · شانون را انتخاب کنید. تابع با توجه به حالت صفر و یک متغیر انتخاب به دو زیرتابع تقسیم می‌شود. این روند تا رسیدن به مقدار ثابت ادامه دارد؛ شاخه‌های یکسان حذف یا مشترک می‌شوند. مقدار سلول‌های X مطابق فرم انتخاب‌شده حفظ می‌شود و جدول درستی مدار با عبارت مقایسه می‌شود.
+
+## Evidence
+Actual local execution: 9 pytest cases passed in 0.10s. Exact Git blobs verified: mux_network.py 01167c83037ab6e5037ad865b5fa6f5eaedfd8c2 and tests/test_mux_network.py 3ced2aa6950c9a5d9b6dcc3b93a8bffbdc74e79e. An independent Boolean evaluator checked all 16 two-variable and 256 three-variable functions, 256 seeded four-variable functions, plus constant/shared cofactor examples, every generated stage, determinism and invalid inputs. The integrated CircuitDocument/minimizer tests (512 complete and 256 partial-map form/function cases) and bilingual GUI cancellation/undo cases are authored but not executed here. No physical MUX IC pinout, new learning route or academic translator change. Run: python -m pytest -q tests/test_mux_network.py.
+
+## Related memory audit
+Existing memory_model.py e0a227bb42b709e8add7a7fe83292b5560540d3c models addressed RAM/ROM, active-low CS/OE/WE, separate data buses and explicit transactions. memory_organization.py fa324ced8d3989d7988a28f3a2b17364cb0bb672 composes actual RAM chips into bank/word lanes. Existing tests/test_memory_organization.py d718ee7967ac7eca0e4320ca0227136649e6c5a8 covers 18 organization cases, address selection, disabled writes, overflow rejection and reset. This is source/test inspection, not new execution. ROM programming, electrical timing, real chip pinouts and exact edition mapping remain open.
