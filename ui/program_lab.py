@@ -576,8 +576,11 @@ class ProgramLab(QDialog):
 
     def refresh_memory(self):
         # Model-driven selection and repaints must not overwrite typed addresses.
-        with QSignalBlocker(self.memory):
+        signals_were_blocked = self.memory.blockSignals(True)
+        try:
             self._refresh_memory_table()
+        finally:
+            self.memory.blockSignals(signals_were_blocked)
 
     def _refresh_memory_table(self):
         self.previous_memory_button.setEnabled(self.cpu is not None and adjacent_page(self.inspected_address, -1) is not None)
