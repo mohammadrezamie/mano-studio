@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFrame, QLabel
 from academic_source import read_source, export_source
 from ui.code_editor import CodeEditor
 from ui.theme import SYNTAX
-from ui.icons import icon
 
 
 class PythonHighlighter(QSyntaxHighlighter):
