@@ -32,3 +32,6 @@ Open Saved examples in Karnaugh or State machine design. [Majority](../examples/
 
 ## Resume FSM simulation
 Save exercise as .mano to preserve runtime state, selected X and last 64 input events. Reopen to continue clock stepping. Legacy design-only files and shipped examples still begin at reset Q=0. Derived outputs are recomputed. Confirm replacement before loading; save before closing or editing the table (close-time FSM unsaved prompt remains pending).
+
+## ALU experiments in the shared bus
+Use the saved [overflow](../examples/databus/alu-overflow.mano-databus.json) and [borrow](../examples/databus/alu-borrow.mano-databus.json) scenarios. Compare each completed edge's flags and memory result. Native checkpoints retain ALU controls. 68 local tests passed; actual UI verification pending.
