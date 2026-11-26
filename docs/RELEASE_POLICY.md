@@ -35,3 +35,6 @@ Owner requests expedited initial prerelease with high quality. Isolated release/
 
 ## Owner update download request — 2026-11-26
 Next-generation branch now implements explicit download-only for eligible official assets with GitHub SHA-256/size, strict URL and redirect validation. This supersedes check-only for that branch, not the frozen first beta. Never execute a downloaded installer until trusted publisher verification and upgrade acceptance exist. Native Windows association and actual Release download pending. See NATIVE_FILES_AND_UPDATES.md.
+
+## 2026-11-26 owner deadline override
+Target instructor-ready v1.0.0 on Monday 2026-11-30. Earlier beta-only timing policy is superseded, while evidence gates remain. Existing build.ps1 and candidate_manifest.py reject stable versions intentionally; stable candidate preparation must revise these guards and release-specific version tests, then rebuild and verify exact new head. See V1_DELIVERY_PLAN.md. No beta artifact renaming.
