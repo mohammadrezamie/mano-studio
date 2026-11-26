@@ -27,3 +27,13 @@ def test_unused_qt_virtual_keyboard_is_pruned_with_a_dependency_guard():
     script = BUILD_SCRIPT.read_text(encoding="utf-8")
     assert "python -m installer.prune_qt $dist" in script
     assert "Qt Virtual Keyboard payload pruning failed." in script
+
+
+def test_installed_smoke_clears_developer_python_and_qt_paths():
+    script = (BUILD_SCRIPT.parents[0] / "smoke.ps1").read_text(encoding="utf-8")
+    assert "$env:PATH = \"$env:SystemRoot\\System32;$env:SystemRoot\"" in script
+    for name in ("PYTHONHOME", "PYTHONPATH", "QT_PLUGIN_PATH", "QT_QPA_PLATFORM_PLUGIN_PATH",
+                 "QT_QPA_FONTDIR", "QML_IMPORT_PATH", "QML2_IMPORT_PATH", "VIRTUAL_ENV", "CONDA_PREFIX"):
+        assert f"'{name}'" in script
+    assert "SetEnvironmentVariable($name, $null, 'Process')" in script
+    assert "SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process')" in script
