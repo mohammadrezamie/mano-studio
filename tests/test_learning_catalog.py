@@ -49,3 +49,8 @@ def test_flipflop_reference_search():
 def test_storage_timing_search():
     for query in ("latch","asynchronous","setup hold","لچ","ناهمگام"):
         assert any(t.id=="sequential" for t in search_tools(query,1))
+
+
+def test_lookahead_search():
+    for query in ("carry lookahead","propagate","نقلی پیش‌بین"):
+        assert any(t.id=="components" for t in search_tools(query,2))
