@@ -21,10 +21,10 @@ def splash_pixmap(theme,glass,version,fa=False):
         render_mark(p,QRect(44,40,84,84),theme,glass)
         p.setPen(QColor(fg))
         p.setFont(QFont("Segoe UI",29,QFont.Weight.Bold))
-        p.drawText(QRect(145,42,480,50),Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter,"MANO STUDIO")
+        p.drawText(QRect(145,42,480,50),int(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter),"MANO STUDIO")
         p.setFont(QFont("Segoe UI",12))
         p.setPen(QColor(accent))
-        p.drawText(QRect(145,94,480,28),Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter,
+        p.drawText(QRect(145,94,480,28),int(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter),
                    "RTL  →  ASM   ·   v"+version)
         p.setPen(QColor(border))
         p.drawLine(44,140,636,140)
