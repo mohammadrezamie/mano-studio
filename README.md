@@ -147,3 +147,5 @@ A focused Beta fix rejects lossy JSON keys and excessively nested native payload
 Follow-up: the proposed fix also bounds serialization to the existing 2,000,000 UTF-8 byte limit, with 33 local tests passing and exact source/test hashes checked. PR #28 merged as `6947b00`; exact-head CI run `45855827594` passed 647 tests (582 core, 26 workspace, 39 Qt). Native Windows file-association acceptance remains separate.
 
 Beta visual polish: bilingual typography and a dedicated instructor demonstration are integrated, with safer memory-row selection and edit-target synchronization. Windows visual QA and native acceptance remain required before promotion.
+
+Instructor visual QA: the 48-view evidence validator and bilingual local gallery are rebased onto the current visual-polish and native-document baseline. Exact-head Windows capture and GUI acceptance are still pending; this does not imply native visual approval.
