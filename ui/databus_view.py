@@ -3,7 +3,8 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QWidget,QVBoxLayout,QHBoxLayout,QGridLayout,QLabel,
     QCheckBox,QSpinBox,QPushButton,QComboBox,QTableWidget,QTableWidgetItem,
     QHeaderView,QAbstractItemView,QMessageBox,QFileDialog)
-from databus_lab import Databus,SOURCES,DESTINATIONS
+from databus_lab import Databus,SOURCES,DESTINATIONS,event_controls
+from word_arithmetic import OPERATIONS
 from databus_samples import SAMPLES,sample
 import databus_file
 from pathlib import Path
@@ -17,8 +18,8 @@ class DatabusView(QWidget):
         self.scenario=None
         self.step_index=0
         layout=QVBoxLayout(self)
-        note=QLabel(self.t("One ideal 4-bit bus connects AR, R0, R1 and RAM (16 × 4). A clock edge samples the old source and old AR. Select one driver when loading destinations.",
-            "یک گذرگاه ایده‌آل ۴ بیتی، AR، R0، R1 و RAM (۱۶ × ۴) را متصل می‌کند. لبه ساعت از مبدأ و AR قبلی نمونه می‌گیرد. هنگام بارگذاری فقط یک راه‌انداز انتخاب کنید."))
+        note=QLabel(self.t("One ideal 4-bit bus connects AR, R0, R1, ALU and RAM (16 × 4). A clock edge samples the old source and old AR. Select one driver when loading destinations.",
+            "یک گذرگاه ایده‌آل ۴ بیتی، AR، R0، R1، ALU و RAM (۱۶ × ۴) را متصل می‌کند. لبه ساعت از مبدأ و AR قبلی نمونه می‌گیرد. هنگام بارگذاری فقط یک راه‌انداز انتخاب کنید."))
         note.setWordWrap(True)
         layout.addWidget(note)
         row=QHBoxLayout()
@@ -76,6 +77,20 @@ class DatabusView(QWidget):
                 check.toggled.connect(self.refresh)
                 grid.addWidget(check,i,3)
         layout.addLayout(grid)
+        alu_row=QHBoxLayout()
+        alu_row.addWidget(QLabel(self.t("ALU: R0, R1","واحد حساب و منطق: R0، R1")))
+        self.operation=QComboBox()
+        self.operation.addItems(OPERATIONS)
+        self.operation.setAccessibleName(self.t("ALU operation","عملیات واحد حساب و منطق"))
+        alu_row.addWidget(self.operation)
+        self.carry=QCheckBox("Cin")
+        alu_row.addWidget(self.carry)
+        self.flags=QLabel()
+        self.flags.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        alu_row.addWidget(self.flags,1)
+        layout.addLayout(alu_row)
+        self.operation.currentIndexChanged.connect(self.refresh)
+        self.carry.toggled.connect(self.refresh)
         row=QHBoxLayout()
         self.bus=QLabel()
         self.bus.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
@@ -95,9 +110,9 @@ class DatabusView(QWidget):
         self.memory.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.memory.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         layout.addWidget(self.memory,1)
-        self.trace=QTableWidget(0,4)
+        self.trace=QTableWidget(0,5)
         self.trace.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-        self.trace.setHorizontalHeaderLabels([self.t("Old AR,R0,R1","مقادیر قبلی"),"BUS",self.t("New AR,R0,R1","مقادیر جدید"),self.t("RAM write","نوشتن RAM")])
+        self.trace.setHorizontalHeaderLabels([self.t("Old AR,R0,R1","مقادیر قبلی"),"BUS",self.t("New AR,R0,R1","مقادیر جدید"),self.t("RAM write","نوشتن RAM"),self.t("ALU C/V/N/Z","پرچم‌های ALU")])
         self.trace.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.trace.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.trace.verticalHeader().hide()
@@ -110,15 +125,25 @@ class DatabusView(QWidget):
         return fa if self.fa else en
 
     def controls(self):
-        return (tuple(n for n,c in self.drivers.items() if c.isChecked()),
-                tuple(n for n,c in self.loads.items() if c.isChecked()),self.external.value())
+        return event_controls(tuple(n for n,c in self.drivers.items() if c.isChecked()),
+                tuple(n for n,c in self.loads.items() if c.isChecked()),self.external.value(),
+                self.operation.currentText(),int(self.carry.isChecked()))
+
+    @staticmethod
+    def flag_text(result):
+        if result is None:
+            return "—"
+        bit=lambda value: "—" if value is None else str(int(value))
+        return " / ".join(bit(v) for v in (result.carry,result.overflow,result.negative,result.zero))
 
     def refresh(self,*_):
+        arithmetic=self.model.arithmetic(self.operation.currentText(),int(self.carry.isChecked()))
         for name,widget in self.words.items():
-            word=self.model.memory.read(self.model.registers["AR"]) if name=="RAM" else self.model.registers[name]
+            word=arithmetic.word if name=="ALU" else self.model.memory.read(self.model.registers["AR"]) if name=="RAM" else self.model.registers[name]
             widget.setText(f"{word:X}")
-        sources,destinations,external=self.controls()
-        bus=self.model.preview(sources,external)
+        self.flags.setText("C / V / N / Z = "+self.flag_text(arithmetic))
+        sources,destinations,external,*alu_controls=self.controls()
+        bus=self.model.preview(sources,external,*alu_controls)
         self.bus.setText("BUS[3:0] = "+bus.bits)
         self.status.setText(self.t("Transfer ready","انتقال آماده") if bus.drivers==1 else
             self.t("No driver / Z","بدون راه‌انداز / Z") if not bus.drivers else
@@ -131,7 +156,7 @@ class DatabusView(QWidget):
         for i,cycle in enumerate(self.model.history):
             write="—" if cycle.memory_write is None else f"M[{cycle.memory_write[0]:X}] ← {cycle.memory_write[2]:X}"
             for j,value in enumerate((" ".join(f"{v:X}" for v in cycle.before),cycle.bus,
-                                       " ".join(f"{v:X}" for v in cycle.after),write)):
+                                       " ".join(f"{v:X}" for v in cycle.after),write,self.flag_text(cycle.arithmetic))):
                 self.trace.setItem(i,j,QTableWidgetItem(value))
         self.trace.scrollToBottom()
 
@@ -156,6 +181,8 @@ class DatabusView(QWidget):
         for control in (*self.drivers.values(),*self.loads.values()):
             control.setChecked(False)
         self.external.setValue(0)
+        self.operation.setCurrentText("ADD")
+        self.carry.setChecked(False)
         self.refresh()
         self.saved_checkpoint=databus_file.snapshot(self.model,self.controls())
 
@@ -163,7 +190,10 @@ class DatabusView(QWidget):
         self.model=model
         self.scenario=None
         self.step_index=0
-        sources,destinations,external=staged
+        sources,destinations,external,*alu_controls=staged
+        operation,carry=alu_controls or ("ADD",0)
+        self.operation.setCurrentText(operation)
+        self.carry.setChecked(bool(carry))
         for name,control in self.drivers.items():
             control.blockSignals(True)
             control.setChecked(name in sources)
@@ -259,6 +289,8 @@ class DatabusView(QWidget):
         for name,control in self.loads.items():
             control.setChecked(name in step["destinations"])
         self.external.setValue(step["external"])
+        self.operation.setCurrentText(step.get("operation","ADD"))
+        self.carry.setChecked(bool(step.get("carry",0)))
         if self.apply_cycle():
             self.step_index+=1
             self.update_task()
