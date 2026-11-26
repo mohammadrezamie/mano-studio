@@ -10,14 +10,42 @@ MAX_BYTES = 2_000_000
 KINDS = {"rtl", "asm", "circuit", "databus", "karnaugh", "state-design", "state-run", "cpu-run"}
 
 
-def encode(kind, payload):
-    if kind not in KINDS or (kind in ("rtl", "asm") and not isinstance(payload, str)) or (kind not in ("rtl", "asm") and not isinstance(payload, dict)):
-        raise ValueError("Unsupported Mano document")
-    text = json.dumps({"format": MAGIC, "version": 1, "kind": kind, "payload": payload},
-                      ensure_ascii=False, allow_nan=False, indent=2) + "\n"
-    if len(text.encode("utf-8")) > MAX_BYTES:
+def _validate_payload(value, remaining, depth=0):
+    """Bound traversal using a conservative lower bound on encoded bytes."""
+    if depth > 64:
+        raise ValueError("Mano document nesting too deep")
+    remaining -= max(1, len(value)) if isinstance(value, str) else 1
+    if remaining < 0:
         raise ValueError("Mano document too large")
-    return text
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise ValueError("Mano document keys must be text")
+            remaining = _validate_payload(key, remaining, depth + 1)
+            remaining = _validate_payload(item, remaining, depth + 1)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            remaining = _validate_payload(item, remaining, depth + 1)
+    return remaining
+
+
+def encode(kind, payload):
+    if not isinstance(kind, str) or kind not in KINDS or (kind in ("rtl", "asm") and not isinstance(payload, str)) or (kind not in ("rtl", "asm") and not isinstance(payload, dict)):
+        raise ValueError("Unsupported Mano document")
+    _validate_payload(payload, MAX_BYTES)
+    try:
+        encoder = json.JSONEncoder(ensure_ascii=False, allow_nan=False, indent=2)
+        chunks = bytearray()
+        for chunk in encoder.iterencode({"format": MAGIC, "version": 1,
+                                         "kind": kind, "payload": payload}):
+            raw = chunk.encode("utf-8")
+            if len(chunks) + len(raw) + 1 > MAX_BYTES:
+                raise ValueError("Mano document too large")
+            chunks.extend(raw)
+        chunks.extend(b"\n")
+        return chunks.decode("utf-8")
+    except (TypeError, RecursionError, UnicodeError) as exc:
+        raise ValueError("Invalid Mano document") from exc
 
 
 def decode(text):
