@@ -52,8 +52,8 @@ def test_dirty_sample_replacement_cancel_preserves_live_cpu(
         tmp_path, monkeypatch, language):
     app, workspace, lab = make_lab(tmp_path, language)
     try:
-        assert lab.step() is None or lab.steps == 1
-        assert lab.is_dirty()
+        lab.step()
+        assert lab.steps == 1 and lab.is_dirty()
         source, cpu, history = lab.source.toPlainText(), lab.cpu, lab.history
         registers, steps = cpu.registers(), lab.steps
         calls = []
@@ -79,7 +79,7 @@ def test_dirty_sample_replacement_save_checkpoints_before_switch(
     app, workspace, lab = make_lab(tmp_path, language)
     try:
         lab.step()
-        assert lab.is_dirty()
+        assert lab.steps == 1 and lab.is_dirty()
         old_source, old_steps = lab.source.toPlainText(), lab.steps
         checkpoint = tmp_path / "before-sample.mano"
         monkeypatch.setattr(QMessageBox, "question",
