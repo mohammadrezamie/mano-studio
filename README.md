@@ -19,7 +19,7 @@
   <a href="#quick-start">Quick start</a> · <a href="#academic-assignment">Academic core</a> · <a href="#visual-preview">Visual preview</a> · <a href="#development-status">Status</a> · <a href="#documentation">Docs</a>
 </p>
 
-**This branch prepares the actual v0.3.0-beta.1 candidate (PR #22); not yet a release.** Earlier integrated Linux job passed 1,370 tests with one outdated credits assertion, corrected locally (2/2 exact-file tests). The next Windows job successfully froze the EXE but failed collecting dependency metadata; the notice collector has been corrected and tested locally (11 cases). Full exact-head regression and independently produced internal artifacts remain mandatory. [Recovery guide](docs/BETA_DELIVERY_RECOVERY.md).
+**This branch tracks the Stable 1.0.0 candidate (PR #24 and redistribution PR #26); it is not a public release.** The current Windows Setup and portable candidate built successfully and both offline smoke reports pass. Exact-head full Windows/Ubuntu regression is running. Security, LGPL/source, clean-machine and native bilingual acceptance gates remain open. The separate forward Beta is 1.1.0-dev.1 in PR #36 and remains ahead of Stable; its visual acceptance passed, while combined integration tests are still running.
 
 ## What you can do
 
@@ -36,11 +36,11 @@ Designed for English and Persian, with persistent language preferences, Light/Da
 
 | Track | Current milestone |
 | --- | --- |
-| **Main — verified source baseline** | PR [#15](https://github.com/mohammadrezamie/mano-studio/pull/15) merged; 1,200 tests passed on each OS in [run 45557009008](https://github.com/mohammadrezamie/mano-studio/actions/runs/45557009008). 42 learning entries across 13 chapters (partial coverage). |
-| **Release — Windows x64 beta** | [PR #22](https://github.com/mohammadrezamie/mano-studio/pull/22), v0.3.0-beta.1 candidate; independent full regression, Windows artifacts, native acceptance and publication gates remain open. #19 retained for diagnostic evidence. |
-| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): 44 learning entries (MSI and Omega); additional Boolean and timing lessons; Qt tests and visual evidence pending. |
+| **Stable — v1.0.0** | [PR #24](https://github.com/mohammadrezamie/mano-studio/pull/24) and [redistribution PR #26](https://github.com/mohammadrezamie/mano-studio/pull/26). Windows candidate build [45906066887](https://github.com/mohammadrezamie/mano-studio/actions/runs/45906066887) is queued; exact-source Windows/Ubuntu regression [45906066863](https://github.com/mohammadrezamie/mano-studio/actions/runs/45906066863) is in progress. LGPL, OpenSSL/Qt security, native, clean-VM and signing review remain open.
+| **Forward Beta — v1.1.0** | Draft [PR #36](https://github.com/mohammadrezamie/mano-studio/pull/36), current development version 1.1.0-dev.1, proposed first prerelease v1.1.0-beta.1. Windows visual acceptance [45905561919](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905561919) passed with 36 verified captures; combined Next-beta tests [45905049642](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905049642) are in progress. |
+| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta) continues independently; advanced textbook coverage is not a blocker for the first two releases. |
 
-**No downloadable public release has been verified or published.** Development artifacts are not stable releases. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live state. This snapshot is dated 2026-11-26; evidence refers to the named commits/runs, not every later change.
+**No downloadable public release has been verified or published.** The older [PR #22](https://github.com/mohammadrezamie/mano-studio/pull/22) v0.3.0-beta.1 is fallback-only and superseded by the forward 1.1.0 Beta line. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live state. This snapshot is dated 2026-11-27; evidence refers to the named commits/runs, not every later change.
 
 ## Visual preview
 
