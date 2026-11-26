@@ -30,7 +30,7 @@ from boolean_synthesis import synthesize
 from universal_gates import universalize
 from mux_synthesis import synthesize_mux
 from classic_samples import SAMPLES, load_sample
-from circuit_file import read_text
+from native_circuit import load_circuit, save_circuit
 from ui.block_dialog import BlockDialog
 from ui.virtual_memory_view import AddressTranslationView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
@@ -773,11 +773,11 @@ class LogicLab(QDialog):
     def open_circuit(self):
         if not self.confirm_discard():
             return
-        name,_=QFileDialog.getOpenFileName(self,self.t("Open circuit","باز کردن مدار"),"","Mano circuit (*.mano-logic.json);;JSON (*.json)")
+        name,_=QFileDialog.getOpenFileName(self,self.t("Open circuit","باز کردن مدار"),"","Mano Studio (*.mano);;Legacy circuit (*.mano-logic.json);;JSON (*.json)")
         if not name:
             return
         try:
-            document=CircuitDocument.loads(read_text(name))
+            document=load_circuit(name)
         except (OSError,UnicodeError,ValueError) as exc:
             QMessageBox.warning(self,self.t("Invalid circuit","مدار نامعتبر"),error_text(exc,self.fa))
             return
@@ -789,14 +789,14 @@ class LogicLab(QDialog):
             QMessageBox.information(self,self.t("Apply first","ابتدا اعمال کنید"),
                 self.t("Apply or cancel the staged edit before saving.","پیش از ذخیره، ویرایش را اعمال یا لغو کنید."))
             return
-        name,_=QFileDialog.getSaveFileName(self,self.t("Save circuit","ذخیره مدار"),"circuit.mano-logic.json","Mano circuit (*.mano-logic.json);;JSON (*.json)")
+        name,_=QFileDialog.getSaveFileName(self,self.t("Save circuit","ذخیره مدار"),"circuit.mano","Mano Studio (*.mano);;Legacy circuit (*.mano-logic.json);;JSON (*.json)")
         if not name:
             return
         path=Path(name)
         if not path.suffix:
-            path=path.with_suffix(".mano-logic.json")
+            path=path.with_suffix(".mano")
         try:
-            path.write_text(self.document.dumps(),encoding="utf-8")
+            save_circuit(path,self.document)
         except (OSError,ValueError) as exc:
             QMessageBox.warning(self,self.t("Cannot save","ذخیره ناموفق"),error_text(exc,self.fa))
             return
