@@ -5,13 +5,17 @@ on:
     paths-ignore:
       - '**/*.md'
       - 'docs/**'
+  pull_request:
+    branches: [develop/next-beta]
+    types: [opened, synchronize, reopened, ready_for_review]
 concurrency:
-  group: next-beta-integration
+  group: next-beta-integration-${{ github.event.pull_request.number || 'branch' }}
   cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   focused:
+    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref == 'fix/beta-native-document-integrity')
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -19,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -63,6 +67,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: next-beta-junit-${{ github.sha }}
+          name: next-beta-junit-${{ github.event.pull_request.head.sha || github.sha }}
           path: next-*.xml
           if-no-files-found: ignore
