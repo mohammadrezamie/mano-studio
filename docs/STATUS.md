@@ -1,6 +1,22 @@
-# Development status — 2026-11-25
+# Development status — 2026-11-26
 
-PR #9 is merged; verified main baseline 9eb19971. Continue quality/beta-visual-review on a separate PR; inspect current open PRs and Actions before editing. No stable release or v1.0.0 tag; owner approval after classroom review is mandatory. See RELEASE_POLICY.md.
+## Live status
+
+- **Stable:** draft PR #26; exact-head full regression run 45863679074 and Windows installer run 45863679206 queued. Previous run exposed one stale fixture omission (1,490 passed, 1 failed); fixture now supplies explicit GitHub `prerelease` metadata. Product update policy remains fail-closed. PySide6 6.12.1 is still being prepared; current candidate uses 6.12.0. OpenSSL 3.5.10 is scheduled for 1 Dec; current runtime is 3.5.9. Security, redistribution/source, native Windows and clean/pre-equipped install acceptance remain open.
+- **Beta:** PR #28 merged to `develop/next-beta` (6947b00); exact-head integration passed 647 tests (582 core, 26 workspace, 39 Qt), zero failures/errors/skips. PR #25 contains bilingual typography, instructor demo and safer memory selection; it was rebased after #28. PR #30 merged into visual-polish after 47 Windows checks and verified 48 captures; PR #31 merged into next-beta after 657 tests passed. PR #25 is being integrated with the current next-beta base; rerun both CI suites before promotion. PR #25 remains a draft pending integrated CI and review.
+- **Academic contract:** root `rtl_translator.py` remains a separate standard-library-only file; no unrelated UI/simulator dependencies.
+- **Release policy:** owner clarification 2026-11-26: no fixed Stable version or date. No public Stable or Beta release is confirmed. Never lower acceptance gates to meet a retired date.
+
+## Immediate next actions
+
+1. Inspect queued exact-head runs and fix any real product/test failures without weakening policy.
+2. Wait for official aligned PySide6 6.12.1 and OpenSSL 3.5.10; rebuild and verify exact pins and hashes.
+3. Complete source/redistribution review and native Windows UX on clean and pre-equipped systems.
+4. Merge only accepted Beta PRs and preserve JUnit, screenshot, artifact and hash evidence.
+
+## Historical checkpoints
+
+All older checkpoints below are retained for traceability; the live status above supersedes outdated priorities, branch names, deadlines and release claims.
 
 ## Completed and verified history
 - Standalone Python RTL translator and catalog cover 25 named instructions / 32 documented forms; prior Linux tests: 64 passed.
@@ -10,10 +26,8 @@ PR #9 is merged; verified main baseline 9eb19971. Continue quality/beta-visual-r
 ## Current installer checkpoint
 Added requirements-build.txt, installer/build.ps1, installer/mano-studio.iss, installer/collect_notices.py and installer/smoke.ps1. PyInstaller onedir includes readable rtl_translator.py, examples, docs and license; Inno Setup x64 per-user install, optional desktop shortcut and uninstaller. main.py --smoke-test checks real frozen UI translation, invalid-input rejection and bundled source/example. Windows Actions workflow builds and tests, installs, smoke-tests, uninstalls and uploads development installer plus SHA256 as a temporary artifact only; no public release or stable tag. Build result not yet confirmed. Installer unsigned; review third-party Qt redistribution obligations and pin verified build dependencies before public distribution.
 
-## Next work
-1. Inspect current Windows installer workflow and test logs; resolve failures and inspect actual screenshots.
-2. Test on independent clean Windows machine (no Python), verify no network dependency, source viewer, install/uninstall and settings; refine visual polish, autocomplete and academic attribution as verified.
-3. Class target: 2026-11-30 to 2026-12-06, explicitly marked 0.x beta only, subject to verification. Current version 0.3.0-dev. Issue #4 packaging, #2 UI, #10 comfort/update preferences remain open. Full simulator #3 and reverse #8 deferred if needed.
+## Historical next work (superseded)
+The earlier 2026-11-30 to 2026-12-06 class target and 0.3.0-dev packaging assumptions are historical, not current commitments. Follow the live status above and current acceptance plans #4/#23.
 
 ## Installer CI resumed
 Merged current main history into the development branch at a749b03b99343c63e209992e14d7c811a977c719, preserving the development tree byte-for-byte (compare returned zero file changes). Added pull_request trigger for installer workflow and build dependency manifest, plus tests for real UTF-8 RTL-to-ASM file export, stale/error export protection, and Python network guard on ordinary tool usage. Installer workflow run 45390227664 and Tests run 45390227734 were in progress when last inspected (revision f07c6434671592f20452bd74fa3026447c0838ea; subsequent tests require newer run). Inspect Actions for latest results; no installer artifact verified yet. Keep PR #9 draft, no stable release. Do not edit main status separately unless essential to avoid repeated branch divergence.
@@ -572,3 +586,7 @@ Beta visual polish: mouse or keyboard row selection synchronizes the hexadecimal
 
 ## Rebased instructor screenshot evidence — 2026-11-26
 The 48-capture QA work is rebased onto the latest visual-polish head after the native-document fix was merged into next-beta. It requires exactly all locale/theme/glass/surface combinations, enforces 1360×900 and 1024×768 workspace sizes, checks manifest hashes/dimensions and rejects duplicate, missing or stale PNGs. A bilingual local gallery is generated. Seven pure fixture tests passed previously (0.08s); the prior 48-image Qt set passed independent Pillow decoding and hash checks. Exact evidence source/test blobs d650ce3f8a67e2e66948d7b9f543b864ffe65641 / ccf5262bc12cca50fd10ab937bb2e1ed555af765; gallery blobs 5980a144084cd650f21e58b3f669bab8e56e0b57 / c8e896fed3f10d7bb9bdacd6c83e333f7bed14cc. Windows PR workflow covers evidence fixtures, typography, compact layout, academic translator isolation, memory inspector regressions and real Qt capture. Current rebased-head Qt execution is pending; image completeness is not native DPI, pixel-level visual or clean-machine acceptance. No academic translator or Stable candidate change.
+
+## Windows visual and CPU sample verification — 2026-11-26
+PR #31 merged into develop/next-beta as 2028f429. Exact-head JUnit artifact 15140457765 contains 657 tests (582 core, 49 Qt, 26 workspace), zero failures/errors/skips, including ten new bilingual saved-sample tests. PR #30 merged into visual-polish as 7dc2f048 after Windows run 45863384391: 25 evidence/typography/isolation, 8 workspace, 14 memory tests passed. All 48 actual captures in artifact 15141142128 independently decoded, checked against dimensions/SHA-256 and reviewed as contact sheets; full-size compact English and Persian dark workspaces reviewed. Native interactive/DPI/clean-machine acceptance remains open. Stable latest internal candidate 67549563 built and passed portable/installed smoke (run 45863679206); 111 binary hashes and academic translator blob independently matched. No public release approval: full regression/security/redistribution/native checks remain open.
+

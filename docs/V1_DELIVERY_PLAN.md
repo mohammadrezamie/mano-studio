@@ -1,6 +1,6 @@
-# v1.0.0 instructor delivery target — Monday, 2026-11-30
+# First Stable instructor delivery — acceptance-driven, no fixed version/date
 
-Owner updated the deadline on 2026-11-26: deliver the first stable v1.0.0 to the instructor on Monday 2026-11-30. This supersedes the earlier policy of no stable before class, but is a target, not permission to mislabel an unverified beta. Keep release stabilization and next-generation development independent. Do not block the academic release on full 13-chapter coverage, arbitrary wiring or other next-generation features.
+Owner clarification 2026-11-26 supersedes the earlier 2026-11-30 target and any mandatory v1.0.0 commitment: there is no fixed Stable release date or version number. Publish the first Stable only when the exact source, full regression, supported security-patched dependencies, redistribution/source obligations, native Windows UX, clean/pre-equipped installation, and verified assets are accepted. Do not mislabel an internal candidate or Beta as Stable. Keep release stabilization and next-generation development independent; do not block a valid academic handoff on full 13-chapter coverage, arbitrary wiring or other next-generation scope. If Stable gates remain open, provide only a transparently labeled verified Beta/RC with known blockers.
 
 ## Exact baseline (before metrics-tool commits)
 
@@ -24,13 +24,19 @@ Method: complete Git tree at each exact SHA; initial root 4c4b458ed8679fc10dca96
 - [x] Downloaded beta assets and manifest/checksums verified independently.
 - [ ] Exact beta regression on Windows and Ubuntu (run 45786384171; Windows executing pytest, Ubuntu queued at inspection).
 - [ ] Native Windows acceptance on disposable VM/actual desktop: fresh install, launch, offline translation, open/save/export RTL/ASM, bilingual restart and keyboard, error behavior, no data loss, uninstall; validate supported screen/DPI settings and course demo. Review and record third-party redistribution obligations and unsigned warning. Signing status is explicit; never bypass OS trust warnings.
-- [ ] Merge accepted beta PR #22; preserve verified beta artifacts/version. Prepare separately versioned stable candidate v1.0.0 from accepted source; version, release notes, build metadata must agree. No renaming beta EXE.
+- [ ] Merge only accepted candidate source; assign the next appropriate Stable version after scope and acceptance are confirmed. Version, release notes, build metadata and installer names must agree. Never rename a Beta EXE.
 - [ ] Rebuild exact stable candidate and rerun relevant/full acceptance tests on that exact commit; verify new installer/portable, checksums, manifest, actual upgrade if claimed. Do not imply all new development features ship.
 - [ ] Publish release (or approved instructor delivery package) with verified stable assets, MIT and third-party notices, independent academic translator, bilingual quick start, known limitations, exact SHA and test evidence. Public release requires redistribution clearance. GitHub connector cannot publish releases directly; repository owner can create release/upload assets through GitHub UI.
 - [ ] Instructor demo rehearsal and handoff, including raw input/output files and single Python converter explanation. If stable acceptance fails by deadline, deliver transparently labeled verified beta/RC plus known blockers, not a false stable label.
 
-## Planned checkpoints (targets, not promised execution times)
+## Event-driven checkpoints (no calendar commitment)
 
-Nov 26: freeze feature scope; diagnose existing regression, prepare delivery checklist and reproducible metrics. Nov 27: complete beta validation and native/redistribution acceptance. Nov 28: stable candidate version/build and exact-commit tests. Nov 29: final native acceptance, documentation and rehearsal. Nov 30: hand off verified v1.0.0 if all applicable gates pass. If runner delays or failures block these checkpoints, prioritize verified academic deliverable and report the blocker.
+1. Resolve the exact-head cross-platform regression and rebuild evidence.
+2. Obtain supported patched PySide/Qt and OpenSSL dependencies; pin and verify their provenance.
+3. Complete module-specific redistribution/source obligations and competent review.
+4. Perform clean and pre-equipped Windows install, upgrade, offline, bilingual, scaling, save/export and uninstall acceptance.
+5. Merge only accepted source, build the chosen Stable version from that exact commit, reverify installer/portable hashes and publish through authorized release tooling.
+
+A delayed runner, unavailable upstream security patch or failed acceptance gate pauses publication; it does not authorize lowering the bar. Keep the academic translator separately downloadable and provide an honestly labeled Beta/RC if the Stable gate is not yet satisfied.
 
 Next-gen scope remains tracked by #23, including .mano, composable labs, updater and all textbook sections. The new development features are not automatically promoted to v1.0.0. Release #4 and #22 are the authoritative active release records.
