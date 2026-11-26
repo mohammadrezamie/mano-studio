@@ -1906,4 +1906,39 @@ def test_databus_lesson(workspace,monkeypatch,language):
         v.tick()
         assert tuple(v.model.registers.values())==before and len(v.model.history)==3
     finally:
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Discard)
+        lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_native_databus_save_open(workspace,tmp_path,monkeypatch,language):
+    from ui.logic_lab import LogicLab
+    from PySide6.QtWidgets import QFileDialog,QMessageBox
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    try:
+        v=lab.databus
+        v.drivers["EXT"].setChecked(True)
+        v.loads["R0"].setChecked(True)
+        v.external.setValue(13)
+        v.tick()
+        assert v.is_dirty()
+        path=tmp_path/"saved.mano"
+        monkeypatch.setattr(QFileDialog,"getSaveFileName",lambda *a:(str(path),""))
+        assert v.save_file() and not v.is_dirty()
+        v.external.setValue(7)
+        v.tick()
+        monkeypatch.setattr(QFileDialog,"getOpenFileName",lambda *a:(str(path),""))
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.No)
+        v.open_file()
+        assert v.model.registers["R0"]==7 and v.is_dirty()
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Yes)
+        v.open_file()
+        assert v.model.registers["R0"]==13 and v.external.value()==13
+        assert v.trace.rowCount()==1 and not v.is_dirty()
+        v.external.setValue(2)
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Cancel)
+        assert not v.confirm_close()
+    finally:
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Discard)
         lab.close()
