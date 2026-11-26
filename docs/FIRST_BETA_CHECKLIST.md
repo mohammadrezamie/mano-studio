@@ -9,7 +9,7 @@ Internal test build, not a published release. Target Windows 10/11 x64. Version 
 
 ## Release gates (not complete)
 - [ ] Exact integrated Windows/Ubuntu tests and glyph preflight pass.
-- [ ] Actual bilingual screenshots reviewed, including all 18 extra academic and six About captures.
+- [ ] Verify the exact 36-image bilingual evidence matrix: 2 locales × 3 themes × 2 glass styles × 3 user-facing surfaces (1360×900 workspace, 1024×768 workspace, splash). No in-app academic source-viewer screenshots are expected; About/credits must also be checked in native Windows acceptance.
 - [ ] Portable and installed Windows x64 smoke tests, installer removal, academic source checksum and candidate manifest.
 - [ ] Native Windows keyboard, scaling, Persian and file workflow acceptance. Confirm instructor-specific RTL dialect and attribution.
 - [ ] Redistribution/license and signing review; communicate unsigned status if applicable, never imply trusted signing.
