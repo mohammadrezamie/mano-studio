@@ -39,7 +39,14 @@ def insert(base_inputs, base_gates, base_outputs, block_inputs, block_gates,
         gates.append((result, op, tuple(mapping[a] for a in args)))
         mapping[name] = result
     for name, source in block_outputs:
-        outputs.append((fresh(name), mapping[source]))
+        # A valid source document may name an output alias exactly like its
+        # underlying signal. Preserve that alias when it is our new signal,
+        # while still rejecting collisions with unrelated names.
+        alias = prefix + '_' + name
+        if name == source and mapping[source] == alias and alias not in known:
+            outputs.append((alias, alias))
+        else:
+            outputs.append((fresh(name), mapping[source]))
     if len(inputs) > 10 or len(gates) > 96 or len(outputs) > 16:
         raise ValueError('Combined circuit exceeds editor limits')
     return tuple(inputs), tuple(gates), tuple(outputs)
