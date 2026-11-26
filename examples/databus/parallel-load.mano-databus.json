@@ -1,0 +1,57 @@
+{
+  "format": "mano-databus",
+  "version": 1,
+  "id": "parallel-load",
+  "title": [
+    "Parallel register transfer",
+    "انتقال موازی ثبات‌ها"
+  ],
+  "task": [
+    "Copy R0 to both AR and R1; write RAM at the old AR.",
+    "R0 را هم‌زمان در AR و R1 بارگذاری و حافظه را در آدرس قبلی AR بنویسید."
+  ],
+  "steps": [
+    {
+      "sources": [
+        "EXT"
+      ],
+      "destinations": [
+        "AR"
+      ],
+      "external": 9
+    },
+    {
+      "sources": [
+        "EXT"
+      ],
+      "destinations": [
+        "R0"
+      ],
+      "external": 6
+    },
+    {
+      "sources": [
+        "R0"
+      ],
+      "destinations": [
+        "AR",
+        "R1",
+        "RAM"
+      ],
+      "external": 0
+    }
+  ],
+  "expected": {
+    "registers": [
+      6,
+      6,
+      6
+    ],
+    "memory": [
+      [
+        9,
+        6
+      ]
+    ]
+  }
+}
