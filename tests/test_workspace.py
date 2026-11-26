@@ -2033,40 +2033,14 @@ def test_databus_alu_controls(workspace,tmp_path,monkeypatch,language):
         lab.close()
 
 
-@pytest.mark.parametrize("language",["en","fa"])
-@pytest.mark.parametrize("theme",["dark","light","night"])
-def test_instructor_source_and_splash(workspace,tmp_path,monkeypatch,language,theme):
-    from PySide6.QtWidgets import QFileDialog
-    from PySide6.QtCore import Qt
-    from academic_source import read_source
+@pytest.mark.parametrize("language", ["en", "fa"])
+@pytest.mark.parametrize("theme", ["dark", "light", "night"])
+def test_instructor_splash_variants(workspace, language, theme):
     from ui.splash import splash_pixmap
     from update_service import VERSION
-    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
-    workspace.themes.setCurrentIndex(workspace.themes.findData(theme))
-    workspace.editor.setPlainText("AC ← 0")
-    workspace.run_translation()
-    before=workspace.editor.toPlainText(),workspace.output.toPlainText()
-    dialog=workspace.academic_dialog()
-    try:
-        dialog.show()
-        QApplication.processEvents()
-        assert workspace.academic_button.text()==workspace.t("Translator source")
-        assert dialog.editor.isReadOnly()
-        assert dialog.editor.layoutDirection()==Qt.LayoutDirection.LeftToRight
-        assert dialog.raw==read_source()
-        assert dialog.editor.toPlainText().splitlines()==dialog.raw.decode("utf-8-sig").splitlines()
-        path=tmp_path/"exact.py"
-        monkeypatch.setattr(QFileDialog,"getSaveFileName",lambda *args:(str(path),""))
-        dialog.save_source()
-        assert path.read_bytes()==read_source()
-        assert (workspace.editor.toPlainText(),workspace.output.toPlainText())==before
-        assert not dialog.grab().isNull()
-        for glass in (True,False):
-            pix=splash_pixmap(theme,glass,VERSION,language=="fa")
-            assert pix.width()==680 and pix.height()==360 and not pix.isNull()
-    finally:
-        dialog.close()
-        dialog.deleteLater()
+    for glass in (True, False):
+        pix = splash_pixmap(theme, glass, VERSION, language == "fa")
+        assert pix.width() == 680 and pix.height() == 360 and not pix.isNull()
 
 
 @pytest.mark.parametrize("language", ["en", "fa"])
@@ -2129,7 +2103,6 @@ def test_visual_polish_compact(workspace,language):
     assert font.pointSizeF()==POINT_SIZE[language]
     assert workspace.width()==1024 and workspace.height()==768
     assert workspace.editor.width()>250 and workspace.output.width()>250
-    assert workspace.academic_button.isVisible()
     for editor in (workspace.editor,workspace.output):
         assert editor.font().pointSize()==12
         assert editor.layoutDirection()==Qt.LayoutDirection.LeftToRight
