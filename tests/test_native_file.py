@@ -87,3 +87,44 @@ def test_bilingual_and_tuple_compatibility():
     payload = {'نام': 'آزمایش ←', 'pins': (1, 2), 'items': [{'1': True}]}
     assert decode(encode('circuit', payload)) == ('circuit', {
         'نام': 'آزمایش ←', 'pins': [1, 2], 'items': [{'1': True}]})
+
+
+def test_shared_graph_expansion_is_bounded(monkeypatch):
+    import mano_file
+    monkeypatch.setattr(mano_file, 'MAX_BYTES', 2048)
+    node = ['x']
+    for _ in range(40):
+        node = [node, node]
+    with pytest.raises(ValueError, match='too large'):
+        encode('circuit', {'nodes': node})
+
+
+def test_exact_utf8_limit(monkeypatch):
+    import mano_file
+    payload = 'آزمایش ←\n' * 20
+    text = encode('rtl', payload)
+    size = len(text.encode('utf-8'))
+    monkeypatch.setattr(mano_file, 'MAX_BYTES', size)
+    assert encode('rtl', payload) == text
+    monkeypatch.setattr(mano_file, 'MAX_BYTES', size - 1)
+    with pytest.raises(ValueError, match='too large'):
+        encode('rtl', payload)
+
+
+def test_indentation_and_escaping_count_against_limit(monkeypatch, tmp_path):
+    import mano_file
+    path = tmp_path / 'safe.mano'
+    save(path, 'rtl', 'original')
+    monkeypatch.setattr(mano_file, 'MAX_BYTES', 200)
+    with pytest.raises(ValueError, match='too large'):
+        save(path, 'circuit', {'items': ['\n'] * 40})
+    assert load(path) == ('rtl', 'original')
+    assert list(tmp_path.iterdir()) == [path]
+
+
+def test_serialization_format_unchanged():
+    payload = {'نام': 'آزمایش ←', 'pins': (1, 2), 'items': [{'1': True}]}
+    expected = json.dumps({'format': 'mano-studio', 'version': 1,
+                           'kind': 'circuit', 'payload': payload},
+                          ensure_ascii=False, allow_nan=False, indent=2) + '\n'
+    assert encode('circuit', payload) == expected
