@@ -4,7 +4,7 @@ from ui.motion import MotionTabs
 from ui.navigation_rail import NavigationRail
 import csv
 import re
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, QSignalBlocker
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QPlainTextEdit, QTableWidget, QTableWidgetItem, QHeaderView,
     QAbstractItemView, QSplitter, QSpinBox, QLineEdit, QTabWidget, QFileDialog, QMessageBox, QWidget, QMenu)
@@ -55,6 +55,7 @@ class ProgramLab(QDialog):
         self.setWindowTitle("Mano Studio — " + self.t("Computer", "کامپیوتر"))
         self.resize(1280, 800)
         self.cpu = None
+        self.assembled_source = None
         self.program = None
         self.steps = 0
         self.history = None
@@ -90,6 +91,9 @@ class ProgramLab(QDialog):
         session_menu.addAction(self.t("Save CPU session", "ذخیره جلسه پردازنده"), self.save_cpu_session)
         self.session_button.setMenu(session_menu)
         controls.addWidget(self.session_button)
+        self.edit_source_button = QPushButton(self.t("Edit source", "ویرایش کد"))
+        self.edit_source_button.clicked.connect(self.begin_source_edit)
+        controls.addWidget(self.edit_source_button)
         for en, fa, slot in [("Assemble / Reset","اسمبل و بازنشانی",self.reset_program),
             ("Back","گام قبل",self.back),("Step","گام بعد",self.step),("Run","اجرا",self.run),
             ("Pause","توقف موقت",self.pause)]:
@@ -258,9 +262,30 @@ class ProgramLab(QDialog):
     def t(self,en,fa):
         return fa if self.fa else en
 
+    def replace_source(self, source):
+        # Internal validated replacements must not trigger the live-edit guard.
+        with QSignalBlocker(self.source):
+            self.source.setPlainText(source)
+
+    def set_source_locked(self, locked):
+        self.source.setReadOnly(locked)
+        self.edit_source_button.setEnabled(locked)
+
     def invalidate(self):
         self.pause()
+        if self.cpu is not None:
+            # Even a programmatic edit must not detach the live CPU from its source.
+            if self.source.toPlainText() != self.assembled_source:
+                self.replace_source(self.assembled_source)
+                self.status.setText(self.t("Choose Edit source before changing a live program.",
+                                           "برای تغییر برنامه در حال اجرا، ویرایش کد را انتخاب کنید."))
+            return
+        self.status.setText(self.t("Source changed. Assemble again.","کد تغییر کرد؛ دوباره اسمبل کنید."))
+
+    def clear_execution(self):
+        self.pause()
         self.cpu = self.program = None
+        self.assembled_source = None
         self.history = None
         self.break_resume = None
         self.steps=0
@@ -269,7 +294,16 @@ class ProgramLab(QDialog):
         self.datapath.set_state(None)
         self.registers.setRowCount(0)
         self.memory.setRowCount(0)
-        self.status.setText(self.t("Source changed. Assemble again.","کد تغییر کرد؛ دوباره اسمبل کنید."))
+        self.set_source_locked(False)
+
+    def begin_source_edit(self):
+        if self.cpu is not None and not self.confirm_close():
+            return False
+        self.clear_execution()
+        self.source.setFocus()
+        self.status.setText(self.t("Edit assembly, then Assemble / Reset.",
+                                   "اسمبلی را ویرایش کنید و سپس اسمبل و بازنشانی را بزنید."))
+        return True
 
     def is_dirty(self):
         return self.cpu_guard.is_dirty(self.source.toPlainText(), self.cpu, self.history)
@@ -331,8 +365,10 @@ class ProgramLab(QDialog):
     def install_cpu_session(self, restored):
         source, program, cpu, steps, breaks = restored
         self.pause()
-        self.source.setPlainText(source)
+        self.replace_source(source)
         self.program, self.cpu = program, cpu
+        self.assembled_source = source
+        self.set_source_locked(True)
         self.history = ExecutionHistory(cpu)
         self.history.steps = self.steps = steps
         self.history.breakpoints = breaks
@@ -385,19 +421,24 @@ class ProgramLab(QDialog):
                 QMessageBox.StandardButton.No)
             if answer != QMessageBox.StandardButton.Yes:
                 return False
-        self.source.setPlainText(source)
+        self.replace_source(source)
         self.load()
         self.mark_saved()
         self.status.setText(sample.task[self.fa])
         return True
 
     def example(self):
-        self.source.setPlainText(EXAMPLE)
+        if not self.confirm_close():
+            return
+        self.replace_source(EXAMPLE)
         self.load()
+        self.mark_saved()
 
     def load(self):
         self.pause()
         self.program = assemble(self.source.toPlainText())
+        self.assembled_source = None
+        self.set_source_locked(False)
         self.cpu = None
         self.history = None
         self.break_resume = None
@@ -412,6 +453,8 @@ class ProgramLab(QDialog):
             return
         self.machine.setPlainText(self.program.listing())
         self.cpu = CPU(self.program.words, self.program.entry)
+        self.assembled_source = self.source.toPlainText()
+        self.set_source_locked(True)
         self.history = ExecutionHistory(self.cpu)
         self.addresses = set(self.program.words)
         self.refresh()
