@@ -1942,3 +1942,42 @@ def test_native_databus_save_open(workspace,tmp_path,monkeypatch,language):
     finally:
         monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Discard)
         lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_native_state_session(workspace,tmp_path,monkeypatch,language):
+    from ui.logic_lab import LogicLab
+    from PySide6.QtWidgets import QFileDialog,QMessageBox
+    from native_exercise import load
+    from state_session import load as load_session
+    from pathlib import Path
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    try:
+        lab.select_tool("state-design")
+        view=lab.state_design
+        root=Path(__file__).resolve().parents[1]
+        view.apply_exercise(load(root/"examples/design/overlap-101.mano"))
+        for bit in (1,0,1)*23:
+            view.input.setCurrentIndex(bit)
+            view.pulse()
+        view.input.setCurrentIndex(0)
+        before=view.session()
+        assert len(before.inputs)==64
+        path=tmp_path/"session.mano"
+        monkeypatch.setattr(QFileDialog,"getSaveFileName",lambda *a:(str(path),""))
+        view.save_exercise_button.click()
+        assert load_session(path)==before
+        view.reset_state()
+        monkeypatch.setattr(QFileDialog,"getOpenFileName",lambda *a:(str(path),""))
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.No)
+        view.open_exercise_button.click()
+        assert view.state==0 and not view.trace
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Yes)
+        view.open_exercise_button.click()
+        assert view.session()==before and len(view.trace)==64
+        expected=view.model.step(before.state,0)[0]
+        view.pulse()
+        assert view.state==expected and len(view.trace)==64
+    finally:
+        lab.close()
