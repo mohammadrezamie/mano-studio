@@ -1,3 +1,14 @@
+# Live status — 2026-11-27 (authoritative; historical checkpoints follow)
+
+- **Beta:** PR [#36](https://github.com/mohammadrezamie/mano-studio/pull/36), source `integration/first-beta` at `007fd2ad`, integrates bilingual polish, ten CPU examples, cycle inspection and keyboardless bilingual RTL authoring. Version `1.1.0-dev.1` is intentionally ahead of Stable `1.0.0`; proposed first prerelease is `v1.1.0-beta.1`. A stale screenshot-count assertion (36 expected vs 48 hard-coded) was corrected; fresh combined Next-beta run 45904681178 and Windows visual run 45904681078 are queued. The older failure 45901184553 was only this test mismatch. No Beta release/tag exists.
+- **Beta test evidence:** individual exact-head runs for #25/#32/#33/#34 passed 659/673/660/661 tests respectively, zero failures/errors/skips; do not sum overlapping suites. The combined PR #36 gate must pass before packaging/promotion.
+- **Stable:** PR #24 remains a draft 1.0.0 candidate. Earlier exact candidate regression passed 1,416 tests on Windows and Ubuntu, and Setup/portable installation smoke passed. Latest redistribution child #26 head `af75c8d` built successfully on Windows (run 45898982989); exact-head full regression (45898982955) is still in progress. LGPL/crypto/security/native/clean-VM/signature checks remain open; do not publish.
+- **Dependency security:** Stable candidate still packages PySide6/Qt 6.12.0 and OpenSSL 3.5.9. Qt 6.12.1 framework is released, but PySide6 6.12.1 was still being prepared per 26-Nov Qt for Python notes. OpenSSL 3.5.10 is announced for 1-Dec-2026. Wait for aligned official wheels, rebuild, and re-run all relevant gates; do not hand-replace DLLs.
+- **Academic contract:** only root `rtl_translator.py` is the isolated, downloadable Python translator; standard-library only. GUI delegates to the same core; no in-app source viewer/editor. Confirm source hash in every final candidate.
+- **Release state:** no public GitHub Release or tag exists. Beta stays ahead of Stable; each track is independently accepted. No version/date shortcut and no Stable promotion from Beta without a separate gate.
+
+---
+
 # Development status — 2026-11-26
 
 ## Live status
