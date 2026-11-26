@@ -50,7 +50,20 @@ jobs:
       # This job produces internal artifacts only and must not repeat the long GUI suite.
       - name: Verify packaging contracts and academic credits
         run: python -m pytest -q tests/test_candidate_manifest.py tests/test_windows_build_contract.py tests/test_localization.py tests/test_collect_notices.py tests/test_version_policy.py tests/test_academic_source.py tests/test_translator_isolation.py tests/test_visual_tokens.py
-      - name: Build portable development application
+      - name: Verify focused instructor UI
+        if: github.head_ref == 'release/v1-candidate'
+        run: python -m pytest -q -o faulthandler_timeout=60 tests/test_workspace.py -k instructor_source_and_splash
+      - name: Capture instructor visual evidence
+        if: github.head_ref == 'release/v1-candidate'
+        run: python capture_instructor.py instructor-preview
+      - uses: actions/upload-artifact@v4
+        if: github.head_ref == 'release/v1-candidate'
+        with:
+          name: ManoStudio-v1-instructor-preview
+          path: instructor-preview/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Build portable candidate application
         shell: pwsh
         run: ./installer/build.ps1 -PortableOnly
       - name: Smoke test frozen portable application
@@ -87,7 +100,7 @@ jobs:
             choco install innosetup -y --no-progress
             if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
           }
-      - name: Build development installer
+      - name: Build candidate installer
         shell: pwsh
         run: ./installer/build.ps1 -ReuseFrozen
       - name: Install, run offline smoke test, uninstall
