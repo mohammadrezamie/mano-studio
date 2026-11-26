@@ -144,3 +144,6 @@ Beta #3/#23: new .mano kind cpu-run, saves source, entire 4096-word memory (spar
 Beta visual polish proposes safer memory editing: explicit table selection synchronizes the address field; automatic refresh preserves typed addresses. Both-locale regression cases added, Windows QA pending.
 
 Instructor visual QA: exact 48-view bilingual capture coverage and a local review gallery are now integrated with pull-request Windows CI, including compact-layout and memory-inspector regressions. Native visual acceptance remains a separate required gate. See [instructor acceptance](docs/V1_INSTRUCTOR_ACCEPTANCE.md).
+
+
+The 48-view QA work is maintained in rebased [PR #29](https://github.com/mohammadrezamie/mano-studio/pull/29); stale-base PR #27 is closed. Exact-head Windows visual CI is enabled; capture and native visual review remain pending.
