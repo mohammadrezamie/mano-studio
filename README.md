@@ -19,7 +19,7 @@
   <a href="#quick-start">Quick start</a> · <a href="#academic-assignment">Academic core</a> · <a href="#visual-preview">Visual preview</a> · <a href="#development-status">Status</a> · <a href="#documentation">Docs</a>
 </p>
 
-**This branch tracks the Stable 1.0.0 candidate (PR #24 and redistribution PR #26); it is not a public release.** The current Windows Setup and portable candidate built successfully and both offline smoke reports pass. Exact-head full Windows/Ubuntu regression is running. Security, LGPL/source, clean-machine and native bilingual acceptance gates remain open. The separate forward Beta is 1.1.0-dev.1 in PR #36 and remains ahead of Stable; its visual acceptance passed, while combined integration tests are still running.
+**This branch tracks the Stable 1.0.0 internal candidate (PR #24 and redistribution PR #26); it is not a public release.** The latest Stable source now removes the in-app translator viewer and switches instructor evidence to a validated 36-image bilingual matrix. Fresh exact-head Windows/Ubuntu tests and a Windows candidate installer are queued; earlier artifacts belong to older source revisions and do not validate this update. Security, LGPL/source, clean-machine, native bilingual and signing gates remain open. The separate forward Beta is 1.1.0-dev.1 in PR #36 and remains ahead of Stable.
 
 ## What you can do
 
@@ -36,8 +36,8 @@ Designed for English and Persian, with persistent language preferences, Light/Da
 
 | Track | Current milestone |
 | --- | --- |
-| **Stable — v1.0.0** | [PR #24](https://github.com/mohammadrezamie/mano-studio/pull/24) and [redistribution PR #26](https://github.com/mohammadrezamie/mano-studio/pull/26). Windows candidate build [45906066887](https://github.com/mohammadrezamie/mano-studio/actions/runs/45906066887) is queued; exact-source Windows/Ubuntu regression [45906066863](https://github.com/mohammadrezamie/mano-studio/actions/runs/45906066863) is in progress. LGPL, OpenSSL/Qt security, native, clean-VM and signing review remain open.
-| **Forward Beta — v1.1.0** | Draft [PR #36](https://github.com/mohammadrezamie/mano-studio/pull/36), current development version 1.1.0-dev.1, proposed first prerelease v1.1.0-beta.1. Windows visual acceptance [45905561919](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905561919) passed with 36 verified captures; combined Next-beta tests [45905049642](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905049642) are in progress. |
+| **Stable — v1.0.0** | [PR #24](https://github.com/mohammadrezamie/mano-studio/pull/24) and [redistribution PR #26](https://github.com/mohammadrezamie/mano-studio/pull/26). After the standalone-translator and 36-view evidence port, exact-head regression [45910206194](https://github.com/mohammadrezamie/mano-studio/actions/runs/45910206194) and Windows installer [45910206196](https://github.com/mohammadrezamie/mano-studio/actions/runs/45910206196) are queued. Older build/smoke artifacts are stale for this source. LGPL, OpenSSL/Qt security, native, clean-VM and signing review remain open.
+| **Forward Beta — v1.1.0** | Draft [PR #36](https://github.com/mohammadrezamie/mano-studio/pull/36), current development version 1.1.0-dev.1, proposed first prerelease v1.1.0-beta.1. Current-head visual acceptance [45905561919](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905561919) passed; exact-head combined integration [45905561920](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905561920) is still running focused Qt regressions. |
 | **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta) continues independently; advanced textbook coverage is not a blocker for the first two releases. |
 
 **No downloadable public release has been verified or published.** The older [PR #22](https://github.com/mohammadrezamie/mano-studio/pull/22) v0.3.0-beta.1 is fallback-only and superseded by the forward 1.1.0 Beta line. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live state. This snapshot is dated 2026-11-27; evidence refers to the named commits/runs, not every later change.
@@ -75,7 +75,7 @@ Choose a language, enter RTL, translate, and export assembly. Press **Ctrl+K** t
 
 ## Academic assignment
 
-**[rtl_translator.py](rtl_translator.py) is the single standalone source file for instructor review.** It uses only the Python standard library, includes translation and validation, and supports all 25 named Basic Computer instructions in the documented provisional dialect. Optional simulation and UI are separate.
+**[rtl_translator.py](rtl_translator.py) is the single standalone source file for instructor review.** It uses only the Python standard library, includes translation and validation, and supports all 25 named Basic Computer instructions in the documented provisional dialect. The desktop intentionally has no in-app source viewer or source editor: download this file separately for explanation and defense. Optional simulation and UI remain separate.
 
 ```sh
 python rtl_translator.py examples/add.rtl -o result.asm
