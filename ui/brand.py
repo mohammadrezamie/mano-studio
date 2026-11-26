@@ -11,9 +11,7 @@ from PySide6.QtWidgets import QWidget
 from ui.theme import PALETTES,STATUS
 from ui.motion import motion_allowed
 
-MARK_POINTS=((12,30),(12,23),(32,11),(52,23),(52,29))
-LOWER_POINTS=tuple((64-x,64-y) for x,y in MARK_POINTS)
-LOWER_PATH="M"+" L".join(f"{x} {y}" for x,y in LOWER_POINTS)
+MARK_POINTS=((19,44),(19,20),(32,34),(45,20),(45,44))
 MARK_PATH="M"+" L".join(f"{x} {y}" for x,y in MARK_POINTS)
 
 
@@ -33,20 +31,23 @@ def brand_svg(theme="dark",glass=True,progress=None,state="neutral",compact=Fals
     signal={"neutral":accent,"success":good,"error":bad}.get(state,accent)
     parts=['<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">']
     if glass and not compact:
-        parts.append(f'<defs><linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{raised}"/><stop offset="1" stop-color="{bg}"/></linearGradient><linearGradient id="mark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="{fg}"/><stop offset="1" stop-color="{accent}"/></linearGradient></defs>')
+        parts.append(f'<defs><linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5a45b9"/><stop offset="1" stop-color="#161d45"/></linearGradient><linearGradient id="mark" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#a4edff"/></linearGradient><linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ecb1ff"/><stop offset=".55" stop-color="#6b7dff"/><stop offset="1" stop-color="#75efff"/></linearGradient></defs>')
         fill,stroke="url(#tile)","url(#mark)"
     else:fill,stroke=panel,accent
-    parts.append(f'<rect x="3" y="3" width="58" height="58" rx="15" fill="{fill}" stroke="{border}" stroke-width="1.5"/>')
+    rim = "url(#rim)" if glass and not compact else border
+    parts.append(f'<rect x="3" y="3" width="58" height="58" rx="15" fill="{fill}" stroke="{rim}" stroke-width="1.5"/>')
     if not compact:
         parts.append(f'<path d="M8 23 V18 Q8 8 18 8 H37" fill="none" stroke="{fg}" stroke-opacity=".18" stroke-width="1.5" stroke-linecap="round"/>')
-    for path in (MARK_PATH,LOWER_PATH):
-        parts.append(f'<path d="{path}" stroke="{stroke}" stroke-width="5" fill="none" stroke-linejoin="round" stroke-linecap="round"/>')
-    parts.append(f'<path d="M32 24 L40 32 L32 40 L24 32 Z" fill="{accent}" stroke="{panel}" stroke-width="1.5"/>')
+    # Friendly M-chip silhouette; pins are decorative brand geometry.
     if not compact:
-        for x,y in (MARK_POINTS[0],LOWER_POINTS[0]):
-            parts.append(f'<circle cx="{x}" cy="{y}" r="2.1" fill="{fg}"/>')
+        for x in (23,32,41):
+            parts.append(f'<path d="M{x} 1 V7 M{x} 57 V63" stroke="{accent}" stroke-width="3" stroke-linecap="round"/>')
+        for y in (23,32,41):
+            parts.append(f'<path d="M1 {y} H7 M57 {y} H63" stroke="{accent}" stroke-width="3" stroke-linecap="round"/>')
+    parts.append(f'<path d="{MARK_PATH}" stroke="{stroke}" stroke-width="6" fill="none" stroke-linejoin="round" stroke-linecap="round"/>')
     if progress is not None:
         x,y=pulse_point(progress)
+        parts.append(f'<circle cx="{x:.3f}" cy="{y:.3f}" r="8" fill="{signal}" opacity=".22"/>')
         parts.append(f'<circle cx="{x:.3f}" cy="{y:.3f}" r="4" fill="{signal}" stroke="{panel}" stroke-width="1.2"/>')
     parts.append("</svg>")
     return "".join(parts)
@@ -72,6 +73,7 @@ class BrandMark(QWidget):
     """Single 360-ms feedback pulse after an actual translation result."""
     def __init__(self,theme="dark",parent=None):
         super().__init__(parent)
+        self.setProperty("manoMotionSurface", True)
         self.theme=theme;self.glass=True;self.reduced=False
         self.progress=None;self.state="neutral"
         self.setFixedSize(44,44)

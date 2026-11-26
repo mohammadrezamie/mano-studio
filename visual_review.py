@@ -13,9 +13,10 @@ from learning_catalog import CHAPTERS, TOOLS
 
 LANGUAGES=("en","fa")
 THEMES=("dark","light","night")
-BASE_CAPTURES=("editor","pad","builder","reverse","logic","logic-edit",
+BASE_CAPTURES=("editor","pad","builder","reverse","about","logic","logic-edit",
                "sequential","computer","debugger","alu","bases",
-               "karnaugh-corners","karnaugh-synthesized","state-design-clock")
+               "karnaugh-corners","karnaugh-synthesized","state-design-clock",
+               "karnaugh-verify","state-design-analysis","state-design-reduction")
 
 
 def validate_base_captures(root):

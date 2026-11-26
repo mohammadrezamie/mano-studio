@@ -3,6 +3,7 @@ from PySide6.QtCore import QObject, QThread, Signal, Slot, Qt, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QCheckBox, QPushButton, QPlainTextEdit, QComboBox
 from update_service import release_info, RELEASES_PAGE, VERSION
+from ui.motion import MotionButton
 
 
 class UpdateWorker(QObject):
@@ -32,8 +33,10 @@ class Preferences(QDialog):
         for key, en, fa, default in [
             ("glass_enabled", "Glass effects", "جلوه‌های شیشه‌ای", True),
             ("reduced_motion", "Reduce motion", "کاهش حرکت و انیمیشن", False),
+            ("lab_motion", "Animate lab signals", "انیمیشن سیگنال‌های آزمایشگاه", True),
         ]:
             toggle = QCheckBox(self.text(en, fa))
+            toggle.setObjectName(key)
             toggle.setChecked(self.settings.value(key, default, type=bool))
             toggle.toggled.connect(lambda value, k=key: self.change(k, value))
             layout.addWidget(toggle)
@@ -54,7 +57,7 @@ class Preferences(QDialog):
         note.setWordWrap(True)
         layout.addWidget(note)
         layout.addWidget(QLabel(self.text("Installed version: ", "نسخه نصب‌شده: ")+VERSION))
-        self.check = QPushButton(self.text("Check for updates", "بررسی به‌روزرسانی"))
+        self.check = MotionButton(self.text("Check for updates", "بررسی به‌روزرسانی"))
         self.check.clicked.connect(self.start_check)
         layout.addWidget(self.check)
         self.status = QLabel()
@@ -66,12 +69,12 @@ class Preferences(QDialog):
         self.notes.setAccessibleName(self.text("Release notes", "توضیحات نسخه"))
         self.notes.hide()
         layout.addWidget(self.notes)
-        self.releases = QPushButton(self.text("Open official releases", "مشاهده نسخه‌های رسمی"))
+        self.releases = MotionButton(self.text("Open official releases", "مشاهده نسخه‌های رسمی"))
         self.releases.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(RELEASES_PAGE)))
         self.releases.hide()
         layout.addWidget(self.releases)
         layout.addStretch()
-        close = QPushButton(self.text("Close", "بستن"))
+        close = MotionButton(self.text("Close", "بستن"))
         close.clicked.connect(self.accept)
         layout.addWidget(close)
 

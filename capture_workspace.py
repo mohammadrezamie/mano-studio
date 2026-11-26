@@ -143,6 +143,17 @@ def main():
             window.languages.setCurrentIndex(1 if language == "fa" else 0)
             for theme in ("dark", "light", "night"):
                 window.themes.setCurrentIndex(window.themes.findData(theme))
+                # Real localized About screen, independently of modal interaction.
+                about = window.about_dialog()
+                about.show()
+                app.processEvents()
+                target = output / f"{language}-{theme}-about.png"
+                if not about.grab().save(str(target)):
+                    raise RuntimeError(f"Could not save {target}")
+                image_info(output, target.name)
+                about.close()
+                about.deleteLater()
+                app.processEvents()
                 for tab, mode in enumerate(("editor", "pad", "builder")):
                     window.tabs.setCurrentIndex(tab)
                     app.processEvents()

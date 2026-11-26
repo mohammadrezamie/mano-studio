@@ -19,6 +19,8 @@
   <a href="#quick-start">Quick start</a> · <a href="#academic-assignment">Academic core</a> · <a href="#visual-preview">Visual preview</a> · <a href="#development-status">Status</a> · <a href="#documentation">Docs</a>
 </p>
 
+**This branch prepares the actual v0.3.0-beta.1 candidate (PR #22); not yet a release.** Earlier integrated Linux job passed 1,370 tests with one outdated credits assertion, corrected locally (2/2 exact-file tests). The next Windows job successfully froze the EXE but failed collecting dependency metadata; the notice collector has been corrected and tested locally (11 cases). Full exact-head regression and independently produced internal artifacts remain mandatory. [Recovery guide](docs/BETA_DELIVERY_RECOVERY.md).
+
 ## What you can do
 
 | Workspace | Explore |
@@ -35,10 +37,10 @@ Designed for English and Persian, with persistent language preferences, Light/Da
 | Track | Current milestone |
 | --- | --- |
 | **Main — verified source baseline** | PR [#15](https://github.com/mohammadrezamie/mano-studio/pull/15) merged; 1,200 tests passed on each OS in [run 45557009008](https://github.com/mohammadrezamie/mano-studio/actions/runs/45557009008). 42 learning entries across 13 chapters (partial coverage). |
-| **Release — Windows x64 beta** | [PR #19](https://github.com/mohammadrezamie/mano-studio/pull/19), proposed v0.3.0-beta.1; integrated regression, installer, native acceptance and publication gates remain open. |
-| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): MSI cache coherence adds a 43rd entry; Qt tests and visual evidence pending. |
+| **Release — Windows x64 beta** | [PR #22](https://github.com/mohammadrezamie/mano-studio/pull/22), v0.3.0-beta.1 candidate; independent full regression, Windows artifacts, native acceptance and publication gates remain open. #19 retained for diagnostic evidence. |
+| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): 44 learning entries (MSI and Omega); additional Boolean and timing lessons; Qt tests and visual evidence pending. |
 
-**No downloadable public release has been verified or published.** Development artifacts are not stable releases. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live state. This snapshot is dated 2026-11-25; evidence refers to the named commits/runs, not every later change.
+**No downloadable public release has been verified or published.** Development artifacts are not stable releases. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live state. This snapshot is dated 2026-11-26; evidence refers to the named commits/runs, not every later change.
 
 ## Visual preview
 

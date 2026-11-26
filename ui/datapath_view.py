@@ -3,9 +3,10 @@ from PySide6.QtCore import Qt,QRectF,QPointF,QVariantAnimation,QEasingCurve,QSig
 from PySide6.QtGui import QColor,QPainter,QPen,QFont,QPainterPath
 from PySide6.QtWidgets import QWidget,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,QComboBox
 from ui.theme import PALETTES
-from ui.motion import motion_allowed
+from ui.motion import motion_allowed, MotionButton
+from ui.signal_motion import BUS_REGISTERS, bus_motion_paths, point_along
 
-REGISTERS=("AR","PC","DR","AC","IR","TR","M")
+REGISTERS=BUS_REGISTERS
 WIDTH={"AR":3,"PC":3,"DR":4,"AC":4,"IR":4,"TR":4,"INPR":2,"OUTR":2}
 # These are model control labels, not a gate-level connectivity assertion.
 BUS_LOADS={"AR.LD":"AR","PC.LD":"PC","DR.LD":"DR","IR.LD":"IR","TR.LD":"TR","M.WRITE":"M"}
@@ -84,10 +85,19 @@ class ArchitectureCanvas(QWidget):
             if name==source:arrow(cx,142,True)
             if name in targets:arrow(cx,120,False)
         line(83,145,917,145,bool(source))
-        if source and v.progress<1:
-            sx=83+139*REGISTERS.index(source)
-            p.setPen(Qt.PenStyle.NoPen);p.setBrush(QColor(accent))
-            p.drawEllipse(QPointF(sx,118+27*v.progress),4,4)
+        # Display feedback follows only the recorded source and load branches.
+        # The animation is not a model of electrical propagation delay.
+        paths = bus_motion_paths(source, targets)
+        if paths and v.progress < 1:
+            p.setPen(Qt.PenStyle.NoPen)
+            if v.progress < 0.25 or len(paths) == 1:
+                samples = [point_along(paths[0], v.progress if len(paths)==1 else v.progress/0.25)]
+            else:
+                samples = [point_along(path, (v.progress-0.25)/0.75) for path in paths[1:]]
+            for x,y in dict.fromkeys(samples):
+                halo = QColor(accent);halo.setAlpha(55)
+                p.setBrush(halo);p.drawEllipse(QPointF(x,y),8,8)
+                p.setBrush(QColor(accent));p.drawEllipse(QPointF(x,y),3.5,3.5)
         text(20,151,960,20,v.t("Recorded shared-bus selection · dedicated ALU controls shown separately","انتخاب ثبت‌شده گذرگاه · کنترل‌های مستقل ALU جداگانه نمایش داده می‌شوند"),12,muted,center=True)
         signals=c.signals if c else ()
         alu=tuple(s for s in signals if s.startswith("ALU."))
@@ -109,24 +119,26 @@ class ArchitectureCanvas(QWidget):
 class DatapathView(QWidget):
     def __init__(self,theme,reduced_motion=False,parent=None,fa=False):
         super().__init__(parent)
+        self.setProperty("manoMotionSurface", True)
         self.theme=theme;self.fa=fa;self.reduced_motion=reduced_motion
         self.cpu=None;self.last_step=None;self.group=None;self.progress=1.0
         self.animation=QVariantAnimation(self)
         self.animation.setStartValue(0.0);self.animation.setEndValue(1.0)
-        self.animation.setDuration(240)
+        self.animation.setDuration(360)
         self.animation.setEasingCurve(QEasingCurve.Type.OutCubic)
         self.animation.valueChanged.connect(self.advance)
+        self.animation.finished.connect(self.stop)
         layout=QVBoxLayout(self);layout.setContentsMargins(6,6,6,6);layout.setSpacing(4)
         row=QHBoxLayout()
         self.title=QLabel();self.title.setObjectName("section");row.addWidget(self.title,1)
-        self.previous=QPushButton(self.t("Previous group","گروه قبلی"))
-        self.next=QPushButton(self.t("Next group","گروه بعدی"))
+        self.previous=MotionButton(self.t("Previous group","گروه قبلی"))
+        self.next=MotionButton(self.t("Next group","گروه بعدی"))
         self.groups=QComboBox();self.groups.setAccessibleName(self.t("Inspect recorded timing group","بررسی گروه زمانی ثبت‌شده"))
         self.groups.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.previous.clicked.connect(lambda:self.groups.setCurrentIndex(max(0,self.groups.currentIndex()-1)))
         self.next.clicked.connect(lambda:self.groups.setCurrentIndex(min(self.groups.count()-1,self.groups.currentIndex()+1)))
         row.addWidget(self.previous);row.addWidget(self.groups);row.addWidget(self.next)
-        self.focus=QPushButton(self.t("Focus canvas","تمرکز روی بوم"));self.focus.setCheckable(True);row.addWidget(self.focus)
+        self.focus=MotionButton(self.t("Focus canvas","تمرکز روی بوم"));self.focus.setCheckable(True);row.addWidget(self.focus)
         layout.addLayout(row)
         self.canvas=ArchitectureCanvas(self);layout.addWidget(self.canvas,1)
         self.rtl=QLabel();self.rtl.setWordWrap(True);self.rtl.setLayoutDirection(Qt.LayoutDirection.LeftToRight);layout.addWidget(self.rtl)
@@ -143,6 +155,9 @@ class DatapathView(QWidget):
 
     def stop(self):
         self.animation.stop();self.progress=1.0;self.canvas.update()
+
+    def snap(self):
+        self.stop()
 
     def set_state(self,cpu,event=None):
         self.stop()
@@ -165,7 +180,7 @@ class DatapathView(QWidget):
         self.title.setText(f"{e.address:03X} · {e.mnemonic} · {self.groups.currentText()}" if e and g else self.t("Live CPU state","وضعیت زنده CPU"))
         self.rtl.setText(g.rtl if g else "—")
         self.signals.setText(" · ".join(g.control.signals) if g and g.control else "—")
-        if g and edge_routes(g)[0] and not self.reduced_motion and motion_allowed() and self.isVisible():
+        if g and bus_motion_paths(*edge_routes(g)) and not self.reduced_motion and motion_allowed() and self.isVisible():
             self.progress=0.0;self.animation.start()
         self.canvas.update()
 
