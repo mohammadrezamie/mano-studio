@@ -32,10 +32,11 @@ def rewrite_zip(path, remove=(), replace=None, add=None):
     checksum(path)
 
 
-@pytest.fixture
-def candidate(tmp_path):
+@pytest.fixture(params=["0.3.0-dev.1","1.0.0"])
+def candidate(tmp_path,request):
     root = tmp_path
-    (root / "update_service.py").write_text('VERSION = "0.3.0-dev.1"\n')
+    version=request.param
+    (root / "update_service.py").write_text(f'VERSION = "{version}"\n')
     academic = b"# academic source\n"
     license_text = b"MIT license fixture\n"
     example = b"AC <- M[100]\nS <- 0\n"
@@ -54,7 +55,7 @@ def candidate(tmp_path):
         (folder / "portable-smoke.txt").write_text("PASS\n")
         (folder / "build-dependencies.txt").write_text("PySide6==6.8.0\n")
     (setup / "installed-smoke.txt").write_text("PASS\n")
-    z = portable / "ManoStudio-v0.3.0-dev.1-Windows-x64.zip"
+    z = portable / f"ManoStudio-v{version}-Windows-x64.zip"
     app = pe()
     python_license = b"Python PSF license fixture\n"
     notice = b"PySide6 license fixture\n"
@@ -77,7 +78,7 @@ def candidate(tmp_path):
         archive.writestr("ManoStudio/third-party-notices/Python-LICENSE.txt", python_license)
         archive.writestr("ManoStudio/third-party-notices/PySide6/METADATA.txt", "Name: PySide6\n")
         archive.writestr("ManoStudio/third-party-notices/PySide6/LICENSE.txt", notice)
-    exe = setup / "ManoStudio-Setup-v0.3.0-dev.1-x64.exe"
+    exe = setup / f"ManoStudio-Setup-v{version}-x64.exe"
     exe.write_bytes(pe(0x14c))
     checksum(z)
     checksum(exe)
@@ -116,7 +117,7 @@ def test_reject_invalid_evidence(candidate, damage):
     elif damage == "arch":
         rewrite_zip(z, replace={"ManoStudio/ManoStudio.exe": pe(0x14c)})
     elif damage == "version":
-        (root / "update_service.py").write_text('VERSION = "1.0.0"')
+        (root / "update_service.py").write_text('VERSION = "2.0.0"')
     elif damage == "setup":
         exe.write_bytes(b"not an executable")
         checksum(exe)
