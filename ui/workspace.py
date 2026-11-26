@@ -707,6 +707,19 @@ class Workspace(QMainWindow):
         if path.suffix.lower()==".mano":
             try:
                 kind,payload=mano_file.load(path)
+                if kind in ("karnaugh","state-design"):
+                    from native_exercise import restore
+                    from ui.logic_lab import LogicLab
+                    exercise=restore(kind,payload)
+                    lab=LogicLab(self)
+                    try:
+                        lab.select_tool(kind)
+                        view=lab.karnaugh if kind=="karnaugh" else lab.state_design
+                        view.apply_exercise(exercise)
+                        lab.exec()
+                    finally:
+                        lab.deleteLater()
+                    return
                 if kind=="databus":
                     from databus_file import restore
                     from ui.logic_lab import LogicLab
