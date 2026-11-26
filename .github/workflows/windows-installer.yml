@@ -37,7 +37,7 @@ jobs:
           python-version: ${{ (github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening') && '3.14.10' || '3.12' }}
           architecture: x64
       - name: Isolate pinned Windows candidate build environment
-        if: github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening' || github.head_ref == 'release/beta-packaging-hardening'
+        if: github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening'
         shell: pwsh
         run: |
           python -m venv (Join-Path $env:RUNNER_TEMP 'mano-candidate-venv')
