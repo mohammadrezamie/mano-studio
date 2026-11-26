@@ -1,0 +1,70 @@
+{
+  "format": "mano-studio",
+  "version": 1,
+  "kind": "databus",
+  "payload": {
+    "registers": [
+      0,
+      0,
+      0
+    ],
+    "ram": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "events": [
+      {
+        "sources": [
+          "EXT"
+        ],
+        "destinations": [
+          "AR"
+        ],
+        "external": 9
+      },
+      {
+        "sources": [
+          "EXT"
+        ],
+        "destinations": [
+          "R0"
+        ],
+        "external": 6
+      },
+      {
+        "sources": [
+          "R0"
+        ],
+        "destinations": [
+          "AR",
+          "R1",
+          "RAM"
+        ],
+        "external": 0
+      }
+    ],
+    "controls": {
+      "sources": [
+        "RAM"
+      ],
+      "destinations": [
+        "R1"
+      ],
+      "external": 0
+    }
+  }
+}
