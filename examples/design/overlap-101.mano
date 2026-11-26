@@ -1,0 +1,44 @@
+{
+  "format": "mano-studio",
+  "version": 1,
+  "kind": "state-design",
+  "payload": {
+    "bits": 2,
+    "mode": "Mealy",
+    "flipflop": "D",
+    "table": [
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ]
+  }
+}
