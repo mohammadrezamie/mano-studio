@@ -6,7 +6,6 @@ from pathlib import Path
 SURFACES = (
     ('workspace-1360', 'Large workspace', 'محیط اصلی بزرگ'),
     ('workspace-1024', 'Compact workspace', 'محیط اصلی کوچک'),
-    ('academic-source', 'Academic source', 'کد تکلیف'),
     ('splash', 'Startup screen', 'صفحه آغازین'),
 )
 
