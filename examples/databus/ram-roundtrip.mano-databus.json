@@ -1,0 +1,55 @@
+{
+  "format": "mano-databus",
+  "version": 1,
+  "id": "ram-roundtrip",
+  "title": [
+    "RAM write and read",
+    "نوشتن و خواندن RAM"
+  ],
+  "task": [
+    "Write A at address 3, then load R1 from RAM.",
+    "مقدار A را در آدرس ۳ بنویسید و سپس R1 را از RAM بارگذاری کنید."
+  ],
+  "steps": [
+    {
+      "sources": [
+        "EXT"
+      ],
+      "destinations": [
+        "AR"
+      ],
+      "external": 3
+    },
+    {
+      "sources": [
+        "EXT"
+      ],
+      "destinations": [
+        "RAM"
+      ],
+      "external": 10
+    },
+    {
+      "sources": [
+        "RAM"
+      ],
+      "destinations": [
+        "R1"
+      ],
+      "external": 0
+    }
+  ],
+  "expected": {
+    "registers": [
+      3,
+      0,
+      10
+    ],
+    "memory": [
+      [
+        3,
+        10
+      ]
+    ]
+  }
+}
