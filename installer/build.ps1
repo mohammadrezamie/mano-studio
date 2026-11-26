@@ -14,6 +14,8 @@ if (Test-Path 'dist\ManoStudio') { Remove-Item 'dist\ManoStudio' -Recurse -Force
 python -m PyInstaller --noconfirm --clean --onedir --windowed --icon $icon --name ManoStudio --add-data 'rtl_translator.py;.' --add-data 'LICENSE;.' --add-data 'examples;examples' --add-data 'docs;docs' main.py
 if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed.' }
 $dist = Join-Path $PWD 'dist\ManoStudio'
+python -m installer.prune_qt $dist
+if ($LASTEXITCODE -ne 0) { throw 'Qt payload pruning failed.' }
 $notices = Join-Path $dist 'third-party-notices'
 New-Item -ItemType Directory -Force $notices | Out-Null
 # Preserve notices shipped in the installed distributions; legal review is still required before public release.
