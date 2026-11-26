@@ -1,0 +1,65 @@
+{
+  "format": "mano-logic",
+  "version": 2,
+  "inputs": [
+    "A",
+    "B",
+    "C"
+  ],
+  "gates": [
+    {
+      "output": "low",
+      "op": "AND",
+      "inputs": [
+        "B",
+        "C"
+      ]
+    },
+    {
+      "output": "high",
+      "op": "OR",
+      "inputs": [
+        "B",
+        "C"
+      ]
+    },
+    {
+      "output": "na",
+      "op": "NOT",
+      "inputs": [
+        "A"
+      ]
+    },
+    {
+      "output": "p0",
+      "op": "AND",
+      "inputs": [
+        "na",
+        "low"
+      ]
+    },
+    {
+      "output": "p1",
+      "op": "AND",
+      "inputs": [
+        "A",
+        "high"
+      ]
+    },
+    {
+      "output": "y",
+      "op": "OR",
+      "inputs": [
+        "p0",
+        "p1"
+      ]
+    }
+  ],
+  "outputs": [
+    [
+      "Y",
+      "y"
+    ]
+  ],
+  "positions": []
+}
