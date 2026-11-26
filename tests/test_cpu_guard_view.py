@@ -89,3 +89,34 @@ def test_edit_source_requires_safe_transition(tmp_path, monkeypatch, language):
         lab.mark_saved()
         lab.close()
         workspace.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_open_assembly_draft_without_running(tmp_path, monkeypatch, language):
+    app = QApplication.instance() or QApplication([])
+    settings = QSettings(str(tmp_path / "draft.ini"), QSettings.Format.IniFormat)
+    settings.setValue("language", language)
+    workspace = Workspace(settings)
+    lab = ProgramLab(workspace)
+    try:
+        lab.step()
+        cpu, expected = lab.cpu, lab.cpu.registers()
+        path = tmp_path / "draft.mano"
+        mano_file.save(path, "asm", "unfinished !")
+        monkeypatch.setattr(QFileDialog, "getOpenFileName", lambda *a: (str(path), ""))
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.No)
+        assert not lab.open_cpu_session()
+        assert lab.cpu is cpu and lab.cpu.registers() == expected
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Yes)
+        assert lab.open_cpu_session()
+        assert lab.source.toPlainText() == "unfinished !"
+        assert not lab.source.isReadOnly() and lab.cpu is None and not lab.is_dirty()
+        lab.source.setPlainText("HLT")
+        lab.reset_program()
+        assert lab.cpu is not None and not lab.cpu.halted
+        lab.step()
+        assert lab.cpu.halted
+    finally:
+        lab.mark_saved()
+        lab.close()
+        workspace.close()

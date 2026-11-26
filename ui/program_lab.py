@@ -30,6 +30,7 @@ from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
 import cpu_session
+import cpu_documents
 import mano_file
 from cpu_guard import CpuGuard
 from program_samples import SAMPLES, load_sample
@@ -87,7 +88,7 @@ class ProgramLab(QDialog):
         controls.addWidget(self.examples_button)
         self.session_button = QPushButton(self.t("Session", "جلسه اجرا"))
         session_menu = QMenu(self.session_button)
-        session_menu.addAction(self.t("Open CPU session", "باز کردن جلسه پردازنده"), self.open_cpu_session)
+        session_menu.addAction(self.t("Open session or draft", "باز کردن جلسه یا پیش‌نویس"), self.open_cpu_session)
         session_menu.addAction(self.t("Save CPU session", "ذخیره جلسه پردازنده"), self.save_cpu_session)
         self.session_button.setMenu(session_menu)
         controls.addWidget(self.session_button)
@@ -383,12 +384,12 @@ class ProgramLab(QDialog):
 
     def open_cpu_session(self):
         self.pause()
-        name, _ = QFileDialog.getOpenFileName(self, self.t("Open CPU session", "باز کردن جلسه پردازنده"),
+        name, _ = QFileDialog.getOpenFileName(self, self.t("Open session or draft", "باز کردن جلسه یا پیش‌نویس"),
             "", self.t("Mano Studio (*.mano)", "مانو استودیو (*.mano)"))
         if not name:
             return False
         try:
-            restored = cpu_session.load(name)
+            kind, restored = cpu_documents.read(name, cpu_session.restore)
         except (OSError, ValueError):
             QMessageBox.warning(self, self.t("Cannot open session", "باز کردن جلسه ناموفق"),
                 self.t("Invalid session. Current program is unchanged.", "جلسه نامعتبر است؛ برنامه فعلی تغییر نکرد."))
@@ -398,7 +399,14 @@ class ProgramLab(QDialog):
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
             return False
-        self.install_cpu_session(restored)
+        if kind == "asm":
+            self.clear_execution()
+            self.replace_source(restored)
+            self.mark_saved()
+            self.source.setFocus()
+            self.status.setText(self.t("Draft opened; assemble when ready.", "پیش‌نویس باز شد؛ پس از تکمیل اسمبل کنید."))
+        else:
+            self.install_cpu_session(restored)
         return True
 
     def open_saved_sample(self, key):
