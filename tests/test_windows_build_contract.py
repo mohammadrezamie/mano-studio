@@ -20,3 +20,10 @@ def test_prerelease_guard_accepts_forward_beta_line_only():
     script = BUILD_SCRIPT.read_text(encoding="utf-8")
     assert r"$version -notmatch '^\d+\.\d+\.\d+-(dev|alpha|beta|rc)(\.\d+)?$'" in script
     assert "Only explicitly marked development/prerelease builds are allowed." in script
+
+
+
+def test_unused_qt_virtual_keyboard_is_pruned_with_a_dependency_guard():
+    script = BUILD_SCRIPT.read_text(encoding="utf-8")
+    assert "python -m installer.prune_qt $dist" in script
+    assert "Qt Virtual Keyboard payload pruning failed." in script
