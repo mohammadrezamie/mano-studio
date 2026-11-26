@@ -53,3 +53,7 @@ Latest release priority (2026-11-25): use release/beta-integrated first beta can
 
 ## Living README — owner mandate (2026-11-25)
 Read docs/DOCUMENTATION_POLICY.md before work. Keep README current with every meaningful change in the same work cycle. This permanent rule applies to release and next-generation tracks; prefer English, the approved M-chip, limited authentic imagery and verified status. Do not reset the active release CI for a docs change. Keep separate branch-specific claims, tests and limitations. Update STATUS, CONTINUE and affected guides as well. This supersedes historic development-only and rejected-logo decisions wherever they conflict.
+
+
+## Practical laboratory mandate — owner 2026-11-26
+Read docs/PRACTICAL_LAB_POLICY.md. Full textbook coverage requires useful interactive experimentation, real composable models wherever applicable, and curated saved ready-to-load samples in each relevant section with independent expected outcomes. Use shared simulation semantics, explicit port/clock/width contracts, validated save/load and undo; never claim unrelated models are integrated. Preserve offline bilingual operation and independent academic translator. Advance on next-beta; keep first Windows beta frozen except verified release blockers.
