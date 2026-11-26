@@ -192,7 +192,7 @@ def test_logic_pin_count_and_truth_table(workspace):
     dialog.close()
 
 
-def test_computer_single_state(workspace):
+def test_computer_single_state(workspace,monkeypatch):
     from ui.program_lab import ProgramLab
     lab=ProgramLab(workspace,"ORG 000\nLDA 100\nADD 101\nSTA 102\nHLT\nORG 100\nDEC 5\nDEC 3\nDEC 0\nEND")
     assert lab.datapath.cpu is lab.cpu
@@ -203,6 +203,12 @@ def test_computer_single_state(workspace):
     lab.step()
     assert lab.datapath.last_step.writes==((0x102,0,8),)
     assert lab.cpu.memory[0x102]==8
+    from PySide6.QtWidgets import QMessageBox
+    original=lab.source.toPlainText()
+    lab.source.setPlainText("HLT")
+    assert lab.source.toPlainText()==original and lab.cpu.memory[0x102]==8
+    monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Discard)
+    assert lab.begin_source_edit()
     lab.source.setPlainText("HLT")
     assert lab.cpu is None and lab.datapath.cpu is None
     lab.mark_saved(); lab.close()

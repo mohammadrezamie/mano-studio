@@ -41,12 +41,50 @@ def test_cpu_close_and_reset_guard(tmp_path, monkeypatch, language):
         assert not lab.confirm_close() and lab.is_dirty()
         monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Discard)
         assert lab.confirm_close()
+        assert lab.begin_source_edit()
         lab.source.setPlainText("unfinished assembly")
         assert lab.cpu is None and lab.is_dirty()
         draft = tmp_path / "draft.mano"
         monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: (str(draft), ""))
         assert lab.save_cpu_session() and not lab.is_dirty()
         assert mano_file.load(draft) == ("asm", "unfinished assembly")
+    finally:
+        lab.mark_saved()
+        lab.close()
+        workspace.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_edit_source_requires_safe_transition(tmp_path, monkeypatch, language):
+    app = QApplication.instance() or QApplication([])
+    settings = QSettings(str(tmp_path / "edit.ini"), QSettings.Format.IniFormat)
+    settings.setValue("language", language)
+    workspace = Workspace(settings)
+    lab = ProgramLab(workspace)
+    try:
+        assert lab.source.isReadOnly() and lab.edit_source_button.isEnabled()
+        lab.step()
+        original = lab.source.toPlainText()
+        cpu, expected = lab.cpu, lab.cpu.registers()
+        lab.source.setPlainText("HLT")
+        assert lab.source.toPlainText() == original and lab.cpu is cpu
+        assert lab.cpu.registers() == expected
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Cancel)
+        assert not lab.begin_source_edit()
+        assert lab.source.isReadOnly() and lab.cpu is cpu
+        monkeypatch.setattr(QMessageBox, "question", lambda *a: QMessageBox.StandardButton.Save)
+        path = tmp_path / "before-edit.mano"
+        monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: ("", ""))
+        assert not lab.begin_source_edit() and lab.cpu is cpu
+        monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: (str(path), ""))
+        assert lab.begin_source_edit()
+        assert cpu_session.load(path)[2].registers() == expected
+        assert not lab.source.isReadOnly() and lab.cpu is None
+        lab.source.setPlainText("HLT")
+        lab.reset_program()
+        assert lab.cpu is not None and lab.source.isReadOnly()
+        lab.step()
+        assert lab.cpu.halted
     finally:
         lab.mark_saved()
         lab.close()
