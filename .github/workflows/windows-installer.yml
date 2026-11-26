@@ -34,7 +34,7 @@ jobs:
           "MANO_SOURCE_SHA=$sha" >> $env:GITHUB_ENV
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ github.head_ref == 'quality/redistribution-gate' && '3.14.10' || '3.12' }}
           architecture: x64
       - name: Isolate pinned Windows candidate build environment
         if: github.head_ref == 'quality/redistribution-gate'
@@ -58,7 +58,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Candidate dependency conflict.' }
       - name: Verify redistribution tooling
         if: github.head_ref == 'quality/redistribution-gate'
-        run: python -m pytest -q tests/test_wheel_evidence.py tests/test_redistribution_gate.py tests/test_prune_qt.py
+        run: python -m pytest -q tests/test_wheel_evidence.py tests/test_redistribution_gate.py tests/test_prune_qt.py tests/test_runtime_evidence.py
       - name: Configure Windows fonts for offscreen Qt
         shell: pwsh
         run: |
@@ -115,6 +115,8 @@ jobs:
           $zip = Get-ChildItem portable-output/*.zip | Select-Object -First 1
           python -m installer.redistribution_gate $zip.FullName | Set-Content -Encoding utf8 portable-output/redistribution-preflight.json
           if ($LASTEXITCODE -notin @(0,2)) { throw 'Invalid distribution evidence.' }
+          python -m installer.runtime_evidence $zip.FullName portable-output/runtime-evidence.json
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid runtime evidence.' }
           Copy-Item wheel-evidence.json portable-output/
           Copy-Item installer/windows-candidate-constraints.txt portable-output/
       - uses: actions/upload-artifact@v4
@@ -148,6 +150,7 @@ jobs:
         shell: pwsh
         run: |
           Copy-Item portable-output/redistribution-preflight.json installer/output/
+          Copy-Item portable-output/runtime-evidence.json installer/output/
           Copy-Item wheel-evidence.json installer/output/
           Copy-Item installer/windows-candidate-constraints.txt installer/output/
       - name: Generate SHA256
