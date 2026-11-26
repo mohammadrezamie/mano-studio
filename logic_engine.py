@@ -140,6 +140,20 @@ def ripple_adder(width=4):
 CIRCUITS["ripple4"] = ripple_adder()
 
 
+def carry_lookahead_adder(width=4):
+    """Use the structural prefix expansion in the shared circuit engine."""
+    from carry_lookahead import network
+    inputs, triples, outputs = network(width)
+    return Circuit(inputs, tuple(Gate(name, op, args) for name, op, args in triples), outputs,
+        (f"{width}-bit carry look-ahead adder", f"جمع‌کننده {width} بیتی نقلی پیش‌بین"),
+        ("XOR propagate and AND generate; expanded prefix carry equations use Cin directly. Ideal gate levels, not physical delay.",
+         "انتشار با XOR و تولید با AND؛ معادلات پیش‌بین مستقیماً از Cin استفاده می‌کنند. سطح منطقی ایده‌آل است، نه تأخیر فیزیکی."))
+
+
+CIRCUITS["lookahead4"] = carry_lookahead_adder()
+
+
+
 def expanded_decoder(width=3, active_low=False):
     """Active-high enable, binary select; inactive outputs are the opposite level."""
     if width not in (2,3):
