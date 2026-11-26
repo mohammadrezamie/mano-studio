@@ -16,12 +16,12 @@ def test_explicit_check_and_beta_order():
         assert request.full_url == RELEASES_URL
         assert timeout == 6
         return io.BytesIO(json.dumps([
-            {"tag_name": "v0.3.0-beta.2", "draft": False},
-            {"tag_name": "v0.3.0-beta.10", "draft": False},
+            {"tag_name": "v1.1.0-beta.2", "draft": False},
+            {"tag_name": "v1.1.0-beta.10", "draft": False},
             {"tag_name": "v9.0.0", "draft": True},
             {"tag_name": "invalid", "draft": False},
         ]).encode())
-    assert check_updates(explicit=True, opener=fake) == "v0.3.0-beta.10"
+    assert check_updates(explicit=True, opener=fake) == "v1.1.0-beta.10"
     assert version_key("0.3.0") > version_key("0.3.0-rc.1")
 
 
@@ -31,10 +31,10 @@ def test_no_release():
 
 def test_release_metadata_and_size_bound():
     from update_service import release_info
-    payload = [{"tag_name":"v0.3.1","draft":False,"body":"<b>notes</b>",
+    payload = [{"tag_name":"v1.0.1","draft":False,"body":"<b>notes</b>",
                 "assets":[{"name":"ManoStudio-Setup.exe","size":1048576}]}]
     info=release_info(explicit=True,opener=lambda *a,**k:io.BytesIO(json.dumps(payload).encode()))
-    assert info.tag=="v0.3.1" and info.notes=="<b>notes</b>" and info.installer_size==1048576
+    assert info.tag=="v1.0.1" and info.notes=="<b>notes</b>" and info.installer_size==1048576
     with pytest.raises(ValueError,match="too large"):
         release_info(explicit=True,opener=lambda *a,**k:io.BytesIO(b" "*2_000_001))
 
