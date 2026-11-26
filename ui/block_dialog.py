@@ -5,7 +5,7 @@ from PySide6.QtCore import Qt
 from logic_engine import CIRCUITS
 from circuit_document import CircuitDocument
 from circuit_composition import compose
-from circuit_file import read_text
+from native_circuit import load_circuit
 from classic_samples import SAMPLES, load_sample
 from pathlib import Path
 
@@ -85,11 +85,11 @@ class BlockDialog(QDialog):
 
     def browse(self):
         name,_=QFileDialog.getOpenFileName(self,self.t("Load block","بارگذاری بلوک"),"",
-            "Mano circuit (*.mano-logic.json);;JSON (*.json)")
+            "Mano Studio (*.mano);;Legacy circuit (*.mano-logic.json);;JSON (*.json)")
         if not name:
             return
         try:
-            document=CircuitDocument.loads(read_text(name))
+            document=load_circuit(name)
         except (OSError,UnicodeError,ValueError):
             QMessageBox.warning(self,self.t("Invalid circuit","مدار نامعتبر"),
                 self.t("The file could not be read or is not a supported circuit.","فایل خوانده نشد یا مدار پشتیبانی‌شده نیست."))
