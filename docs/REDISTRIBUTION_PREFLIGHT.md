@@ -79,3 +79,14 @@ Official evidence checked 2026-11-27:
 - CVE-2026-105924: https://www.qt.io/blog/security-advisory-cve-2026-105924
 - CVE-2026-116337: https://www.qt.io/blog/security-issue-cve-2026-116337
 - OpenSSL 3.5.10 schedule: https://www.openwall.com/lists/oss-security/2026/11/24/14
+
+
+## Latest exact-head Windows candidate audit — 2026-11-27
+
+Run 45898982989 built source af75c8d167df14c5e55301d2da6720d5d716b5b0. Independently downloaded outer artifacts and checked their ZIP CRCs. Nested Setup: 34,984,654 bytes, SHA-256 4f4e69a3c177a5ea56cb38c759352904bcb790829bbc723ffb12dd14e108655d. Nested portable: 50,965,610 bytes, SHA-256 6ab47dcb00be8c8b2220445acb4304829eb3a2ad10f92e81e5835e95adbf0706; 327 entries, all CRC-clean. All 111 binary paths, sizes and hashes match the inventory; eight package records, eight notices and zero collector warnings. Portable and installed smoke reports both PASS. Setup PE certificate table is empty (unsigned).
+
+The manifest deliberately retains `review_complete=false`, `native_acceptance=false` and `public_release=false`. Redistribution preflight has six `qt-lgpl-text-not-identified` flags (PySide6, Addons, Essentials, Pdf, WebEngine and shiboken6). Runtime evidence has three flags: two OpenSSL crypto DLLs embed 3.5.9 and build-context SSL is 3.5.0; review baseline is 3.5.10. Installed restricted-PATH probe resolves Python 3.14.10 and OpenSSL 3.5.9 from the app-private runtime. Clean VM is false. Do not equate complete hashes/notices with complete license/source compliance or security clearance.
+
+The 48-image instructor preview artifact passes outer ZIP CRC; all 48 unique PNGs decode with Pillow and match manifest dimensions/SHA-256. Spot-checked Persian dark-glass workspaces at 1024×768 and 1360×900: text is legible and no obvious clipping in those views. However, the preview still includes academic-source-viewer images. The owner-approved Beta change removes the in-app source viewer and expects a 36-view matrix (both locales × three themes × glass/plain × two workspace sizes plus splash). Port that removal to Stable and rebuild the final preview; current 48-image preview is historical candidate evidence only.
+
+Exact-head full Windows/Ubuntu regression run 45898982955 is still in progress at this checkpoint. This is not a legal determination, signed distribution, native Windows acceptance or public-release approval.
