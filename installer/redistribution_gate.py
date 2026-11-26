@@ -8,6 +8,8 @@ import json
 from pathlib import PurePosixPath
 import zipfile
 
+from installer.windows_zip_paths import validate_windows_paths
+
 PREFIX = 'ManoStudio/'
 NOTICES = PREFIX + 'third-party-notices/'
 BINARY_SUFFIXES = {'.dll', '.pyd', '.exe'}
@@ -15,14 +17,8 @@ QT_ONLY_GPL_MARKERS = ('virtualkeyboard',)
 
 
 def audit(archive):
+    validate_windows_paths(archive, PREFIX)
     names = archive.namelist()
-    if len(names) != len(set(names)):
-        raise ValueError('Duplicate ZIP member')
-    for name in names:
-        path = PurePosixPath(name)
-        if (not name.startswith(PREFIX) or '\\' in name or
-                any(part in ('.', '..') or ':' in part for part in name.split('/')) or path.is_absolute()):
-            raise ValueError('Unexpected archive path: ' + name)
     inventory = json.loads(archive.read(NOTICES + 'inventory.json'))
     if inventory.get('kind') != 'build-license-evidence':
         raise ValueError('Invalid build inventory')
