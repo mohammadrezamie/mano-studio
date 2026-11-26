@@ -3,6 +3,7 @@
 #endif
 [Setup]
 AppId=ManoStudio.Desktop
+ChangesAssociations=yes
 AppName=Mano Studio
 AppVersion={#BuildVersion}
 AppPublisher=Mano Studio contributors
@@ -26,6 +27,12 @@ LicenseFile=..\LICENSE
 Name: "english"; MessagesFile: "compiler:Default.isl"
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "associate"; Description: "Associate .mano files with Mano Studio"; Flags: unchecked
+[Registry]
+Root: HKCU; Subkey: "Software\Classes\.mano\OpenWithProgids"; ValueType: string; ValueName: "ManoStudio.Document"; ValueData: ""; Flags: uninsdeletevalue; Tasks: associate
+Root: HKCU; Subkey: "Software\Classes\ManoStudio.Document"; ValueType: string; ValueData: "Mano Studio document"; Flags: uninsdeletekey; Tasks: associate
+Root: HKCU; Subkey: "Software\Classes\ManoStudio.Document\DefaultIcon"; ValueType: string; ValueData: "{app}\ManoStudio.exe,0"; Tasks: associate
+Root: HKCU; Subkey: "Software\Classes\ManoStudio.Document\shell\open\command"; ValueType: string; ValueData: """{app}\ManoStudio.exe"" ""%1"""; Tasks: associate
 [Files]
 Source: "..\dist\ManoStudio\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 [Icons]
