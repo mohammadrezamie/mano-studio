@@ -1,3 +1,14 @@
+# Live Stable status — 2026-11-27 (authoritative; historical notes follow)
+
+- **Stable candidate:** PR #24 is a draft 1.0.0 candidate. Its redistribution child PR #26 is at source af75c8d167df14c5e55301d2da6720d5d716b5b0. Exact-head Windows installer run 45898982989 succeeded; full Windows/Ubuntu regression run 45898982955 is still in progress. Do not mark the candidate accepted until both jobs complete and the current source hash is rechecked.
+- **Artifact audit:** Setup outer archive 34,153,226 B; nested Setup 34,984,654 B, SHA-256 4f4e69a3c177a5ea56cb38c759352904bcb790829bbc723ffb12dd14e108655d. Portable outer archive 50,803,131 B; nested portable 50,965,610 B, SHA-256 6ab47dcb00be8c8b2220445acb4304829eb3a2ad10f92e81e5835e95adbf0706. Nested portable: 327 entries, CRC clean, all 111 binary hashes/sizes match inventory; both portable and installed smoke reports PASS. The Setup is unsigned.
+- **Open release gates:** six Qt LGPL notice flags; three crypto/runtime review flags; current PySide6 6.12.0 and installed OpenSSL 3.5.9, build SSL 3.5.0 vs 3.5.10 review baseline; clean-VM and native bilingual acceptance false; public_release false. Do not mix or replace individual Qt/OpenSSL DLLs.
+- **Upstream packages:** Qt Framework 6.12.1 is released, but PySide6 6.12.1 was still marked preparing in Qt for Python notes dated 26 Nov. OpenSSL 3.5.10 is announced for 1 Dec 2026. Rebuild only from aligned official packages after publication, then repeat security and full candidate gates.
+- **Academic deliverable:** the only required file is the standalone root rtl_translator.py. The current Stable candidate still contains the in-app academic source viewer/helper and 48-view screenshot matrix. The forward Beta owner-approved change removes the viewer and uses 36 user-facing views; port that removal to Stable, replace its obsolete viewer test/captures, and rerun exact-source full tests and packaging before final acceptance.
+- **Release channel policy:** Beta remains semantically ahead of Stable (1.1.0-dev.1 vs 1.0.0). No public GitHub Release/tag exists. Stable must be independently accepted; no date or passing subset overrides security, redistribution, signing, native and owner-approval gates.
+
+---
+
 # Development status — 2026-11-25
 
 PR #9 is merged; verified main baseline 9eb19971. Continue quality/beta-visual-review on a separate PR; inspect current open PRs and Actions before editing. No stable release or v1.0.0 tag; owner approval after classroom review is mandatory. See RELEASE_POLICY.md.
