@@ -15,7 +15,7 @@ permissions:
   contents: read
 jobs:
   focused:
-    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'fix/beta-native-document-integrity' || github.event.pull_request.head.ref == 'feature/cpu-sample-ui-acceptance' || github.event.pull_request.head.ref == 'develop/visual-polish'))
+    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'fix/beta-native-document-integrity' || github.event.pull_request.head.ref == 'feature/cpu-sample-ui-acceptance' || github.event.pull_request.head.ref == 'develop/visual-polish' || github.event.pull_request.head.ref == 'feature/cpu-arithmetic-memory-examples'))
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:

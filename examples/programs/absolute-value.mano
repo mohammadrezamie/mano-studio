@@ -1,0 +1,11 @@
+{
+  "format": "mano-studio",
+  "version": 1,
+  "kind": "asm",
+  "payload": [
+    [
+      265,
+      7
+    ]
+  ]
+}
