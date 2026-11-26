@@ -41,3 +41,16 @@ PR #25 at `1cc1f08ceed8b4ff1dfa75342b2df8b03dc0cb92` targets develop/next-beta; 
 ## Handoff
 
 See [#4](https://github.com/mohammadrezamie/mano-studio/issues/4), [#23](https://github.com/mohammadrezamie/mano-studio/issues/23), [#24](https://github.com/mohammadrezamie/mano-studio/pull/24), [#25](https://github.com/mohammadrezamie/mano-studio/pull/25), and [#20](https://github.com/mohammadrezamie/mano-studio/pull/20) for current state. The next priority is regression evidence and native acceptance, with independent development on its own branch. No tag/release operation was performed.
+
+## Independent artifact verification — same checkpoint
+
+Downloaded all four listed archives and verified archive CRCs; nested portable archive contains 321 entries and also passes CRC. Exact source revision in both commit.txt files and manifest: 3ed419e3a37d9e233a4a908c08f9eccbbe80bf83. Independently recalculated lengths and SHA-256, matched both sidecar digests and manifest:
+
+| Actual asset | Bytes | SHA-256 |
+|---|---:|---|
+| ManoStudio-v1.0.0-Windows-x64.zip | 50915675 | 1b7860eaf818f831050fd2672007f992638da3cede0ab328d7e267257b337839 |
+| ManoStudio-Setup-v1.0.0-x64.exe | 35951004 | 703548ac7f8f7e5f5414195dd6abc66f860c8880903ce0844f31905c36727ea6 |
+
+Manifest reports portable and installed smoke PASS, redistribution review incomplete, native_acceptance=false, public_release=false. Separate smoke archive also contains both PASS records. Portable archive contains ManoStudio.exe, third-party-notices/inventory.json and _internal/rtl_translator.py. Actual extracted academic source SHA-256 0a2540403aeced6b6d31a1b79c67e26c489a0c48008537d87915ee5d52c62dec matches manifest; LF-normalized Git blob dc495ca2bf2484a28fa9aa440e7868ea6932254c matches frozen academic core. Executed actual extracted source with python -I -S and independent four-line RTL sample, output exactly LDA 100 / ADD 101 / STA 102 / HLT (exit 0).
+
+Preview manifest: exact 48-image Cartesian set (two locales, three themes, glass/plain, four surfaces), unique names, all image SHA-256 and dimensions match; all PNGs fully decoded. Inspected contact sheets of 24 compact-workspace/splash captures across all themes and languages, and full-size Persian compact and English large dark glass workspaces. No missing-glyph boxes or major clipping observed in sampled screens. Persian button/footer text is visibly too small relative to English and the editors; #25 is the independent improvement candidate. Offscreen review does not establish native DPI/usability. Full matrix, independent licensing review, native Windows acceptance and publication remain open. This supersedes the earlier metadata-only statement above.
