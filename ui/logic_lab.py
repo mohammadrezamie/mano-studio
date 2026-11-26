@@ -22,6 +22,7 @@ from ui.sequential_view import SequentialView
 from ui.memory_view import MemoryView
 from ui.memory_array_view import MemoryArrayView
 from ui.bus_view import BusView
+from ui.databus_view import DatabusView
 from ui.cache_view import CacheView
 from ui.karnaugh_view import KarnaughView
 from ui.state_synthesis_view import StateSynthesisView
@@ -402,6 +403,8 @@ class LogicLab(QDialog):
         memory_tabs.addTab(self.memory_array,self.t("Memory expansion","گسترش حافظه"))
         self.bus_view=BusView(parent.theme,self.fa)
         memory_tabs.addTab(self.bus_view,self.t("Register bus","گذرگاه ثبات‌ها"))
+        self.databus=DatabusView(self.fa)
+        memory_tabs.addTab(self.databus,self.t("RAM + registers","RAM و ثبات‌ها"))
         self.cache=CacheView(parent.theme,self.fa)
         memory_tabs.addTab(self.cache,self.t("Cache","حافظه نهان"))
         self.address_translation=AddressTranslationView(parent.theme,self.fa)
