@@ -14,6 +14,9 @@ class Distribution:
     def locate_file(self, file):
         return self.root / file
 
+    def read_text(self, name):
+        return f"Name: {self.metadata['Name']}\nVersion: {self.version}\n" if name == "METADATA" else None
+
 
 def test_inventory_preserves_relative_notices_and_hashes(tmp_path):
     site = tmp_path / "site"
@@ -54,3 +57,25 @@ def test_missing_notices_reported(tmp_path):
 def test_duplicate_metadata_rejected(tmp_path):
     with pytest.raises(ValueError, match="Duplicate"):
         collect(tmp_path / "notices", [Distribution("PySide6", tmp_path, []), Distribution("pyside6", tmp_path, [])], tmp_path, tmp_path)
+
+
+@pytest.mark.parametrize("filename", ["METADATA", "PKG-INFO"])
+def test_real_distribution_description_preserved(tmp_path, filename):
+    from importlib.metadata import PathDistribution
+    site = tmp_path / "PyInstaller-1.dist-info"
+    site.mkdir()
+    metadata = "Metadata-Version: 2.1\nName: PyInstaller\nVersion: 1\n\nOverview\n========\n:Documentation: https://example.invalid/\n:Code: local\nUnicode: آزمایش\n"
+    (site / filename).write_text(metadata, encoding="utf-8", newline="")
+    dist = PathDistribution(site)
+    target = tmp_path / "notices"
+    result = collect(target, [dist], tmp_path, tmp_path / "absent")
+    assert result["packages"][0]["name"] == "PyInstaller"
+    assert (target / "PyInstaller/METADATA.txt").read_bytes() == metadata.encode("utf-8")
+    assert not result["review_complete"]
+
+
+def test_missing_raw_metadata_fails_closed(tmp_path):
+    dist = Distribution("PySide6", tmp_path, [])
+    dist.read_text = lambda name: None
+    with pytest.raises(ValueError, match="Missing distribution metadata"):
+        collect(tmp_path / "notices", [dist], tmp_path, tmp_path / "absent")
