@@ -1,16 +1,18 @@
-# Live Stable continuation — 2026-11-27 (supersedes older status below)
+# Live Stable continuation — 2026-11-27 (authoritative; historical notes follow)
 
-## Exact current candidate
-PR #24 remains a draft Stable 1.0.0 release candidate. PR #26 is the redistribution/security child, current head af75c8d167df14c5e55301d2da6720d5d716b5b0. Windows installer run 45898982989 succeeded; its latest full Windows/Ubuntu regression run 45898982955 remains in progress. The downloaded artifacts were independently audited: nested Setup 34,984,654 B / SHA-256 4f4e69a3c177a5ea56cb38c759352904bcb790829bbc723ffb12dd14e108655d; nested portable 50,965,610 B / SHA-256 6ab47dcb00be8c8b2220445acb4304829eb3a2ad10f92e81e5835e95adbf0706. The portable ZIP has 327 CRC-clean entries and all 111 binary inventory hashes/sizes match. Portable and installed smoke PASS. Setup unsigned. See REDISTRIBUTION_PREFLIGHT.md.
+## Current Stable source and academic contract
+PR #24 remains the Stable release umbrella; draft child PR #26 contains the redistribution gate and the current standalone-translator alignment. The app must not contain a source viewer, source editor, exporter helper or duplicate conversion engine. The sole instructor handoff is the individually downloadable root `rtl_translator.py`; the GUI imports and delegates to it.
 
-## Do not publish yet
-The candidate correctly reports six Qt LGPL notice flags and three crypto/runtime flags. It packages PySide6 6.12.0 / Qt 6.12.0 and OpenSSL 3.5.9; build SSL is 3.5.0. Qt Framework 6.12.1 is available, but PySide6 6.12.1 was still preparing in the 26-Nov Qt for Python notes. OpenSSL 3.5.10 is scheduled for 1-Dec-2026. Wait for aligned official packages, rebuild from exact pins, and re-run all tests/runtime evidence. No hand-replacement of DLLs. Clean VM, native bilingual acceptance, legal/source review, signing and owner approval remain open.
+The Stable branch now removes `academic_source.py`, `ui/academic_view.py`, and `tests/test_academic_source.py`; removes the in-app action and translations; and preserves the splash/credits tests. The installer workflow checks the isolated translator contract instead.
 
-## Academic source contract
-The only academic deliverable is the standalone root rtl_translator.py. Current Stable candidate still contains academic_source.py, ui/academic_view.py and source-viewer tests/captures. Owner direction now requires the single downloadable file without an in-app source viewer; port the already-reviewed Beta removal to Stable after the current regression run finishes, then rerun the exact-source full matrix and Windows installer. Do not treat the current candidate as final Stable.
+## Instructor visual evidence
+The capture now produces 36 real Qt images: English/Persian × Dark/Light/Night × glass/plain × (1360×900 workspace, 1024×768 workspace, splash). The strict evidence validator rejects missing, duplicate, extra, wrongly sized or hash-mismatched images. A local bilingual HTML gallery is generated alongside the images. Offscreen capture is not native Windows acceptance.
+
+## Required fresh gates
+All prior test and installer artifacts refer to earlier source revisions and must not be used to approve the updated candidate. Run exact-head Windows and Ubuntu regression, focused splash UI checks, 36-image capture and visual inspection, fresh Windows Setup and portable builds, complete manifests/checksums, and offline install/first-launch/reinstall/uninstall smoke. Keep PR #26 draft until these gates and the separate redistribution/security/legal/native/signing/owner-approval gates are satisfied.
 
 ## Parallel channels
-Forward Beta remains ahead at 1.1.0-dev.1, with proposed first prerelease v1.1.0-beta.1; Stable remains 1.0.0. Keep the two branches separate. No public release or tag is confirmed. Continue historical evidence below only after checking this live summary.
+Forward Beta remains separate and ahead in PR #36. Do not merge Beta wholesale into Stable. No fixed Stable date is committed, and no public Release/tag is confirmed.
 
 ---
 
