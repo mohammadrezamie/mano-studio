@@ -3,7 +3,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 import pytest
 pytest.importorskip("PySide6")
 from PySide6.QtCore import QSettings
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QFileDialog
 from ui.workspace import Workspace
 from ui.program_lab import ProgramLab
 
@@ -41,6 +41,35 @@ def test_inspect_full_memory_without_cpu_mutation(tmp_path, language):
         lab.mark_saved()
         lab.reset_program()
         assert lab.inspected_address is None
+    finally:
+        lab.mark_saved()
+        lab.close()
+        workspace.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_export_memory_page(tmp_path, monkeypatch, language):
+    import csv
+    app = QApplication.instance() or QApplication([])
+    settings = QSettings(str(tmp_path / "export.ini"), QSettings.Format.IniFormat)
+    settings.setValue("language", language)
+    workspace = Workspace(settings)
+    lab = ProgramLab(workspace)
+    try:
+        lab.memory_address.setText("FFF")
+        assert lab.inspect_memory()
+        before = lab.cpu.registers()
+        memory = lab.cpu.memory.copy()
+        path = tmp_path / "report.csv"
+        monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: ("", ""))
+        assert not lab.export_memory()
+        monkeypatch.setattr(QFileDialog, "getSaveFileName", lambda *a: (str(path), ""))
+        assert lab.export_memory()
+        with path.open(encoding="utf-8-sig", newline="") as stream:
+            rows = list(csv.DictReader(stream))
+        assert any(row["address_hex"] == "FFF" and row["word_hex"] == "0000" for row in rows)
+        assert len(rows) == lab.memory.rowCount()
+        assert lab.cpu.registers() == before and lab.cpu.memory == memory and not lab.is_dirty()
     finally:
         lab.mark_saved()
         lab.close()
