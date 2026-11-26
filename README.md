@@ -125,3 +125,7 @@ The release track stabilizes a Windows-first beta without scope creep. The next-
 An independent educational project for the computer architecture course, based on M. Morris Mano's *Computer System Architecture*. Academic acknowledgment and institutional details are subject to verification; no official endorsement is implied.
 
 Released under the [MIT License](LICENSE). See [references](docs/REFERENCES.md) for technical sources.
+
+
+## Instructor v1.0.0 candidate (not accepted stable)
+This branch prepares the first stable delivery for Monday, 2026-11-30. Priority: standalone RTL-to-Assembly Python file, stability, and premium bilingual presentation. See [instructor acceptance](docs/V1_INSTRUCTOR_ACCEPTANCE.md). Candidate packaging and full tests remain required. Later-generation functionality is promoted only after validation; verified beta artifacts remain independent.
