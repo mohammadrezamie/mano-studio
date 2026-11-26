@@ -15,7 +15,7 @@ permissions:
   contents: read
 jobs:
   focused:
-    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'fix/beta-native-document-integrity' || github.event.pull_request.head.ref == 'feature/cpu-sample-ui-acceptance' || github.event.pull_request.head.ref == 'develop/visual-polish'))
+    if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'fix/beta-native-document-integrity' || github.event.pull_request.head.ref == 'feature/cpu-sample-ui-acceptance' || github.event.pull_request.head.ref == 'develop/visual-polish' || github.event.pull_request.head.ref == 'feature/cycle-view-acceptance'))
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -56,7 +56,7 @@ jobs:
         if: always() && steps.preflight.outcome == 'success'
         run: >-
           python -m pytest -q -o faulthandler_timeout=90 --junitxml=next-qt.xml
-          tests/test_timing_view.py tests/test_flipflop_reference_view.py
+          tests/test_timing_view.py tests/test_cycle_view.py tests/test_flipflop_reference_view.py
           tests/test_storage_view.py tests/test_universal_view.py tests/test_update_view.py tests/test_program_samples_view.py tests/test_program_samples_ui.py tests/test_cpu_session_view.py tests/test_cpu_guard_view.py tests/test_memory_inspector_view.py
       - name: Integrated workspace regressions
         if: always() && steps.preflight.outcome == 'success'
