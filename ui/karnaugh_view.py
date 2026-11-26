@@ -145,6 +145,7 @@ class KarnaughView(QWidget):
         self.gate_family.addItem(self.t("Mixed gates", "گیت‌های ترکیبی"),"mixed")
         self.gate_family.addItem("NAND","NAND")
         self.gate_family.addItem("NOR","NOR")
+        self.gate_family.addItem(self.t("MUX · Shannon","مالتی‌پلکسر · شانون"),"MUX")
         self.gate_family.setAccessibleName(label.text())
         label.setBuddy(self.gate_family)
         technology.addWidget(label)
