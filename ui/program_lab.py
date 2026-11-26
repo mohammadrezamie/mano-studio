@@ -3,7 +3,7 @@ from pathlib import Path
 from ui.motion import MotionTabs
 from ui.navigation_rail import NavigationRail
 import csv
-import re
+from memory_inspector import parse_address, page_addresses, memory_rows
 from PySide6.QtCore import QTimer, QSignalBlocker
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QPlainTextEdit, QTableWidget, QTableWidgetItem, QHeaderView,
@@ -58,6 +58,7 @@ class ProgramLab(QDialog):
         self.resize(1280, 800)
         self.cpu = None
         self.assembled_source = None
+        self.inspected_address = None
         self.program = None
         self.steps = 0
         self.history = None
@@ -123,12 +124,31 @@ class ProgramLab(QDialog):
         self.inspector=MotionTabs()
         self.datapath=DatapathView(parent.theme, parent.settings.value("reduced_motion", False, type=bool) or not parent.settings.value("lab_motion", True, type=bool), fa=self.fa)
         self.inspector.addTab(self.datapath,self.t("Live view","نمای زنده"))
-        self.inspector.addTab(lower,self.t("Registers & memory","ثبات‌ها و حافظه"))
+        memory_panel = QWidget()
+        memory_layout = QVBoxLayout(memory_panel)
+        memory_layout.setContentsMargins(0,0,0,0)
+        memory_tools = QHBoxLayout()
+        self.memory_address = QLineEdit()
+        self.memory_address.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
+        self.memory_address.setPlaceholderText("000–FFF")
+        self.memory_address.returnPressed.connect(self.inspect_memory)
+        memory_tools.addWidget(self.memory_address)
+        self.inspect_memory_button = QPushButton(self.t("Inspect address", "مشاهده آدرس"))
+        self.inspect_memory_button.clicked.connect(self.inspect_memory)
+        memory_tools.addWidget(self.inspect_memory_button)
+        self.clear_memory_button = QPushButton(self.t("Accessed only", "فقط آدرس‌های استفاده‌شده"))
+        self.clear_memory_button.clicked.connect(self.clear_memory_page)
+        memory_tools.addWidget(self.clear_memory_button)
+        self.memory_page_label = QLabel()
+        memory_tools.addWidget(self.memory_page_label)
+        memory_layout.addLayout(memory_tools)
+        memory_layout.addWidget(lower,1)
+        self.inspector.addTab(memory_panel,self.t("Registers & memory","ثبات‌ها و حافظه"))
         trace_page=QWidget()
         trace_layout=QVBoxLayout(trace_page)
         trace_tools=QHBoxLayout()
         self.break_address=QLineEdit()
-        self.break_address.setMaxLength(3)
+        self.break_address.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.break_address.setPlaceholderText(self.t("Breakpoint HEX","نقطه توقف هگز"))
         trace_tools.addWidget(self.break_address)
         for en,fa,fn in [("Toggle breakpoint","تغییر نقطه توقف",self.toggle_breakpoint),
@@ -205,7 +225,7 @@ class ProgramLab(QDialog):
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
         self.cpu_widgets=(intro,panes,cpu_controls,cpu_io,self.status)
-        self.tool_pages={"live":self.datapath,"register-memory":lower,"debugger":trace_page,
+        self.tool_pages={"live":self.datapath,"register-memory":memory_panel,"debugger":trace_page,
                          "alu":alu_page,"codes":self.codes,"cycles":self.cycles,
                          "microprogram":self.microprogram,"organization":self.organization,
                          "pipeline":pipeline_tabs,"io":self.io_organization,"multiprocessor":self.multiprocessor_tabs}
@@ -288,6 +308,7 @@ class ProgramLab(QDialog):
         self.pause()
         self.cpu = self.program = None
         self.assembled_source = None
+        self.reset_memory_page()
         self.history = None
         self.break_resume = None
         self.steps=0
@@ -380,7 +401,8 @@ class ProgramLab(QDialog):
         self.pause()
         self.replace_source(source)
         self.program, self.cpu = program, cpu
-        self.assembled_source = source
+        self.reset_memory_page()
+        self.assembled_source = self.source.toPlainText()
         self.set_source_locked(True)
         self.history = ExecutionHistory(cpu)
         self.history.steps = self.steps = steps
@@ -447,6 +469,7 @@ class ProgramLab(QDialog):
     def load(self):
         self.pause()
         self.program = assemble(self.source.toPlainText())
+        self.reset_memory_page()
         self.assembled_source = None
         self.set_source_locked(False)
         self.cpu = None
@@ -488,11 +511,46 @@ class ProgramLab(QDialog):
             self.addresses.update(a for a,old,new in event.writes)
             if event.effective_address is not None:
                 self.addresses.add(event.effective_address)
-        addresses = sorted(self.addresses)
-        self.memory.setRowCount(len(addresses))
-        for row,a in enumerate(addresses):
-            self.memory.setItem(row,0,QTableWidgetItem(f"{a:03X}"))
-            self.memory.setItem(row,1,QTableWidgetItem(f"{self.cpu.memory[a]:04X}"))
+        self.refresh_memory()
+
+    def reset_memory_page(self):
+        self.inspected_address = None
+        self.memory_address.clear()
+        self.memory_page_label.clear()
+
+    def refresh_memory(self):
+        if self.cpu is None:
+            self.memory.setRowCount(0)
+            return
+        rows = memory_rows(self.cpu.memory, self.addresses, self.inspected_address)
+        self.memory.setRowCount(len(rows))
+        for row,(address,word) in enumerate(rows):
+            self.memory.setItem(row,0,QTableWidgetItem(f"{address:03X}"))
+            self.memory.setItem(row,1,QTableWidgetItem(f"{word:04X}"))
+
+    def inspect_memory(self):
+        if self.cpu is None:
+            self.status.setText(self.t("Assemble first.", "ابتدا اسمبل کنید."))
+            return False
+        try:
+            address = parse_address(self.memory_address.text())
+        except ValueError:
+            self.status.setText(self.t("Enter 000–FFF.", "آدرس 000 تا FFF وارد کنید."))
+            return False
+        self.inspected_address = address
+        page = page_addresses(address)
+        self.memory_page_label.setText(f"{page[0]:03X}–{page[-1]:03X}")
+        self.refresh_memory()
+        for row in range(self.memory.rowCount()):
+            if self.memory.item(row,0).text() == f"{address:03X}":
+                self.memory.setCurrentCell(row,0)
+                self.memory.scrollToItem(self.memory.item(row,0))
+                break
+        return True
+
+    def clear_memory_page(self):
+        self.reset_memory_page()
+        self.refresh_memory()
 
     def step(self):
         if self.cpu is None:
@@ -596,11 +654,12 @@ class ProgramLab(QDialog):
 
     def toggle_breakpoint(self):
         if self.history is None:return
-        raw=self.break_address.text().strip()
-        if not re.fullmatch(r"[0-9a-fA-F]{1,3}",raw):
+        try:
+            address = parse_address(self.break_address.text())
+        except ValueError:
             self.status.setText(self.t("Enter 000–FFF.","آدرس 000 تا FFF وارد کنید."))
             return
-        self.history.toggle_breakpoint(int(raw,16))
+        self.history.toggle_breakpoint(address)
         self.break_resume=None
         self.refresh_trace()
 
