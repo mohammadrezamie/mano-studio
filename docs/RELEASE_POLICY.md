@@ -32,3 +32,6 @@ Owner requests reaching the initial GitHub release sooner. Freeze optional featu
 
 ## Integrated first beta candidate — 2026-11-25
 Owner requests expedited initial prerelease with high quality. Isolated release/beta-integrated combines exact heads of #16, #17 and #18. No publication or stable claim. Independent source branches retained; combined CI is final source gate. Current version 0.3.0-dev.1; proposed public beta v0.3.0-beta.1. Verify actual Windows installer/portable artifacts, hashes, bilingual screenshots, native acceptance, redistribution/license and owner acceptance before publication. Freeze optional features. Fix obsolete About modal test and require all six actual About captures. No translator changes.
+
+## Owner update download request — 2026-11-26
+Next-generation branch now implements explicit download-only for eligible official assets with GitHub SHA-256/size, strict URL and redirect validation. This supersedes check-only for that branch, not the frozen first beta. Never execute a downloaded installer until trusted publisher verification and upgrade acceptance exist. Native Windows association and actual Release download pending. See NATIVE_FILES_AND_UPDATES.md.
