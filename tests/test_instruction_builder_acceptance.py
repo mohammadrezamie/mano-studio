@@ -71,7 +71,8 @@ def test_symbol_pad_and_builder_hex_pad_construct_program_without_keyboard(
 
         workspace.editor.clear()
         workspace.tabs.setCurrentIndex(1)
-        for token in ("AC", "←", "M[", "1", "0", "0", "]"):
+        for token in ("AC", workspace.t("Space"), "←", workspace.t("Space"),
+                      "M[", "1", "0", "0", "]"):
             pad_buttons[token].click()
         assert workspace.editor.toPlainText() == "AC ← M[100]"
         workspace.run_translation()
