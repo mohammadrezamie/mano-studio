@@ -166,3 +166,45 @@ def test_memory_page_navigation(tmp_path, language):
         lab.mark_saved()
         lab.close()
         workspace.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_incremental_memory_refresh_and_invalid_assembly(tmp_path, language):
+    app = QApplication.instance() or QApplication([])
+    settings = QSettings(str(tmp_path / "refresh.ini"), QSettings.Format.IniFormat)
+    settings.setValue("language", language)
+    settings.setValue("reduced_motion", True)
+    workspace = Workspace(settings)
+    lab = ProgramLab(workspace)
+    try:
+        lab.memory_address.setText("FFF")
+        assert lab.inspect_memory()
+        row = lab.memory.currentRow()
+        assert lab.memory.item(row, 0).text() == "FFF"
+        first = lab.memory.item(0, 1)
+        lab.refresh_memory()
+        assert lab.memory.item(0, 1) is first
+        lab.cpu.memory[4095] = 0x7001
+        lab.refresh_memory()
+        assert lab.memory.item(row, 1).text() == "7001"
+        assert lab.memory.item(row, 2).text() == "HLT"
+        assert lab.memory.item(0, 1) is first
+        assert lab.memory.currentRow() == row
+        lab.mark_saved()
+        assert lab.begin_source_edit()
+        lab.source.setPlainText("INVALID")
+        lab.reset_program()
+        assert lab.cpu is None and lab.memory.rowCount() == 0
+        assert not lab.next_memory_button.isEnabled()
+        assert not lab.edit_memory_button.isEnabled()
+        assert not lab.export_memory_button.isEnabled()
+        lab.source.setPlainText("HLT")
+        lab.reset_program()
+        assert lab.cpu is not None and lab.memory.item(0, 1).text() == "7001"
+        assert lab.next_memory_button.isEnabled()
+        lab.microstep()
+        assert not lab.edit_memory_button.isEnabled()
+    finally:
+        lab.mark_saved()
+        lab.close()
+        workspace.close()

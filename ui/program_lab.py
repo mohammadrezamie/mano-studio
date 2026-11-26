@@ -6,6 +6,7 @@ import csv
 from memory_inspector import parse_address, page_addresses, memory_rows
 import memory_export
 from memory_navigation import adjacent_page
+from memory_refresh import refresh_plan, row_for_address
 from word_decode import decode_word
 from memory_edit import parse_word, write_word
 from PySide6.QtWidgets import QInputDialog
@@ -64,6 +65,7 @@ class ProgramLab(QDialog):
         self.cpu = None
         self.assembled_source = None
         self.inspected_address = None
+        self.memory_snapshot = ()
         self.program = None
         self.steps = 0
         self.history = None
@@ -507,13 +509,13 @@ class ProgramLab(QDialog):
             self.machine.setPlainText("\n".join(f"{e.line}: {error_text(e.message,self.fa)}" for e in self.program.errors))
             self.status.setText(self.t("Assembly failed.","اسمبل ناموفق بود."))
             self.registers.setRowCount(0)
-            self.memory.setRowCount(0)
+            self.refresh_memory()
             return
         if not self.program.words:
             self.machine.clear()
             self.datapath.set_state(None)
             self.registers.setRowCount(0)
-            self.memory.setRowCount(0)
+            self.refresh_memory()
             self.status.setText(self.t("No memory words assembled. Edit the draft.",
                                        "هیچ کلمه‌ای اسمبل نشد؛ پیش‌نویس را ویرایش کنید."))
             return
@@ -566,19 +568,35 @@ class ProgramLab(QDialog):
         self.inspect_memory_button.setEnabled(self.cpu is not None)
         self.clear_memory_button.setEnabled(self.cpu is not None and self.inspected_address is not None)
         self.export_memory_button.setEnabled(self.cpu is not None)
-        self.edit_memory_button.setEnabled(self.cpu is not None)
+        self.edit_memory_button.setEnabled(self.cpu is not None and not self.cpu.in_progress)
         if self.cpu is None:
             self.memory.setRowCount(0)
+            self.memory_snapshot = ()
             return
         rows = memory_rows(self.cpu.memory, self.addresses, self.inspected_address)
-        self.memory.setRowCount(len(rows))
-        for row,(address,word) in enumerate(rows):
+        reshape, changed = refresh_plan(self.memory_snapshot, rows)
+        selected_row = self.memory.currentRow()
+        selected_column = self.memory.currentColumn()
+        selected_address = (self.memory_snapshot[selected_row][0]
+                            if 0 <= selected_row < len(self.memory_snapshot) else None)
+        if reshape:
+            self.memory.setRowCount(len(rows))
+        for row in changed:
+            address, word = rows[row]
             self.memory.setItem(row,0,QTableWidgetItem(f"{address:03X}"))
             self.memory.setItem(row,1,QTableWidgetItem(f"{word:04X}"))
             decoded = decode_word(word)
             item = QTableWidgetItem(decoded or self.t("Unsupported", "پشتیبانی‌نشده"))
             item.setToolTip(self.t("Interpretation only; a memory word may be data.", "فقط تفسیر؛ کلمه حافظه ممکن است داده باشد."))
             self.memory.setItem(row,2,item)
+        self.memory_snapshot = tuple(rows)
+        if reshape:
+            selected = row_for_address(rows, selected_address)
+            if selected is not None:
+                self.memory.setCurrentCell(selected, max(0, selected_column))
+            else:
+                self.memory.setCurrentCell(-1, -1)
+                self.memory.clearSelection()
 
     def inspect_memory(self):
         if self.cpu is None:
