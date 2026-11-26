@@ -60,7 +60,7 @@ def source_version(root):
     for node in tree.body:
         if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "VERSION" for t in node.targets):
             version = ast.literal_eval(node.value)
-            if isinstance(version, str) and re.fullmatch(r"0\.\d+\.\d+-(dev|alpha|beta|rc)(\.\d+)?", version):
+            if isinstance(version, str) and re.fullmatch(r"\d+\.\d+\.\d+-(dev|alpha|beta|rc)(\.\d+)?", version):
                 return version
     raise ValueError("Not an explicit development/prerelease version")
 
