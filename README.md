@@ -75,6 +75,8 @@ Choose a language, enter RTL, translate, and export assembly. Press **Ctrl+K** t
 
 ## Academic assignment
 
+The instructor-facing converter is the standalone rtl_translator.py file at the repository root. Download and explain that file separately; the desktop app delegates to it but intentionally has no in-app source viewer or source editor.
+
 **[rtl_translator.py](rtl_translator.py) is the single standalone source file for instructor review.** It uses only the Python standard library, includes translation and validation, and supports all 25 named Basic Computer instructions in the documented provisional dialect. Optional simulation and UI are separate.
 
 ```sh
