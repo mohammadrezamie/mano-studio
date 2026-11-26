@@ -736,6 +736,17 @@ class Workspace(QMainWindow):
         if path.suffix.lower()==".mano":
             try:
                 kind,payload=mano_file.load(path)
+                if kind=="cpu-run":
+                    from cpu_session import restore
+                    from ui.program_lab import ProgramLab
+                    restored=restore(payload)
+                    lab=ProgramLab(self,restored[0])
+                    try:
+                        lab.install_cpu_session(restored)
+                        lab.exec()
+                    finally:
+                        lab.deleteLater()
+                    return
                 if kind=="state-run":
                     from state_session import restore
                     from ui.logic_lab import LogicLab

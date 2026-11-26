@@ -29,6 +29,7 @@ from ui.omega_view import OmegaView
 from ui.localization import error_text
 from assembler import assemble
 from simulator import CPU
+import cpu_session
 from program_samples import SAMPLES, load_sample
 from ui.workspace import code_editor
 from ui.datapath_view import DatapathView
@@ -81,6 +82,12 @@ class ProgramLab(QDialog):
             menu.addAction(sample.title[self.fa], lambda checked=False, key=sample.key: self.open_saved_sample(key))
         self.examples_button.setMenu(menu)
         controls.addWidget(self.examples_button)
+        self.session_button = QPushButton(self.t("Session", "جلسه اجرا"))
+        session_menu = QMenu(self.session_button)
+        session_menu.addAction(self.t("Open CPU session", "باز کردن جلسه پردازنده"), self.open_cpu_session)
+        session_menu.addAction(self.t("Save CPU session", "ذخیره جلسه پردازنده"), self.save_cpu_session)
+        self.session_button.setMenu(session_menu)
+        controls.addWidget(self.session_button)
         for en, fa, slot in [("Assemble / Reset","اسمبل و بازنشانی",self.load),
             ("Back","گام قبل",self.back),("Step","گام بعد",self.step),("Run","اجرا",self.run),
             ("Pause","توقف موقت",self.pause)]:
@@ -260,6 +267,69 @@ class ProgramLab(QDialog):
         self.registers.setRowCount(0)
         self.memory.setRowCount(0)
         self.status.setText(self.t("Source changed. Assemble again.","کد تغییر کرد؛ دوباره اسمبل کنید."))
+
+    def save_cpu_session(self):
+        self.pause()
+        if self.cpu is None or self.history is None or self.cpu.in_progress:
+            QMessageBox.warning(self, self.t("Cannot save session", "ذخیره جلسه ناموفق"),
+                self.t("Assemble and finish or rewind the current instruction before saving.",
+                       "ابتدا اسمبل کنید و دستور جاری را کامل کنید یا به ابتدای آن بازگردید."))
+            return False
+        name, _ = QFileDialog.getSaveFileName(self, self.t("Save CPU session", "ذخیره جلسه پردازنده"),
+            "cpu.mano", self.t("Mano Studio (*.mano)", "مانو استودیو (*.mano)"))
+        if not name:
+            return False
+        path = Path(name)
+        if not path.suffix:
+            path = path.with_suffix(".mano")
+        if path.suffix.lower() != ".mano":
+            QMessageBox.warning(self, self.t("Cannot save session", "ذخیره جلسه ناموفق"),
+                self.t("Use the .mano extension.", "از پسوند .mano استفاده کنید."))
+            return False
+        try:
+            cpu_session.save(path, self.source.toPlainText(), self.cpu, self.history.steps, self.history.breakpoints)
+        except (OSError, ValueError):
+            QMessageBox.warning(self, self.t("Cannot save session", "ذخیره جلسه ناموفق"),
+                self.t("Session could not be saved.", "جلسه ذخیره نشد."))
+            return False
+        self.status.setText(self.t("CPU session saved.", "جلسه پردازنده ذخیره شد."))
+        return True
+
+    def install_cpu_session(self, restored):
+        source, program, cpu, steps, breaks = restored
+        self.pause()
+        self.source.setPlainText(source)
+        self.program, self.cpu = program, cpu
+        self.history = ExecutionHistory(cpu)
+        self.history.steps = self.steps = steps
+        self.history.breakpoints = breaks
+        self.break_resume = None
+        self.addresses = set(program.words) | {a for a, w in enumerate(cpu.memory) if w} | {cpu.pc}
+        self.machine.setPlainText(program.listing())
+        self.refresh()
+        self.select_address(cpu.pc)
+        self.status.setText(self.t("Session restored; reverse history starts here.",
+                                   "جلسه بازیابی شد؛ تاریخچه بازگشت از اینجا آغاز می‌شود."))
+
+    def open_cpu_session(self):
+        self.pause()
+        name, _ = QFileDialog.getOpenFileName(self, self.t("Open CPU session", "باز کردن جلسه پردازنده"),
+            "", self.t("Mano Studio (*.mano)", "مانو استودیو (*.mano)"))
+        if not name:
+            return False
+        try:
+            restored = cpu_session.load(name)
+        except (OSError, ValueError):
+            QMessageBox.warning(self, self.t("Cannot open session", "باز کردن جلسه ناموفق"),
+                self.t("Invalid session. Current program is unchanged.", "جلسه نامعتبر است؛ برنامه فعلی تغییر نکرد."))
+            return False
+        if QMessageBox.question(self, self.t("Replace program?", "جایگزینی برنامه؟"),
+            self.t("Replace the current program and execution state?", "برنامه و وضعیت اجرای فعلی جایگزین شوند؟"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+            return False
+        self.install_cpu_session(restored)
+        return True
 
     def open_saved_sample(self, key):
         # Validate before changing the live program or any execution state.
