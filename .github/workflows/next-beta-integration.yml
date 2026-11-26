@@ -9,7 +9,7 @@ on:
     branches: [develop/next-beta]
     types: [opened, synchronize, reopened, ready_for_review]
 concurrency:
-  group: next-beta-integration-${{ github.event.pull_request.number || 'branch' }}
+  group: ${{ github.event_name == 'pull_request' && format('next-beta-integration-pr-{0}', github.event.pull_request.number) || 'next-beta-integration' }}
   cancel-in-progress: true
 permissions:
   contents: read
