@@ -29,6 +29,7 @@ from boolean_synthesis import synthesize
 from universal_gates import universalize
 from mux_synthesis import synthesize_mux
 from classic_samples import SAMPLES, load_sample
+from circuit_file import read_text
 from ui.block_dialog import BlockDialog
 from ui.virtual_memory_view import AddressTranslationView
 from ui.gate_symbols import draw_gate, input_point, output_point, WIDTH, HEIGHT, CENTER
@@ -768,10 +769,7 @@ class LogicLab(QDialog):
         if not name:
             return
         try:
-            path=Path(name)
-            if path.stat().st_size>200000:
-                raise ValueError("Circuit file too large.")
-            document=CircuitDocument.loads(path.read_text(encoding="utf-8"))
+            document=CircuitDocument.loads(read_text(name))
         except (OSError,UnicodeError,ValueError) as exc:
             QMessageBox.warning(self,self.t("Invalid circuit","مدار نامعتبر"),error_text(exc,self.fa))
             return
