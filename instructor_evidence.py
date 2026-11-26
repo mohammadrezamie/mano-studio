@@ -4,7 +4,7 @@ from pathlib import Path
 
 def expected_captures():
     surfaces = {'workspace-1360': (1360, 900), 'workspace-1024': (1024, 768),
-                'academic-source': None, 'splash': None}
+                'splash': None}
     return {f'{language}-{theme}-{glass}-{surface}.png': size
             for language in ('en', 'fa') for theme in ('dark', 'light', 'night')
             for glass in ('glass', 'plain') for surface, size in surfaces.items()}
