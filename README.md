@@ -30,17 +30,16 @@
 
 Designed for English and Persian, with persistent language preferences, Light/Dark/Night themes and optional glass effects and motion. Core features work offline; only an explicit update check may contact GitHub.
 
-## Development status
+## Development status — two permanent channels
 
-| Track | Current milestone |
-| --- | --- |
-| **Main — verified source baseline** | PR [#15](https://github.com/mohammadrezamie/mano-studio/pull/15) merged; 1,200 tests passed on each OS in [run 45557009008](https://github.com/mohammadrezamie/mano-studio/actions/runs/45557009008). 42 learning entries across 13 chapters (partial coverage). |
-| **Release — Windows x64 beta** | [PR #22](https://github.com/mohammadrezamie/mano-studio/pull/22), v0.3.0-beta.1: installer workflow [45786384159](https://github.com/mohammadrezamie/mano-studio/actions/runs/45786384159) passed; full regression [45786384171](https://github.com/mohammadrezamie/mano-studio/actions/runs/45786384171) still running on both OS at observation. |
-| **Instructor v1 candidate** | [PR #24](https://github.com/mohammadrezamie/mano-studio/pull/24), internal 1.0.0 candidate: [Windows build and automated install/portable smoke](https://github.com/mohammadrezamie/mano-studio/actions/runs/45798904733) passed; full regression [45798904930](https://github.com/mohammadrezamie/mano-studio/actions/runs/45798904930), native review and distribution approval remain open. |
-| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): native design/session files, ALU bus and update progress source; [visual polish PR #25](https://github.com/mohammadrezamie/mano-studio/pull/25) remains separate and unaccepted. |
+| Channel | Plan | Current work |
+| --- | --- | --- |
+| **Stable** | [Release plan #4](https://github.com/mohammadrezamie/mano-studio/issues/4) | [v1.0.0 candidate #24](https://github.com/mohammadrezamie/mano-studio/pull/24): [Windows installer and smoke](https://github.com/mohammadrezamie/mano-studio/actions/runs/45798904733) passed; [full regression](https://github.com/mohammadrezamie/mano-studio/actions/runs/45798904930), native acceptance and [redistribution #26](https://github.com/mohammadrezamie/mano-studio/pull/26) remain open. |
+| **Beta** | [Development plan #23](https://github.com/mohammadrezamie/mano-studio/issues/23) | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): new features and textbook coverage; [typography #25](https://github.com/mohammadrezamie/mano-studio/pull/25) and [visual QA #27](https://github.com/mohammadrezamie/mano-studio/pull/27) await integrated acceptance. |
 
-**No downloadable public release has been verified or published.** Successful CI packages are internal candidates, not an accepted stable release. The owner targets Monday 2026-11-30 for instructor delivery; do not delay a verified delivery for optional textbook features. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [owner backlog #23](https://github.com/mohammadrezamie/mano-studio/issues/23), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases). Snapshot: 2026-11-26; evidence is tied to the named runs and revisions. See [release acceptance evidence](docs/RELEASE_ACCEPTANCE_CHECKPOINT.md).
+The latest verified source baseline on main remains PR #15 (1,200 tests per OS in [run 45557009008](https://github.com/mohammadrezamie/mano-studio/actions/runs/45557009008); partial coverage across 13 chapters). The older [#22](https://github.com/mohammadrezamie/mano-studio/pull/22) build is a retained fallback, not the latest Beta feature channel.
 
+**No accepted public release is confirmed.** Internal artifacts are not public Stable or Beta releases. Instructor delivery targets Monday 2026-11-30, subject to evidence. See [two-channel policy](docs/DEVELOPMENT_CHANNELS.md), [release acceptance evidence](docs/RELEASE_ACCEPTANCE_CHECKPOINT.md), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases). Snapshot 2026-11-26.
 
 ## Visual preview
 
@@ -118,7 +117,7 @@ The academic translator remains dependency-free and independently testable. See 
 
 ## Two tracks, one project
 
-The release track stabilizes Windows-first beta and v1 candidates without uncontrolled scope expansion. The next-generation track expands the textbook models, visual tools and educational experiments independently. Neither track waits for the other to finish. Full textbook coverage is a goal, not a completion claim. New libraries are welcome when licensing, offline operation, packaging and maintainability are compatible.
+Stable maintains the latest accepted release; Beta develops the newest features continuously. Both advance independently, with selective verified promotion from Beta to Stable and relevant fixes back to Beta. See the [two-channel policy](docs/DEVELOPMENT_CHANNELS.md). Full textbook coverage is a goal, not a completion claim.
 
 **Contributors and agents:** read [AGENTS.md](AGENTS.md) and [CONTINUE.md](docs/CONTINUE.md). Update README and affected documentation in the same work cycle as every meaningful project change. Record actual evidence, not anticipated results.
 
