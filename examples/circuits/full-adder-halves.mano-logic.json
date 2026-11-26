@@ -1,0 +1,62 @@
+{
+  "format": "mano-logic",
+  "version": 2,
+  "inputs": [
+    "A",
+    "B",
+    "Cin"
+  ],
+  "gates": [
+    {
+      "output": "p",
+      "op": "XOR",
+      "inputs": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "output": "c1",
+      "op": "AND",
+      "inputs": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "output": "s",
+      "op": "XOR",
+      "inputs": [
+        "p",
+        "Cin"
+      ]
+    },
+    {
+      "output": "c2",
+      "op": "AND",
+      "inputs": [
+        "p",
+        "Cin"
+      ]
+    },
+    {
+      "output": "c",
+      "op": "OR",
+      "inputs": [
+        "c1",
+        "c2"
+      ]
+    }
+  ],
+  "outputs": [
+    [
+      "S",
+      "s"
+    ],
+    [
+      "Cout",
+      "c"
+    ]
+  ],
+  "positions": []
+}
