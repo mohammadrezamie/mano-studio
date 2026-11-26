@@ -33,6 +33,7 @@ import cpu_session
 import cpu_documents
 import mano_file
 from cpu_guard import CpuGuard
+from replacement_guard import allow_replace
 from program_samples import SAMPLES, load_sample
 from ui.workspace import code_editor
 from ui.datapath_view import DatapathView
@@ -325,6 +326,17 @@ class ProgramLab(QDialog):
             return self.save_cpu_session()
         return choice == QMessageBox.StandardButton.Discard
 
+    def confirm_replace(self):
+        self.pause()
+        def confirm_clean():
+            return QMessageBox.question(self, self.t("Replace program?", "جایگزینی برنامه؟"),
+                self.t("Replace the current program and execution state?",
+                       "برنامه و وضعیت اجرای فعلی جایگزین شوند؟"),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No) == QMessageBox.StandardButton.Yes
+        return allow_replace(self.is_dirty(), bool(self.cpu is not None or self.source.toPlainText()),
+                             self.confirm_close, confirm_clean)
+
     def reset_program(self):
         if self.cpu is not None and not self.confirm_close():
             return
@@ -394,10 +406,7 @@ class ProgramLab(QDialog):
             QMessageBox.warning(self, self.t("Cannot open session", "باز کردن جلسه ناموفق"),
                 self.t("Invalid session. Current program is unchanged.", "جلسه نامعتبر است؛ برنامه فعلی تغییر نکرد."))
             return False
-        if QMessageBox.question(self, self.t("Replace program?", "جایگزینی برنامه؟"),
-            self.t("Replace the current program and execution state?", "برنامه و وضعیت اجرای فعلی جایگزین شوند؟"),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No) != QMessageBox.StandardButton.Yes:
+        if not self.confirm_replace():
             return False
         if kind == "asm":
             self.clear_execution()
@@ -420,15 +429,8 @@ class ProgramLab(QDialog):
                 self.t("The saved program is invalid or unreadable. Current program is unchanged.",
                        "برنامه ذخیره‌شده نامعتبر یا خواندنی نیست. برنامه فعلی تغییر نکرد."))
             return False
-        self.pause()
-        if self.source.toPlainText().strip():
-            answer = QMessageBox.question(self, self.t("Replace program?", "جایگزینی برنامه؟"),
-                self.t("Replace the current program and reset its execution?",
-                       "برنامه فعلی جایگزین و اجرای آن بازنشانی شود؟"),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No)
-            if answer != QMessageBox.StandardButton.Yes:
-                return False
+        if not self.confirm_replace():
+            return False
         self.replace_source(source)
         self.load()
         self.mark_saved()
