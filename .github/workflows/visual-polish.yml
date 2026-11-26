@@ -1,14 +1,14 @@
 name: Visual polish acceptance
 on:
   push:
-    branches: [develop/visual-polish]
+    branches: [develop/visual-polish, quality/instructor-evidence-rebased]
   pull_request:
     branches: [develop/visual-polish]
     types: [opened, synchronize, reopened, ready_for_review]
 permissions:
   contents: read
 concurrency:
-  group: \${{ github.event_name == 'pull_request' && format('visual-polish-pr-{0}', github.event.pull_request.number) || github.ref }}
+  group: ${{ github.event_name == 'pull_request' && format('visual-polish-pr-{0}', github.event.pull_request.number) || github.ref }}
   cancel-in-progress: true
 jobs:
   visual:
@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: \${{ github.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
