@@ -707,6 +707,18 @@ class Workspace(QMainWindow):
         if path.suffix.lower()==".mano":
             try:
                 kind,payload=mano_file.load(path)
+                if kind=="state-run":
+                    from state_session import restore
+                    from ui.logic_lab import LogicLab
+                    session=restore(payload)
+                    lab=LogicLab(self)
+                    try:
+                        lab.select_tool("state-design")
+                        lab.state_design.apply_session(session)
+                        lab.exec()
+                    finally:
+                        lab.deleteLater()
+                    return
                 if kind in ("karnaugh","state-design"):
                     from native_exercise import restore
                     from ui.logic_lab import LogicLab
