@@ -57,3 +57,6 @@ Read docs/DOCUMENTATION_POLICY.md before work. Keep README current with every me
 
 ## Practical laboratory mandate — owner 2026-11-26
 Read docs/PRACTICAL_LAB_POLICY.md. Full textbook coverage requires useful interactive experimentation, real composable models wherever applicable, and curated saved ready-to-load samples in each relevant section with independent expected outcomes. Use shared simulation semantics, explicit port/clock/width contracts, validated save/load and undo; never claim unrelated models are integrated. Preserve offline bilingual operation and independent academic translator. Advance on next-beta; keep first Windows beta frozen except verified release blockers.
+
+## Native document and updates — owner 2026-11-26
+Use .mano as the native versioned application document envelope; retain legacy and academic exports. Expand validated persistence to all applicable lab types; never encode executable content or claim exclusivity/encryption. Optional Windows per-user association, user retains default-app choice. Explicit official GitHub update check/download only, validate digest and exact version/platform; no auto execution without trusted signing and verified upgrade. See docs/NATIVE_FILES_AND_UPDATES.md. First beta remains frozen.
