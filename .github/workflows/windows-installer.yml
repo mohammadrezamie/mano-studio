@@ -37,7 +37,7 @@ jobs:
           python-version: ${{ (github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening') && '3.14.10' || '3.12' }}
           architecture: x64
       - name: Isolate pinned Windows candidate build environment
-        if: github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening'
+        if: github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening' || github.head_ref == 'release/beta-packaging-hardening'
         shell: pwsh
         run: |
           python -m venv (Join-Path $env:RUNNER_TEMP 'mano-candidate-venv')
@@ -47,7 +47,7 @@ jobs:
         if: github.head_ref != 'quality/redistribution-gate' && github.head_ref != 'release/beta-packaging-hardening'
         run: python -m pip install -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
       - name: Install pinned wheels and verify download evidence
-        if: github.head_ref == 'quality/redistribution-gate'
+        if: github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening'
         shell: pwsh
         run: |
           python -m pip --isolated install --index-url https://pypi.org/simple --only-binary=:all: --report build-wheel-report.json -c installer/windows-candidate-constraints.txt -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
@@ -57,7 +57,7 @@ jobs:
           python -m pip check
           if ($LASTEXITCODE -ne 0) { throw 'Candidate dependency conflict.' }
       - name: Verify redistribution tooling
-        if: github.head_ref == 'quality/redistribution-gate'
+        if: github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening'
         run: python -m pytest -q tests/test_wheel_evidence.py tests/test_redistribution_gate.py tests/test_windows_zip_paths.py tests/test_prune_qt.py tests/test_runtime_evidence.py tests/test_update_service.py
       - name: Configure Windows fonts for offscreen Qt
         shell: pwsh
@@ -109,7 +109,7 @@ jobs:
           (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower() | Set-Content -Encoding ascii "$zip.sha256"
           Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt') portable-output/portable-smoke.txt
       - name: Record redistribution review evidence
-        if: github.head_ref == 'quality/redistribution-gate'
+        if: github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening'
         shell: pwsh
         run: |
           $zip = Get-ChildItem portable-output/*.zip | Select-Object -First 1
@@ -147,7 +147,7 @@ jobs:
           Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-installed-payload.json') installer/output/installed-payload.json
           Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt') installer/output/portable-smoke.txt
       - name: Include redistribution review evidence with Setup
-        if: github.head_ref == 'quality/redistribution-gate'
+        if: github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening'
         shell: pwsh
         run: |
           Copy-Item portable-output/redistribution-preflight.json installer/output/
