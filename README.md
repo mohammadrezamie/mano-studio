@@ -132,3 +132,5 @@ Monday 2026-11-30: see [v1.0 delivery plan](docs/V1_DELIVERY_PLAN.md) and [issue
 
 
 Visual-first instructor presentation and exact standalone source access are shared with the independent [v1 candidate PR #24](https://github.com/mohammadrezamie/mano-studio/pull/24). See [acceptance criteria](docs/V1_INSTRUCTOR_ACCEPTANCE.md). The next-generation version and native file dispatch remain independent.
+
+Instructor capture QA: a developer-only exact 48-image coverage and workspace-size check is proposed on the separate evidence branch; native visual review remains mandatory. See [acceptance criteria](docs/V1_INSTRUCTOR_ACCEPTANCE.md).
