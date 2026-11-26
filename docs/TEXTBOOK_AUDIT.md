@@ -217,3 +217,6 @@ Every applicable section must also satisfy [PRACTICAL_LAB_POLICY.md](PRACTICAL_L
 - [ ] Preserve release isolation and the single-file academic translator contract.
 
 Current inventory: 104 topic families across 13 chapters, plus six closure gates. This count is an audit starting point, not the total number of topics in the textbook. Existing 44 interactive entries on next-beta are not 44 verified textbook sections.
+
+## Saved sample extension
+C02.02 enabled active-low decoder, C02.04 two-bit add/subtract, C02.05 two-bit comparator: 56 saved-file truth rows independently checked; section closure and actual UI execution remain pending. Saved custom block import added, no stateful cross-model composition yet.
