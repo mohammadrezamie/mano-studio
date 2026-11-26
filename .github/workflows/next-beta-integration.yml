@@ -47,13 +47,13 @@ jobs:
           tests/test_update_progress.py tests/test_localization.py
           tests/test_learning_catalog.py tests/test_storage_elements.py
           tests/test_timing_constraints.py tests/test_flipflop_reference.py
-          tests/test_academic_source.py tests/test_source_metrics.py tests/test_program_samples.py tests/test_cpu_session.py
+          tests/test_academic_source.py tests/test_source_metrics.py tests/test_program_samples.py tests/test_cpu_session.py tests/test_cpu_guard.py
       - name: Focused Qt regressions
         if: always() && steps.preflight.outcome == 'success'
         run: >-
           python -m pytest -q -o faulthandler_timeout=90 --junitxml=next-qt.xml
           tests/test_timing_view.py tests/test_flipflop_reference_view.py
-          tests/test_storage_view.py tests/test_universal_view.py tests/test_update_view.py tests/test_program_samples_view.py tests/test_cpu_session_view.py
+          tests/test_storage_view.py tests/test_universal_view.py tests/test_update_view.py tests/test_program_samples_view.py tests/test_cpu_session_view.py tests/test_cpu_guard_view.py
       - name: Integrated workspace regressions
         if: always() && steps.preflight.outcome == 'success'
         run: >-

@@ -99,7 +99,7 @@ def test_calm_preferences(workspace):
     assert lab.datapath.reduced_motion
     assert lab.datapath.progress == 1.0
     assert lab.cpu.ac == 5
-    lab.close()
+    lab.mark_saved(); lab.close()
     prefs.close()
 
 
@@ -136,7 +136,7 @@ def test_core_does_not_request_network(workspace, monkeypatch):
     lab = ProgramLab(workspace)
     lab.step()
     assert lab.cpu.ac == 5
-    lab.close()
+    lab.mark_saved(); lab.close()
     prefs.close()
 
 
@@ -205,7 +205,7 @@ def test_computer_single_state(workspace):
     assert lab.cpu.memory[0x102]==8
     lab.source.setPlainText("HLT")
     assert lab.cpu is None and lab.datapath.cpu is None
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_example_workflow(workspace, tmp_path, monkeypatch):
@@ -349,7 +349,7 @@ def test_computer_debugger_and_alu(workspace,tmp_path):
     path=tmp_path/"trace.csv"
     lab.write_trace(path)
     assert len(path.read_text(encoding="utf-8-sig").splitlines())==3
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_optional_reverse_import(workspace,tmp_path,monkeypatch):
@@ -383,7 +383,7 @@ def test_alu_base_switch_preserves_word(workspace):
     view.base.setCurrentIndex(view.base.findData(2))
     assert view.a.text()=="0111111111111111"
     assert view.result.word==0x8000
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_number_conversion_only(workspace):
@@ -398,7 +398,7 @@ def test_number_conversion_only(workspace):
     assert view.representation.item(0,3).text()=="00FF"
     assert view.representation.item(0,4).text()=="255"
     assert view.stages.isHidden()
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 def test_reverse_builder_and_mapping(workspace):
     from PySide6.QtGui import QTextCursor
@@ -451,7 +451,7 @@ def test_persian_credits_and_optional_labs(workspace,monkeypatch):
     lab=ProgramLab(workspace,"UNKNOWN")
     assert "ناشناخته" in lab.machine.toPlainText()
     assert lab.arithmetic.representation.horizontalHeaderItem(0).text()=="کلمه"
-    lab.close()
+    lab.mark_saved(); lab.close()
     logic=LogicLab(workspace)
     assert "منطق" in logic.windowTitle()
     logic.canvas_edit.setChecked(True)
@@ -532,7 +532,7 @@ def test_memory_and_data_codes_views(workspace):
     codes.mode.setCurrentIndex(1)
     codes.input.setText("1010")
     assert not codes.output.toPlainText()
-    computer.close()
+    computer.mark_saved(); computer.close()
 
 
 def test_memory_expansion_and_register_bus(workspace):
@@ -578,7 +578,7 @@ def test_cycle_inspector_and_reverse(workspace):
     assert lab.cycles.current_trace.mnemonic=="LDA"
     lab.back()
     assert lab.cycles.groups.rowCount()==0
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_live_timing_controls(workspace):
@@ -597,7 +597,7 @@ def test_live_timing_controls(workspace):
     assert lab.steps==0 and lab.cpu.memory[0x100]==0 and lab.cpu.in_progress
     lab.back()
     assert lab.cpu.pc==0 and not lab.cpu.in_progress
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 def test_arithmetic_algorithm_modes(workspace):
     from ui.program_lab import ProgramLab
@@ -621,7 +621,7 @@ def test_arithmetic_algorithm_modes(workspace):
     view.op.setCurrentIndex(1)
     assert view.result.word==0 and view.result.carry==1
     assert view.stages.horizontalHeaderItem(3).text()=="Cin"
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_extended_division_modes(workspace):
@@ -645,7 +645,7 @@ def test_extended_division_modes(workspace):
     assert "overflow" in view.flags.text().lower()
     view.b.setText("0")
     assert view.result is None and view.stages.rowCount()==0
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_packed_bcd_modes(workspace):
@@ -670,7 +670,7 @@ def test_packed_bcd_modes(workspace):
     view.op.setCurrentIndex(1)
     assert view.result.word==0xAC
     assert view.representation.item(0,5).text()=="-85"
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_binary16_inspector(workspace):
@@ -691,7 +691,7 @@ def test_binary16_inspector(workspace):
     view.a.setText("3C00")
     view.op.setCurrentIndex(1)
     assert view.width.isEnabled() and view.result.word==0x7400
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_control_registers_in_cycle_view(workspace):
@@ -709,7 +709,7 @@ def test_control_registers_in_cycle_view(workspace):
     assert lab.cycles.groups.item(0,0).text()=="RT0" and lab.cpu.r==0
     lab.back()
     assert lab.cpu.r==1
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_selected_common_bus_view(workspace):
@@ -725,7 +725,7 @@ def test_selected_common_bus_view(workspace):
     assert "ALU.DR" in lab.cycles.controls.text()
     lab.back()
     assert lab.cycles.bus.control is None
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_microprogram_inspector(workspace):
@@ -741,7 +741,7 @@ def test_microprogram_inspector(workspace):
     assert view.model is None
     view.example()
     assert view.model.car==64 and view.model.ac==0
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_symbolic_microassembler_ui(workspace):
@@ -758,7 +758,7 @@ def test_symbolic_microassembler_ui(workspace):
     view.control.setPlainText("ADD, SUB U JMP NEXT")
     view.load()
     assert view.model is None and not view.listing.toPlainText() and view.status.text()
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_microprogram_reverse_and_sequencer(workspace):
@@ -778,7 +778,7 @@ def test_microprogram_reverse_and_sequencer(workspace):
     view.step()
     view.control.setPlainText("40:00000")
     assert view.history is None and view.trace.rowCount()==0
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_microinstruction_builder_and_source_navigation(workspace):
@@ -811,7 +811,7 @@ def test_microinstruction_builder_and_source_navigation(workspace):
     builder.address.setValue(91)
     builder.append()
     assert "ORG 91" in view.control.toPlainText() and view.history is None
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_cpu_organization_view(workspace):
@@ -834,7 +834,7 @@ def test_cpu_organization_view(workspace):
     assert view.stack_input.value()==0xABCD and view.stack.empty
     view.pop()
     assert view.stack.empty and view.stack_status.text()
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_memory_stack_and_addressing_view(workspace):
@@ -855,7 +855,7 @@ def test_memory_stack_and_addressing_view(workspace):
     assert view.address_register.value()==0 and view.last_address.effective_address==65535
     view.address_memory.setPlainText("FFFF:10000");view.evaluate_address()
     assert view.last_address is None and view.address_reads.rowCount()==0
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_expression_formats_view(workspace):
@@ -870,7 +870,7 @@ def test_expression_formats_view(workspace):
     view.expression.setText("A/(B-B)")
     view.evaluate()
     assert view.result is None and view.trace.rowCount()==0 and view.summary.text()
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_pipeline_view(workspace):
@@ -885,7 +885,7 @@ def test_pipeline_view(workspace):
     assert view.model is None and view.timeline.rowCount()==0
     view.load();view.run()
     assert view.model.done and view.model.registers[5]==5 and view.model.stalls>0
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_pipeline_predictor_controls(workspace):
@@ -899,7 +899,7 @@ def test_pipeline_predictor_controls(workspace):
     assert view.model.done and view.model.registers[5]==5
     assert view.model.branches==1 and view.model.mispredictions==0
     assert view.model.shared_port
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_vector_pipeline_view(workspace):
@@ -917,7 +917,7 @@ def test_vector_pipeline_view(workspace):
     view.inputs[0].setPlainText("1 x")
     view.load()
     assert view.model is None and view.trace.rowCount()==0
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_interleaving_view(workspace):
@@ -932,7 +932,7 @@ def test_interleaving_view(workspace):
     assert view.model is None and view.timeline.rowCount()==0
     view.sequential();view.run()
     assert view.model.cycles==64
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_floating_pipeline_view(workspace):
@@ -947,7 +947,7 @@ def test_floating_pipeline_view(workspace):
     view.source.setPlainText("ADD 0000 FFFFF")
     view.load()
     assert view.model is None and view.timeline.rowCount()==0
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_io_organization_view(workspace):
@@ -967,7 +967,7 @@ def test_io_organization_view(workspace):
     assert v.irq.select().winner==3
     v.mask.setValue(0)
     assert not v.ack.isEnabled() and v.irq.pending==8
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_dma_fifo_view(workspace):
@@ -986,7 +986,7 @@ def test_dma_fifo_view(workspace):
     assert v.fifo.model.contents()==(8,)
     v.fifo.edge(True,False)
     assert v.fifo.model.empty
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_learning_center_search_progress_and_routes(workspace):
@@ -1027,7 +1027,7 @@ def test_learning_center_search_progress_and_routes(workspace):
     logic.select_tool("bus")
     assert logic.memory_tabs.currentWidget() is logic.bus_view
     assert workspace.editor.toPlainText()==source and workspace.output.toPlainText()==output
-    computer.close();logic.close();center.close();restored.close()
+    computer.mark_saved(); computer.close();logic.close();center.close();restored.close()
 
 
 def test_learning_center_persian_and_launch(workspace):
@@ -1053,7 +1053,7 @@ def test_focused_learning_tool_pauses_without_reset(workspace):
     assert lab.cpu is cpu and lab.steps==before
     lab.select_tool("live")
     assert lab.cpu is cpu and lab.steps==before
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_shared_motion_policy(workspace,app):
@@ -1129,7 +1129,7 @@ def test_shared_navigation_rail(workspace,app):
     assert logic.navigation.list.currentRow()==2
     logic.navigation.list.setCurrentRow(1)
     assert logic.mode_tabs.currentWidget() is logic.sequential
-    lab.close();restored.close();logic.close()
+    lab.mark_saved(); lab.close();restored.mark_saved(); restored.close();logic.close()
 
 
 def test_navigation_rail_persian(workspace):
@@ -1141,7 +1141,7 @@ def test_navigation_rail_persian(workspace):
     assert "جمع" in lab.navigation.toggle.accessibleName()
     lab.navigation.set_compact(True)
     assert "باز" in lab.navigation.toggle.accessibleName()
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_live_architecture_canvas(workspace,app):
@@ -1168,7 +1168,7 @@ def test_live_architecture_canvas(workspace,app):
     assert not lab.cpu_widgets[1].isHidden()
     lab.microstep()
     assert v.group.timing==0 and v.last_step==lab.cpu.pending_event
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_procedural_brand_feedback(workspace,app):
@@ -1212,7 +1212,7 @@ def test_multiprocessor_route_and_live_grant(workspace):
     v.policy.setCurrentIndex(1);v.example();v.run()
     assert v.model.waited==[0,2,4,6]
     assert not v.canvas.grab().isNull()
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_waveform_inspection_and_export(workspace,tmp_path):
@@ -1292,7 +1292,7 @@ def test_serial_frame_fifo_and_irq_route(workspace,app):
     assert not v.timer.isActive() and v.model.active
     lab.select_tool("serial");assert v.model.active
     v.finish();assert v.model.fifo.contents()==(0xA5,)
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 def test_crossbar_routes_bilingual(workspace):
@@ -1312,7 +1312,7 @@ def test_crossbar_routes_bilingual(workspace):
         assert v.model.cycles==8
         assert not v.canvas.grab().isNull()
         lab.select_tool("multiprocessor");assert lab.multiprocessor_tabs.currentWidget() is lab.multiprocessor
-        lab.close()
+        lab.mark_saved(); lab.close()
 
 
 def test_synchronization_bilingual_route(workspace):
@@ -1330,7 +1330,7 @@ def test_synchronization_bilingual_route(workspace):
         assert v.model.shared==1 and v.trace.rowCount()==6
         assert ("به‌روزرسانی ازدست‌رفته" if lang=="fa" else "Lost update") in v.status.text()
         assert not v.canvas.grab().isNull()
-        lab.close()
+        lab.mark_saved(); lab.close()
 
 
 @pytest.mark.parametrize("style",["ansi","iec"])
@@ -1381,6 +1381,7 @@ def test_all_learning_routes_locale_and_document_integrity(workspace,language):
         if tool.lab=="logic":logic.select_tool(tool.route)
         elif tool.lab=="computer":computer.select_tool(tool.route)
     assert snapshot==(workspace.editor.toPlainText(),workspace.output.toPlainText())
+    computer.mark_saved()
     for dialog in (center,logic,computer):dialog.close()
 
 
@@ -1415,7 +1416,7 @@ def test_memory_serial_localized_transaction_feedback(workspace,language):
     s.start();s.finish()
     assert ("خطای توازن" if fa else "Parity error") in s.status.text()
     assert s.payload.layoutDirection()==Qt.LayoutDirection.LeftToRight
-    lab.close();logic.close()
+    lab.mark_saved(); lab.close();logic.close()
 
 
 @pytest.mark.parametrize("language",["en","fa"])
@@ -1435,7 +1436,7 @@ def test_arithmetic_focused_without_losing_cpu(workspace,language):
     lab.select_tool("live")
     assert all(not w.isHidden() for w in lab.cpu_widgets)
     assert lab.source.toPlainText()==source and lab.steps==1
-    lab.close()
+    lab.mark_saved(); lab.close()
 
 
 @pytest.mark.parametrize("language",["en","fa"])
@@ -1756,7 +1757,7 @@ def test_lab_motion_preference_shared_by_cpu_and_logic(workspace, language):
         assert cpu.datapath.reduced_motion
         assert logic.diagram.reduced_motion
     finally:
-        cpu.close()
+        cpu.mark_saved(); cpu.close()
         logic.close()
 
 

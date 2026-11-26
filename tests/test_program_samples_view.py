@@ -35,5 +35,6 @@ def test_saved_program_menu(tmp_path, monkeypatch, language):
             lab.step()
         assert lab.cpu.halted and lab.cpu.ac == 12
     finally:
+        lab.mark_saved()
         lab.close()
         workspace.close()
