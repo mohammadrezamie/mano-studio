@@ -707,6 +707,19 @@ class Workspace(QMainWindow):
         if path.suffix.lower()==".mano":
             try:
                 kind,payload=mano_file.load(path)
+                if kind=="databus":
+                    from databus_file import restore
+                    from ui.logic_lab import LogicLab
+                    model,staged=restore(payload)
+                    lab=LogicLab(self)
+                    lab.select_tool("bus")
+                    lab.memory_tabs.setCurrentWidget(lab.databus)
+                    lab.databus.install_checkpoint(model,staged)
+                    try:
+                        lab.exec()
+                    finally:
+                        lab.deleteLater()
+                    return
                 if kind=="circuit":
                     import json
                     from circuit_document import CircuitDocument
