@@ -43,7 +43,7 @@ jobs:
           tests/test_native_exercise.py tests/test_state_session.py tests/test_session_guard.py
           tests/test_databus_lab.py tests/test_databus_file.py
           tests/test_databus_samples.py tests/test_databus_alu.py
-          tests/test_update_service.py tests/test_update_download.py
+          tests/test_update_service.py tests/test_release_channel.py tests/test_update_download.py
           tests/test_update_progress.py tests/test_localization.py
           tests/test_learning_catalog.py tests/test_storage_elements.py
           tests/test_timing_constraints.py tests/test_flipflop_reference.py
