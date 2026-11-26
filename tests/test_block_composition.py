@@ -47,3 +47,15 @@ def test_collision_and_limit():
         insert(tuple(f'A{i}' for i in range(10)), (), (('Y','A0'),),
                *HALF, 'h', {'A':None,'B':None})
     assert HALF[0] == ('A','B')
+
+
+def test_same_name_output_aliases():
+    block = (('X',), (('Y','NOT',('X',)),), (('Y','Y'),('X','X')))
+    inputs,gates,outputs=insert(*HALF,*block,'b',{'X':None})
+    assert inputs[-1]=='b_X'
+    assert gates[-1]==('b_Y','NOT',('b_X',))
+    assert outputs[-2:]==(('b_Y','b_Y'),('b_X','b_X'))
+    result=insert(*HALF,*block,'b',{'X':'carry'})
+    assert result[2][-1]==('b_X','carry')
+    with pytest.raises(ValueError,match='collision'):
+        insert(*result,*block,'b',{'X':'carry'})
