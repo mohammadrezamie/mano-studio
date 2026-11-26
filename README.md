@@ -125,3 +125,7 @@ The release track stabilizes a Windows-first beta without scope creep. The next-
 An independent educational project for the computer architecture course, based on M. Morris Mano's *Computer System Architecture*. Academic acknowledgment and institutional details are subject to verification; no official endorsement is implied.
 
 Released under the [MIT License](LICENSE). See [references](docs/REFERENCES.md) for technical sources.
+
+
+## First stable instructor delivery target
+Monday 2026-11-30: see [v1.0 delivery plan](docs/V1_DELIVERY_PLAN.md) and [issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4). The verified installable beta remains separate from the conditional stable target and ongoing next-generation scope. Reproducible source counts: `python source_metrics.py HEAD`.
