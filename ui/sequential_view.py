@@ -8,6 +8,7 @@ from waveform_analysis import recorded,window,write_csv
 from ui.motion import MotionTabs
 from ui.flipflop_reference_view import FlipFlopReferenceView
 from ui.timing_view import TimingView
+from ui.storage_view import StorageView
 
 TITLES={
     "D":("D flip-flop","فلیپ‌فلاپ D"),
@@ -229,6 +230,8 @@ class SequentialView(QWidget):
         self.details.addTab(self.reference,self.t("Flip-flop tables","جدول‌های فلیپ‌فلاپ"))
         self.timing=TimingView(theme,self.fa)
         self.details.addTab(self.timing,self.t("Setup / hold","آماده‌سازی و نگهداری"))
+        self.storage=StorageView(self.fa)
+        self.details.addTab(self.storage,self.t("Latches / async","لچ و ناهمگام"))
         layout.addWidget(self.details,3)
         self.zoom.currentIndexChanged.connect(self.update_waveform)
         self.follow.toggled.connect(self.update_waveform)
