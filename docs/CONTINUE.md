@@ -1,3 +1,21 @@
+# Live continuation checkpoint — 2026-11-27 (supersedes older status below)
+
+## Beta / forward track
+- PR [#36](https://github.com/mohammadrezamie/mano-studio/pull/36) integrates the exact reviewed heads of #25, #32, #33 and #34 on `integration/first-beta` (current source `007fd2ad`). It carries version `1.1.0-dev.1` ahead of the separate Stable `1.0.0` candidate. Proposed public tag is `v1.1.0-beta.1`; no tag/release exists.
+- The 36-view evidence matrix is the intended user-facing scope (both languages × three themes × glass/plain × two workspace sizes plus splash). The old 48-image assertion was stale after removing the in-app academic source viewer. Fixed the test to compare against `len(expected_captures())` in commit `007fd2ad`. Old visual run 45901184553 failed only on that mismatch; exact-head combined Next-beta run 45904681178 and Windows visual run 45904681078 are queued. Do not treat earlier per-PR successes as combined acceptance.
+- Independent source PR evidence: #25 659, #32 673, #33 660, #34 661 tests in their separate exact-head runs, all zero failures/errors/skips. These suites overlap; counts are not additive. The combined exact-head workflows remain the release gate.
+- Keep root `rtl_translator.py` isolated, standard-library-only and downloadable as one file. No in-app source viewer/editor. Ten bilingual CPU samples, read-only CPU timing trace and keyboardless RTL builder are part of the Beta integration candidate, not claims of complete Mano textbook coverage.
+
+## Stable / release track
+- PR [#24](https://github.com/mohammadrezamie/mano-studio/pull/24) remains a draft Stable 1.0.0 release candidate. Its exact-head regression run 45798904930 passed 1,416 tests on each OS; Windows candidate build 45798904733 passed Setup/portable build and install/offline-smoke/uninstall checks. The child redistribution PR [#26](https://github.com/mohammadrezamie/mano-studio/pull/26), head `af75c8d`, has a successful Windows installer run 45898982989; its fresh full Windows/Ubuntu regression run 45898982955 was still in progress at this checkpoint.
+- Latest Windows artifacts from 45898982989: Setup/development installer 34,153,226 bytes; portable development package 50,803,131 bytes; instructor preview 2,989,313 bytes. These are CI artifacts, not public release assets. Installed smoke succeeded; candidate is unsigned and native acceptance/public release approval remain false.
+- Stable runtime currently contains Qt/PySide 6.12.0 and OpenSSL 3.5.9. Qt Framework 6.12.1 is released, but Qt for Python still reported PySide6 6.12.1 as preparing on 26 Nov. OpenSSL announced 3.5.10 for 1 Dec 2026. Rebuild only from aligned official packages; never replace individual Qt/OpenSSL DLLs in place. Six Qt LGPL review flags and three crypto review flags remain open; clean-VM and native bilingual acceptance are not approved.
+- Official upstream checkpoints: [Qt 6.12.1 release](https://www.qt.io/blog/qt-6.12.1-released), [Qt for Python development notes](https://wiki.qt.io/Qt_for_Python_Development_Notes), [OpenSSL 3.5.10 release announcement](https://www.openwall.com/lists/oss-security/2026/11/24/14).
+
+No public Beta or Stable release is confirmed. Never promote based on a green subset or deadline. Continue below for historical evidence; reconcile it against this live checkpoint before acting.
+
+---
+
 # Start here — live continuation checkpoint (2026-11-26)
 
 ## Two permanent tracks
