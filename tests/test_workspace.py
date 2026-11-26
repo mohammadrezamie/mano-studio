@@ -1873,3 +1873,37 @@ def test_saved_block_import(workspace,tmp_path,monkeypatch,language):
             assert out==(a^b,int((a^b)+a+c>=2))
     finally:
         dialog.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_databus_lesson(workspace,monkeypatch,language):
+    from ui.logic_lab import LogicLab
+    from PySide6.QtWidgets import QMessageBox
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace)
+    try:
+        lab.select_tool("bus")
+        lab.memory_tabs.setCurrentWidget(lab.databus)
+        v=lab.databus
+        v.examples.setCurrentIndex(v.examples.findData("parallel-load"))
+        v.load_example()
+        for _ in range(3):
+            v.next_step()
+        assert tuple(v.model.registers.values())==(6,6,6)
+        assert v.model.memory.read(9)==6 and v.model.memory.read(6)==0
+        assert v.trace.rowCount()==3 and not v.next_button.isEnabled()
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.No)
+        v.reset()
+        assert len(v.model.history)==3
+        monkeypatch.setattr(QMessageBox,"question",lambda *a:QMessageBox.StandardButton.Yes)
+        v.examples.setCurrentIndex(v.examples.findData("bus-contention"))
+        v.load_example()
+        for _ in range(3):
+            v.next_step()
+        assert v.bus.text()=="BUS[3:0] = 01XX"
+        before=tuple(v.model.registers.values())
+        v.loads["AR"].setChecked(True)
+        v.tick()
+        assert tuple(v.model.registers.values())==before and len(v.model.history)==3
+    finally:
+        lab.close()
