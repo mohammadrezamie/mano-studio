@@ -9,6 +9,7 @@ $userFile=Join-Path $env:RUNNER_TEMP ('mano-user-'+[Guid]::NewGuid().ToString('N
 $reportDir=Join-Path $PWD 'native-evidence'
 New-Item -ItemType Directory -Force $reportDir | Out-Null
 $reg='HKCU:\Software\ManoStudio\ManoStudio'
+$uninstallAttempted=$false
 if (Test-Path $reg) {throw 'Expected a fresh application settings profile'}
 if (Test-Path $target) {throw 'Unexpected installation target'}
 $names=@('PATH','PYTHONHOME','PYTHONPATH','QT_PLUGIN_PATH','QT_QPA_PLATFORM_PLUGIN_PATH','QT_QPA_FONTDIR','QML_IMPORT_PATH','QML2_IMPORT_PATH','VIRTUAL_ENV','CONDA_PREFIX','QT_QPA_PLATFORM')
@@ -44,11 +45,15 @@ try {
   Smoke 'same-version-reinstall'
   if((Get-ItemProperty -Path $reg -Name language).language -ne 'fa'){throw 'Settings not preserved'}
   if((Get-FileHash -LiteralPath $userFile -Algorithm SHA256).Hash -ne $userHash){throw 'Document changed'}
+  $uninstallAttempted=$true
   Run-Checked (Join-Path $target 'unins000.exe') '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART'
   if(Test-Path (Join-Path $target 'ManoStudio.exe')){throw 'Uninstall left executable'}
   if((Get-FileHash -LiteralPath $userFile -Algorithm SHA256).Hash -ne $userHash){throw 'Uninstall changed document'}
   @{installer_sha256=$ExpectedHash; profile=$Profile; fresh_target=$true; fresh_settings=$true; first_install='pass'; same_version_reinstall='pass'; settings_preserved=$true; document_preserved=$true; uninstall='pass'; bare_os_verified=$false; cross_version_upgrade_verified=$false; interactive_visual_verified=$false} | ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $reportDir 'summary.json')
 } finally {
   foreach($name in $names){[Environment]::SetEnvironmentVariable($name,$saved[$name],'Process')}
-  if(Test-Path (Join-Path $target 'unins000.exe')){Run-Checked (Join-Path $target 'unins000.exe') '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART'}
+  if(!$uninstallAttempted -and (Test-Path (Join-Path $target 'unins000.exe'))){
+    try { Run-Checked (Join-Path $target 'unins000.exe') '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART' }
+    catch { Write-Warning "Best-effort cleanup failed: $_" }
+  }
 }
