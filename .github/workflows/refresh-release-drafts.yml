@@ -36,7 +36,7 @@ jobs:
             portable_sha: 'bc93823dbea393f17464886abeef406defda22e4151dbaab82293928eae3271e'
             old_setup: '978f1e02731b6e3aaecf808401f5b66d33b760d0b3780e65d206946f3976889b'
             old_portable: '67406b43ee06cc824e6beb3515785756ef74d5235472cc544f97f8960cdee3f7'
-            old_setup_checksum: 'd096a322d192f5b920c2f42f0cc3819982eb1aa9843609064fe41d94bd7d72b1'
+            old_setup_checksum: 'd096a322d192f5b920c2f42f0cc3819982eb1aa9843609064fe61d94bd7d72b1'
             old_portable_checksum: 'b565f5f70d5aece8fbc0698f78f83b823551ebb76df3e0d6316dec0c1065d31f'
           - track: 'beta'
             version: '1.1.0-beta.1'
@@ -200,10 +200,11 @@ jobs:
                   existing = {a["name"]:a for a in draft()["assets"]}
                   a = existing.get(p.name)
                   if a is not None and a.get("digest") == expected[p.name]:
+                      print("Already verified:", p.name)
                       continue
                   if a is not None:
                       require(p.name in old_hashes and a.get("digest") == "sha256:" + old_hashes[p.name],
-                              "Unknown existing asset; refusing replacement")
+                              "Unknown existing asset; refusing replacement: " + p.name + " digest=" + str(a.get("digest")))
                       backup = "OLD-REVIEW-ONLY-" + p.name
                       require(backup not in existing, "Backup already exists")
                       gh("api", "--method", "PATCH", f"{base}/releases/assets/{a['id']}", "-f", "name=" + backup)
