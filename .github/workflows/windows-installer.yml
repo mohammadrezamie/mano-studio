@@ -70,7 +70,7 @@ jobs:
       # Full Windows and Ubuntu regression remain independent release gates in Tests.
       # This job produces internal artifacts only and must not repeat the long GUI suite.
       - name: Verify packaging contracts and academic credits
-        run: python -m pytest -q tests/test_candidate_manifest.py tests/test_windows_build_contract.py tests/test_localization.py tests/test_collect_notices.py tests/test_version_policy.py tests/test_instructor_evidence.py tests/test_instructor_gallery.py tests/test_translator_isolation.py tests/test_visual_tokens.py
+        run: python -m pytest -q tests/test_candidate_manifest.py tests/test_verify_installed.py tests/test_windows_build_contract.py tests/test_localization.py tests/test_collect_notices.py tests/test_version_policy.py tests/test_instructor_evidence.py tests/test_instructor_gallery.py tests/test_translator_isolation.py tests/test_visual_tokens.py
       - name: Verify focused instructor UI
         if: github.head_ref == 'release/v1-candidate' || github.head_ref == 'quality/redistribution-gate'
         run: python -m pytest -q -o faulthandler_timeout=60 tests/test_workspace.py -k instructor_splash_variants
@@ -149,6 +149,7 @@ jobs:
           "SHA=$env:MANO_SOURCE_SHA" | Set-Content -Encoding ascii installer/output/commit.txt
           Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-smoke.txt') installer/output/installed-smoke.txt
           Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-standalone-runtime.json') installer/output/standalone-runtime.json
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-installed-payload.json') installer/output/installed-payload.json
           Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt') installer/output/portable-smoke.txt
       - name: Include redistribution review evidence with Setup
         if: github.head_ref == 'quality/redistribution-gate'
@@ -166,7 +167,7 @@ jobs:
             "$hash  $($_.Name)" | Set-Content -Encoding ascii "$($_.FullName).sha256"
           }
       - name: Validate both candidate assets and record manifest
-        run: python installer/candidate_manifest.py --root . --sha "${{ env.MANO_SOURCE_SHA }}"
+        run: python -m installer.candidate_manifest --root . --sha "${{ env.MANO_SOURCE_SHA }}"
       - uses: actions/upload-artifact@v4
         with:
           name: ManoStudio-Windows-x64-development
