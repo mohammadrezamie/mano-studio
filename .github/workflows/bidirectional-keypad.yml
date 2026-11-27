@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   keypad:
-    if: github.head_ref == 'feature/bidirectional-keypad' && github.event.pull_request.head.repo.full_name == github.repository
+    if: (github.head_ref == 'feature/bidirectional-keypad' || github.head_ref == 'feature/shared-code-keypad') && github.event.pull_request.head.repo.full_name == github.repository
     strategy:
       fail-fast: false
       matrix:
@@ -34,6 +34,9 @@ jobs:
         run: python -m pip install -r requirements.txt -r requirements-dev.txt
       - name: Keypad and reverse translation regressions
         run: python -m pytest -q --junitxml=keypad.xml tests/test_bidirectional_keypad.py
+      - name: Shared CPU keypad and locked execution source
+        if: github.head_ref == 'feature/shared-code-keypad'
+        run: python -m pytest -q --junitxml=shared-keypad.xml tests/test_shared_code_keypad.py
       - name: Existing editor and startup contracts
         run: python -m pytest -q --junitxml=editor.xml tests/test_workspace.py -k "builder_and_pad or pad_replaces_selection or reverse_builder_and_mapping or optional_reverse_import or instructor_source_and_splash"
       - uses: actions/upload-artifact@v4
@@ -43,4 +46,5 @@ jobs:
           path: |
             keypad.xml
             editor.xml
+            shared-keypad.xml
           if-no-files-found: ignore
