@@ -64,3 +64,19 @@ def test_release_metadata_and_size_bound(monkeypatch):
 def test_invalid_response():
     with pytest.raises(ValueError, match='Invalid release response'):
         release_info(explicit=True, opener=response({}))
+
+
+@pytest.mark.parametrize("target", ["https://example.org/releases", "http://api.github.com/repos/x/y/releases", "https://api.github.com/repos/other/repo/releases"])
+def test_release_metadata_redirect_rejected(target):
+    with pytest.raises(ValueError, match="metadata redirect"):
+        update_service.NoMetadataRedirect().redirect_request(None, None, 302, "", {}, target)
+
+
+def test_default_opener_uses_no_redirect_policy(monkeypatch):
+    class FakeOpener:
+        open = staticmethod(response([]))
+    def fake_build(handler):
+        assert isinstance(handler, update_service.NoMetadataRedirect)
+        return FakeOpener()
+    monkeypatch.setattr(update_service, "build_opener", fake_build)
+    assert release_info(explicit=True) is None

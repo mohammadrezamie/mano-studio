@@ -59,3 +59,13 @@ def test_disallow_url(url):
     assert not allowed_url(url)
     with pytest.raises(ValueError):
         SafeRedirect().redirect_request(None,None,302,'',{},url)
+
+
+@pytest.mark.parametrize("url", [None, "", 42, "https://[broken", "https://github.com:abc/a", "https://github.com:65536/a", "https://github.com/a#fragment", " https://github.com/a", "https://git\nhub.com/a", "https://github.com\\a", "https://github.com/a\x7f"])
+def test_malformed_url_is_rejected(url):
+    assert allowed_url(url) is False
+
+
+@pytest.mark.parametrize("url", ["https://github.com/a", "https://github.com:443/a", "https://release-assets.githubusercontent.com/a?sig=abc%20def", "https://objects.githubusercontent.com/a"])
+def test_official_asset_hosts_still_allowed(url):
+    assert allowed_url(url) is True

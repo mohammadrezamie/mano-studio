@@ -43,8 +43,16 @@ def asset_from_release(tag, item):
 
 
 def allowed_url(url):
-    p = urlsplit(url)
-    return p.scheme == "https" and p.hostname in HOSTS and p.username is None and p.password is None and p.port in (None, 443)
+    # Reject ambiguous or malformed input before URL parser normalization.
+    if not isinstance(url, str) or not url or any(ord(c) <= 32 or ord(c) == 127 for c in url) or "\\" in url:
+        return False
+    try:
+        p = urlsplit(url)
+        return (p.scheme == "https" and p.hostname in HOSTS and
+                p.username is None and p.password is None and
+                p.port in (None, 443) and not p.fragment)
+    except ValueError:
+        return False
 
 
 class SafeRedirect(HTTPRedirectHandler):
