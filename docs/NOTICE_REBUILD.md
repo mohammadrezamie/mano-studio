@@ -1,0 +1,3 @@
+# Corrected release candidate packaging
+
+One two-job Windows matrix builds exact notice-correction commits #70 and #71 using recorded dependency pins, original Stable lean-PDF build mode, Beta original build mode, actual portable and installed smoke, exact license blob, wheel/runtime/redistribution evidence and candidate manifests. These are internal replacement candidates; neither existing draft is overwritten. Qt corresponding-source and security review, native acceptance and final full regression for the replacement bytes still remain. No public publication is authorized by workflow success alone.

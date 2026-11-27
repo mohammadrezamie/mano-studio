@@ -1,0 +1,133 @@
+name: Build corrected frozen release candidates
+on:
+  push:
+    branches: [release/notice-rebuild]
+    paths: ['.github/workflows/notice-rebuild.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: notice-rebuild-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/notice-rebuild'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {track: stable, source: '8184129b13e5e80eb0571f90d37694fe26654c72', version: '1.0.0'}
+          - {track: beta, source: '8cac2d66ddc18f0e7501ea37c64d4b2d4e50e03e', version: '1.1.0-beta.1'}
+    env:
+      QT_QPA_PLATFORM: offscreen
+      MANO_SOURCE_SHA: ${{ matrix.source }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14.10'
+          architecture: x64
+      - name: Verify exact checkout and isolate build environment
+        shell: pwsh
+        run: |
+          if ((git rev-parse HEAD).Trim() -ne $env:MANO_SOURCE_SHA) {throw 'Wrong source'}
+          python -m venv (Join-Path $env:RUNNER_TEMP 'mano-notice-venv')
+          if ($LASTEXITCODE -ne 0) {throw 'venv failed'}
+          (Join-Path $env:RUNNER_TEMP 'mano-notice-venv\Scripts') >> $env:GITHUB_PATH
+          "QT_QPA_FONTDIR=$env:WINDIR\Fonts" >> $env:GITHUB_ENV
+      - name: Install exact recorded dependency versions
+        shell: pwsh
+        run: |
+          python -m pip --isolated install --index-url https://pypi.org/simple --only-binary=:all: --report build-wheel-report.json -c installer/windows-candidate-constraints.txt -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
+          if ($LASTEXITCODE -ne 0) {throw 'Pinned install failed'}
+          python -m installer.wheel_evidence build-wheel-report.json installer/windows-candidate-constraints.txt wheel-evidence.json
+          if ($LASTEXITCODE -ne 0) {throw 'Wheel verification failed'}
+          python -m pip check
+      - name: Verify notice and packaging contracts
+        run: python -m pytest -q tests/test_openssl_notice.py tests/test_collect_notices.py tests/test_runtime_evidence.py tests/test_candidate_manifest.py tests/test_verify_installed.py tests/test_windows_build_contract.py tests/test_release_channel.py
+      - run: python render_preflight.py
+      - name: Build corrected portable candidate
+        shell: pwsh
+        run: |
+          if ('${{ matrix.track }}' -eq 'stable') { ./installer/build.ps1 -PortableOnly -LeanPdf }
+          else { ./installer/build.ps1 -PortableOnly }
+          if ($LASTEXITCODE -ne 0) {throw 'Freeze failed'}
+          $notice = 'dist/ManoStudio/third-party-notices/openssl/openssl-3.5.9-LICENSE.txt'
+          if (!(Test-Path $notice)) {throw 'Expected exact OpenSSL license absent'}
+          if ((git hash-object $notice).Trim() -ne '49cc83d2ee29d13453188217f0e4edd70c7f842f') {throw 'License bytes mismatch'}
+          $report=Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt'
+          $app=Join-Path $PWD 'dist/ManoStudio/ManoStudio.exe'
+          $p=Start-Process -FilePath $app -ArgumentList ('--smoke-test "'+$report+'"') -PassThru
+          if (!$p.WaitForExit(120000)) {$p.Kill();throw 'Portable smoke timeout'}
+          if ($p.ExitCode -ne 0 -or !(Test-Path $report) -or (Get-Content $report -Raw).Trim() -ne 'PASS') {throw 'Portable smoke failed'}
+      - name: Archive portable and review evidence
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force portable-output | Out-Null
+          $version='${{ matrix.version }}'
+          $zip="portable-output/ManoStudio-v$version-Windows-x64.zip"
+          python -c "import shutil,sys; shutil.make_archive(sys.argv[1],'zip',root_dir='dist',base_dir='ManoStudio')" ($zip -replace '\.zip$', '')
+          if ($LASTEXITCODE -ne 0) {throw 'Archive failed'}
+          $hash=(Get-FileHash $zip -Algorithm SHA256).Hash.ToLower()
+          $hash | Set-Content -Encoding ascii "$zip.sha256"
+          python -m pip freeze | Set-Content -Encoding utf8 portable-output/build-dependencies.txt
+          "SHA=$env:MANO_SOURCE_SHA" | Set-Content -Encoding ascii portable-output/commit.txt
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt') portable-output/portable-smoke.txt
+          python -m installer.redistribution_gate $zip | Set-Content -Encoding utf8 portable-output/redistribution-preflight.json
+          if ($LASTEXITCODE -notin @(0,2)) {throw 'Distribution evidence invalid'}
+          python -m installer.runtime_evidence $zip portable-output/runtime-evidence.json
+          if ($LASTEXITCODE -ne 0) {throw 'Runtime evidence invalid'}
+          Copy-Item wheel-evidence.json,build-wheel-report.json,installer/windows-candidate-constraints.txt portable-output/
+      - name: Build Setup from same payload
+        shell: pwsh
+        run: |
+          if (!(Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup -y --no-progress
+            if ($LASTEXITCODE -ne 0) {throw 'Inno installation failed'}
+          }
+          ./installer/build.ps1 -ReuseFrozen
+          if ($LASTEXITCODE -ne 0) {throw 'Setup failed'}
+      - name: Verify installed payload and offline smoke
+        shell: pwsh
+        run: ./installer/smoke.ps1
+      - name: Manifest and checksums
+        shell: pwsh
+        run: |
+          python -m pip freeze | Set-Content -Encoding utf8 installer/output/build-dependencies.txt
+          "SHA=$env:MANO_SOURCE_SHA" | Set-Content -Encoding ascii installer/output/commit.txt
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-smoke.txt') installer/output/installed-smoke.txt
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-installed-payload.json') installer/output/installed-payload.json
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt') installer/output/portable-smoke.txt
+          if ('${{ matrix.track }}' -eq 'stable') {Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-standalone-runtime.json') installer/output/standalone-runtime.json}
+          Copy-Item portable-output/redistribution-preflight.json,portable-output/runtime-evidence.json,wheel-evidence.json,build-wheel-report.json,installer/windows-candidate-constraints.txt installer/output/
+          Get-ChildItem installer/output/*.exe | ForEach-Object {
+            "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" | Set-Content -Encoding ascii "$($_.FullName).sha256"
+          }
+          if ('${{ matrix.track }}' -eq 'stable') {python -m installer.candidate_manifest --root . --sha "$env:MANO_SOURCE_SHA" --require-review}
+          else {python -m installer.candidate_manifest --root . --sha "$env:MANO_SOURCE_SHA"}
+          if ($LASTEXITCODE -ne 0) {throw 'Manifest rejected'}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: corrected-${{ matrix.track }}-setup
+          path: installer/output/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        with:
+          name: corrected-${{ matrix.track }}-portable
+          path: portable-output/
+          if-no-files-found: error
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: corrected-${{ matrix.track }}-smoke
+          path: |
+            ${{ runner.temp }}/mano-smoke.txt
+            ${{ runner.temp }}/mano-portable-smoke.txt
+          if-no-files-found: ignore
