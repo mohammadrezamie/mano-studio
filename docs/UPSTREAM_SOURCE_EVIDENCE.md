@@ -16,7 +16,7 @@ The Stable archive contains no Qt6Pdf.dll; neither archive contains a Qt6WebEngi
 
 ## Acquisition
 
-The source evidence workflow retrieves vendor archives and verifies the official SHA-256 record before retaining the original bytes and license-member inventory in temporary Actions artifacts. QtBase and PySide hashes are independently pinned from upstream metadata. Other modules require live vendor checksum verification, not independent pinned provenance. A failure in one matrix job does not stop the others.
+The source evidence workflow retrieves vendor archives and verifies the official SHA-256 record before retaining the original bytes and license-member inventory in temporary Actions artifacts. QtBase and PySide checksums are recorded from vendor metadata, not independent cryptographic provenance. Other modules require live vendor checksum verification, not independent pinned provenance. A failure in one matrix job does not stop the others.
 
 - https://download.qt.io/archive/qt/6.12/6.12.0/submodules/
 - https://download.qt.io/official_releases/QtForPython/pyside6/PySide6-6.12.0-src/
@@ -29,3 +29,5 @@ A successful download is evidence of source availability only. Determine exact w
 The app uses dynamically loaded Qt libraries, but this alone is not proof of LGPL compliance. Validate user ability to replace and run compatible rebuilt libraries, retain unmodified originals for recovery, and document required compiler/ABI, dependencies, installation paths and build instructions. Do not suggest arbitrary DLL mixing as a security fix. The MIT application source remains separate. Source acquisition does not resolve actual advisory applicability, native Windows acceptance or signing/authenticity.
 
 No product code, candidate hash, tag or release state changes in this branch.
+
+See [OpenSSL notice evidence](OPENSSL_NOTICE_EVIDENCE.md) for the exact frozen binary review and retained upstream license. Corrected source-acquisition workflow uses official alternate archive locations and supports hash-only checksum records.
