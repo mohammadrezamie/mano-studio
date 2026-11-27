@@ -1,8 +1,9 @@
-"""Compare the installed payload with the exact frozen build without executing it."""
+"""Compare installed files with the exact frozen build without following links."""
 import argparse
 import hashlib
 import json
 from pathlib import Path
+import stat
 
 
 UNINSTALLER_FILES = frozenset({"unins000.exe", "unins000.dat", "unins000.msg"})
@@ -16,24 +17,40 @@ def digest(path):
     return result.hexdigest()
 
 
+def linked(info):
+    """Reject symlinks and every Windows reparse point, including junctions."""
+    return stat.S_ISLNK(info.st_mode) or bool(
+        getattr(info, "st_file_attributes", 0) & stat.FILE_ATTRIBUTE_REPARSE_POINT
+    )
+
+
 def inventory(root):
     root = Path(root)
-    if not root.is_dir() or root.is_symlink():
-        raise ValueError("Invalid payload directory")
+    root_info = root.lstat()
+    if linked(root_info) or not stat.S_ISDIR(root_info.st_mode):
+        raise ValueError("Invalid or linked payload directory")
     files = {}
     seen = set()
-    for path in sorted(root.rglob("*")):
-        name = path.relative_to(root).as_posix()
-        key = name.casefold()
-        if key in seen:
-            raise ValueError("Case-colliding payload path: " + name)
-        seen.add(key)
-        if path.is_symlink() or getattr(path, "is_junction", lambda: False)():
-            raise ValueError("Unexpected linked payload path: " + name)
-        if path.is_file():
-            files[name] = {"size": path.stat().st_size, "sha256": digest(path)}
-        elif not path.is_dir():
-            raise ValueError("Unexpected payload entry: " + name)
+    pending = [root]
+    while pending:
+        directory = pending.pop()
+        for path in sorted(directory.iterdir()):
+            name = path.relative_to(root).as_posix()
+            key = name.casefold()
+            if key in seen:
+                raise ValueError("Case-colliding payload path: " + name)
+            seen.add(key)
+            info = path.lstat()
+            if linked(info):
+                raise ValueError("Unexpected linked payload path: " + name)
+            if stat.S_ISDIR(info.st_mode):
+                if key in UNINSTALLER_FILES:
+                    raise ValueError("Uninstaller path cannot be a directory: " + name)
+                pending.append(path)
+            elif stat.S_ISREG(info.st_mode):
+                files[name] = {"size": info.st_size, "sha256": digest(path)}
+            else:
+                raise ValueError("Unexpected payload entry: " + name)
     return files
 
 
