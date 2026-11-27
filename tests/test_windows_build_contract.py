@@ -19,3 +19,9 @@ def test_windows_pyinstaller_data_arguments_use_windows_separator():
 def test_unused_qml_runtime_is_pruned_before_notice_collection():
     script = BUILD_SCRIPT.read_text(encoding="utf-8")
     assert "python -m installer.prune_qml $dist" in script
+
+
+def test_qt_imageformats_notice_collection_runs_once_after_upstream_license_copy():
+    script = BUILD_SCRIPT.read_text(encoding="utf-8")
+    assert script.count("python -m installer.qt_imageformats_notices") == 1
+    assert script.index("python -m installer.qt_imageformats_notices") > script.index("Copy-Item -LiteralPath")
