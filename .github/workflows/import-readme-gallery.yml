@@ -1,0 +1,102 @@
+name: Import verified README gallery
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/import-readme-gallery.yml'
+permissions: {}
+jobs:
+  gallery:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    concurrency:
+      group: readme-gallery-main
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+      - name: Import only selected immutable captures
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import io
+          import json
+          import os
+          from pathlib import Path
+          import struct
+          import subprocess
+          import zipfile
+
+          repo = os.environ["GH_REPO"]
+          base = f"repos/{repo}"
+          def gh(*args):
+              return subprocess.check_output(["gh", *args])
+          def api(path):
+              return json.loads(gh("api", path))
+          def digest(raw):
+              return hashlib.sha256(raw).hexdigest()
+          def require(condition, message):
+              if not condition:
+                  raise RuntimeError(message)
+          sets = [
+              ("stable", 45961164536, 15181013010, "5d72fb32867b2e37396ebac433b3bc28795e6c1f",
+               "desktop-previews-windows-latest", "4d57e599f13a53f497df7fc266172e47dacb333e6e98fdb17d53882b31d2850a", [
+                  ("en-dark-editor.png", "editor.png", "10b8c20ae486d3fb6eb48450184263406b77e76a320881aa3d23f47004802ea3"),
+                  ("en-light-builder.png", "builder.png", "3bf08dfa0760fb9a0200cf5f35174be72c27b76bbb7fc459c1d889f4a041d333"),
+                  ("en-dark-computer.png", "computer.png", "fd752a86b83ca2e8f7ad0f356ce445caa2498eac39f38cde1cf38acc85087265"),
+                  ("en-light-logic.png", "logic.png", "8f5441c94df0ecbe154b5de1bd1db153b6359d85bf8c451b7bd6a2b12883f46e"),
+                  ("en-dark-learning-center.png", "learning.png", "b2df7fc1d3f62525a52582b720d903820f45c8b0f46a43bbc6c602ec48168c88"),
+                  ("en-night-debugger.png", "debugger.png", "e21f68c699e62e49edfc72c0d76dac785e25242a58a243b6a1d4af03444e6cd0"),
+                  ("en-dark-active-live-fetch.png", "live.png", "1c3bbf7a4bf46f7f16b0d082946e48910a7b32e866b2a27f9ebc1c6aba013dfb"),
+                  ("fa-dark-editor.png", "persian.png", "6e127da2683392f2749d7bdba557c402e4253678c2001d6f53d430fd4835771d")]),
+              ("beta", 46000977462, 15198182200, "4d64fd1da99ae6c407b221c562062a87ec623afd",
+               "parallel-desktop-windows-latest", "ce59d29253c8c95b6ac2fc5e362a8f69e67c5cccb68655f85fcffd8c19a81c27", [
+                  ("en-dark-route-computer-cycles.png", "timing.png", "67bf83bab7e9a8bb40d546e8017ea45223acfef32df5e3cbaa7fa57eb167c3ff"),
+                  ("en-dark-active-omega-crossed-switch.png", "omega.png", "a6c1a0572a884d05d0f133b425e55da2bd86dd3a9c1d5c7b85f55ebd88279eeb")]),
+          ]
+          root = Path("docs/assets/screenshots")
+          root.mkdir(parents=True, exist_ok=True)
+          manifest = []
+          for track, run, aid, source, name, outer, files in sets:
+              r = api(f"{base}/actions/runs/{run}")
+              require(r["head_sha"] == source and r["conclusion"] == "success", "Unverified capture run")
+              a = api(f"{base}/actions/artifacts/{aid}")
+              require(a["name"] == name and not a["expired"] and a["digest"] == "sha256:" + outer,
+                      "Artifact metadata mismatch")
+              require(a["workflow_run"]["id"] == run, "Artifact run mismatch")
+              raw = gh("api", f"{base}/actions/artifacts/{aid}/zip")
+              require(len(raw) <= 32 * 1024 * 1024 and digest(raw) == outer, "Archive mismatch")
+              with zipfile.ZipFile(io.BytesIO(raw)) as z:
+                  require(len(z.namelist()) == len(set(z.namelist())) and z.testzip() is None, "Invalid capture archive")
+                  for member, filename, expected in files:
+                      data = z.read(member)
+                      require(data.startswith(b"\x89PNG\r\n\x1a\n") and len(data) < 2 * 1024 * 1024
+                              and digest(data) == expected, "PNG mismatch: " + member)
+                      w, h = struct.unpack(">II", data[16:24])
+                      require((w, h) in [(1360, 900), (1100, 750)], "Unexpected capture size")
+                      (root / filename).write_bytes(data)
+                      manifest.append(dict(file=filename, member=member, track=track, run=run,
+                                           artifact=aid, source=source, sha256=expected, width=w, height=h))
+          (root / "provenance.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+          print(f"Verified {len(manifest)} original captures")
+          PY
+      - name: Commit documentation assets only
+        run: |
+          set -euo pipefail
+          git add -- docs/assets/screenshots/
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' commit -m "docs: import exact verified desktop screenshots"
+          git push origin HEAD:main
