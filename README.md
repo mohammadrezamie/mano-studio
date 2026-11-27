@@ -35,7 +35,7 @@ Designed for English and Persian, with persistent language preferences, Light/Da
 | Track | Current milestone |
 | --- | --- |
 | Stable | [PR #24](https://github.com/mohammadrezamie/mano-studio/pull/24), 1.0.0 candidate. [1,561 tests per OS](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164536); [installer](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498) passed; verified private release draft created. |
-| Beta | [PR #37](https://github.com/mohammadrezamie/mano-studio/pull/37), 1.1.0-beta.1 candidate. [Installer](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621) passed; [parallel final gate](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977462) passed all 12 jobs; 2,265 tests per OS, zero skips. |
+| Beta | [PR #37](https://github.com/mohammadrezamie/mano-studio/pull/37), 1.1.0-beta.1 candidate. [Installer](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621) passed; [parallel final gate](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977462) passed all 12 jobs; 2,265 tests per OS, zero skips; verified private prerelease draft created. |
 | Next generation | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta), independent feature development. |
 
 Public release remains subject to actual applicable security review, redistribution/source obligations, native Windows acceptance and authenticity review. Follow [Stable #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [Beta #23](https://github.com/mohammadrezamie/mano-studio/issues/23), and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for current evidence (checkpoint 2026-11-27). No claim of a bug-free application.
@@ -133,14 +133,6 @@ Released under the [MIT License](LICENSE). See [references](docs/REFERENCES.md) 
 
 **Publication status:** the initial releases are still under acceptance review. The buttons above open the official Releases page; there is no public installer download there yet. Do not redistribute review builds or treat them as accepted releases.
 
-| Version | Device / OS | Architecture | Setup (install) | Portable (no install) | Status |
-| --- | --- | --- | --- | --- | --- |
-| **1.0.0 — Stable** | Windows desktop / laptop, 10 / 11 target | Intel / AMD x64 | [Setup · 35.0 MB (review)](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180752782) | [ZIP · 51.0 MB (review)](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180064025) | 1,561 tests per OS passed; private draft |
-| **1.1.0-beta.1 — Beta** | Windows desktop / laptop, 10 / 11 target | Intel / AMD x64 | [Setup · 36.8 MB (review)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621/artifacts/15197803727) | [ZIP · 53.6 MB (review)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621/artifacts/15198955230) | 2,265 tests per OS passed; publication review |
-| — | Windows 32-bit | x86 | Not available | Not available | [Feasibility #54](https://github.com/mohammadrezamie/mano-studio/issues/54) |
-| — | Windows on ARM | ARM64 | Not available | Not available | [Feasibility #54](https://github.com/mohammadrezamie/mano-studio/issues/54) |
-| — | Linux / macOS | — | Not available | Not available | Source only; no released package |
-
 GitHub Actions artifacts are temporary review files (GitHub sign-in may be required), not public releases. The official Releases page is the permanent download location; once a release is published, choose its Setup EXE for installation or its portable ZIP to run without installing. Verify the accompanying SHA-256 checksum. These candidates are not Authenticode-signed.
 
 ### Device and system compatibility
@@ -159,3 +151,13 @@ The Windows Setup bundles its application-private Python/Qt runtime; no separate
 The standalone [RTL translator](rtl_translator.py) uses only the Python standard library and can be run with a compatible 32-bit Python installation, but that is not the full desktop app. A future 32-bit desktop build requires a supported GUI dependency strategy and independent installation and regression evidence. See [Qt supported platforms](https://doc.qt.io/qt-6/supported-platforms.html) and [PySide6 distribution files](https://pypi.org/project/PySide6/6.12.0/#files).
 
 **راهنمای دانلود:** نسخه فعلی برای رایانه و لپ‌تاپ ویندوز ۶۴ بیتی (Intel/AMD) ساخته شده است. برای نصب عادی، Setup و برای اجرای بدون نصب، Portable را انتخاب کنید. فعلاً فایل‌ها آزمایشی‌اند و انتشار عمومی نهایی نشده است. نسخه کامل ویندوز ۳۲ بیتی و ARM64 هنوز تأیید نشده است.
+
+### Download table
+
+| Version | Device / OS | Architecture | Setup (install) | Portable (no install) | Status |
+| --- | --- | --- | --- | --- | --- |
+| **1.0.0 — Stable** | Windows desktop / laptop, 10 / 11 target | Intel / AMD x64 | [Setup · 35.0 MB (review)](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180752782) | [ZIP · 51.0 MB (review)](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180064025) | 1,561 tests per OS passed; [private draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-e438c6988649501c973e) |
+| **1.1.0-beta.1 — Beta** | Windows desktop / laptop, 10 / 11 target | Intel / AMD x64 | [Setup · 36.8 MB (review)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621/artifacts/15197803727) | [ZIP · 53.6 MB (review)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621/artifacts/15198955230) | 2,265 tests per OS passed; [private draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-786f71ed7a05b8f89b03) |
+| — | Windows 32-bit | x86 | Not available | Not available | [Feasibility #54](https://github.com/mohammadrezamie/mano-studio/issues/54) |
+| — | Windows on ARM | ARM64 | Not available | Not available | [Feasibility #54](https://github.com/mohammadrezamie/mano-studio/issues/54) |
+| — | Linux / macOS | — | Not available | Not available | Source only; no released package |
