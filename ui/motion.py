@@ -3,8 +3,8 @@
 One lightweight indicator per tab bar; no animated page snapshots, timers
 at idle, layout movement or effects on text/circuit content.
 """
-from PySide6.QtCore import Qt, QRectF, QVariantAnimation, QEasingCurve, QAbstractAnimation, QEvent
-from PySide6.QtGui import QPainter, QPalette, QPen
+from PySide6.QtCore import Qt, QPointF, QRectF, QVariantAnimation, QEasingCurve, QAbstractAnimation, QEvent
+from PySide6.QtGui import QPainter, QPalette, QPen, QColor, QBrush, QRadialGradient
 from PySide6.QtWidgets import QApplication, QTabBar, QTabWidget, QPushButton
 
 TAB_DURATION=160
@@ -21,6 +21,19 @@ def set_reduced_motion(app, reduced):
         for widget in app.allWidgets():
             if widget.property("manoMotionSurface"):
                 widget.snap()
+
+
+def glass_motion_allowed():
+    app = QApplication.instance()
+    return motion_allowed() and app.property("manoGlassEnabled") is not False
+
+
+def set_glass_motion(app, enabled):
+    app.setProperty("manoGlassEnabled", bool(enabled))
+    if not enabled:
+        for widget in app.allWidgets():
+            if isinstance(widget, MotionButton):
+                widget.clear_pointer()
 
 
 class MotionTabBar(QTabBar):
@@ -99,6 +112,8 @@ class MotionButton(QPushButton):
         self.setProperty("manoMotionSurface", True)
         self.level = 0.0
         self.hovered = False
+        self.pointer = None
+        self.setMouseTracking(True)
         self.animation = QVariantAnimation(self)
         self.animation.setDuration(145)
         self.animation.setEasingCurve(QEasingCurve.Type.OutCubic)
@@ -113,7 +128,24 @@ class MotionButton(QPushButton):
     def snap(self):
         self.animation.stop()
         self.level = 0.0
+        self.clear_pointer()
         self.update()
+
+    def clear_pointer(self):
+        if self.pointer is not None:
+            self.pointer = None
+            self.update()
+
+    def _track_pointer(self, position):
+        if not (self.isVisible() and self.isEnabled() and glass_motion_allowed() and self.rect().contains(position.toPoint())):
+            self.clear_pointer()
+            return
+        self.pointer = QPointF(position)
+        self.update()
+
+    def mouseMoveEvent(self, event):
+        super().mouseMoveEvent(event)
+        self._track_pointer(event.position())
 
     def _retarget(self, target):
         self.animation.stop()
@@ -129,10 +161,13 @@ class MotionButton(QPushButton):
     def enterEvent(self, event):
         self.hovered = True
         super().enterEvent(event)
+        if hasattr(event, "position"):
+            self._track_pointer(event.position())
         self._retarget(1.0 if self.isDown() else 0.48)
 
     def leaveEvent(self, event):
         self.hovered = False
+        self.clear_pointer()
         super().leaveEvent(event)
         self._retarget(0.0)
 
@@ -160,5 +195,17 @@ class MotionButton(QPushButton):
         pen.setWidthF(1.5)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawRoundedRect(QRectF(self.rect()).adjusted(2, 2, -2, -2), 6, 6)
+        rim = QRectF(self.rect()).adjusted(2, 2, -2, -2)
+        painter.drawRoundedRect(rim, 6, 6)
+        # A local specular reflection follows the cursor, clipped to the
+        # existing rim. It does not shift text, geometry or click targets.
+        if self.pointer is not None and self.hovered and glass_motion_allowed():
+            glow = QRadialGradient(self.pointer, max(20.0, min(96.0, self.width() * 0.55)))
+            bright = QColor(color)
+            bright.setAlpha(round(220 * self.level))
+            glow.setColorAt(0.0, bright)
+            bright.setAlpha(0)
+            glow.setColorAt(1.0, bright)
+            painter.setPen(QPen(QBrush(glow), 2.0))
+            painter.drawRoundedRect(rim, 6, 6)
         painter.end()

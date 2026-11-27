@@ -35,6 +35,8 @@ def apply_theme(app, theme, glass_enabled=True):
         palette.setColor(role,QColor(value))
     for role in (roles.Text,roles.WindowText,roles.ButtonText):
         palette.setColor(QPalette.ColorGroup.Disabled,role,QColor(muted))
+    from ui.motion import set_glass_motion
+    set_glass_motion(app, glass_enabled)
     app.setPalette(palette)
     app.setStyleSheet(stylesheet(theme,glass_enabled))
 
