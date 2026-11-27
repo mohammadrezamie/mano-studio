@@ -8,3 +8,5 @@ Upstream:
 - https://download.qt.io/official_releases/QtForPython/pyside6/PySide6-6.12.0-src/pyside-setup-everywhere-src-6.12.0.tar.xz (vendor SHA-256 099c1a597cf33c1b000e11cf68a0b82d216fb802bf81726efc720394f10c7751)
 
 Corresponding source, module-specific and third-party notices, exact wheel-to-source mapping, compatible replacement/relinking instructions, and distributor-controlled source access still require review before public distribution. Upstream links are provenance only, not a source offer. No commercial entitlement is assumed. The package-specific inventory remains intact and its open flags are not suppressed.
+
+Qt Image Formats supplemental notices for qicns, qtga, qtiff, qwbmp and qwebp, including libtiff and libwebp attribution, are maintained under qtimageformats/ and copied into each frozen candidate. This is evidence only; corresponding-source and redistribution review remain open.
