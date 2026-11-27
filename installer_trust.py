@@ -57,10 +57,13 @@ def _identity(path, asset):
         after = os.fstat(stream.fileno())
     def identity(s):
         return (s.st_dev, s.st_ino, s.st_size, s.st_mtime_ns, s.st_ctime_ns)
-    if not identity(st) == identity(before) == identity(after) == identity(path.lstat()):
-        raise ValueError("Installer changed during verification")
+    # Report content corruption first, including on Windows where file
+    # metadata can be refreshed after a recent write. All identity checks
+    # remain mandatory for files with a matching digest.
     if digest != asset.digest:
         raise ValueError("Installer digest mismatch")
+    if not identity(st) == identity(before) == identity(after) == identity(path.lstat()):
+        raise ValueError("Installer changed during verification")
     return identity(st)
 
 def verify_installer(path, asset, *, tag, current, prerelease, trusted_signers=TRUSTED_SIGNERS,
