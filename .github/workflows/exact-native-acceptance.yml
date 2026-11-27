@@ -1,4 +1,4 @@
-name: Exact frozen installer acceptance
+name: Corrected exact installer acceptance
 on:
   push:
     branches: [release/exact-native-acceptance]
@@ -15,8 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         candidate:
-          - {track: stable, run: 45961164498, artifact: 15180752782, version: '1.0.0', sha256: '978f1e02731b6e3aaecf808401f5b66d33b760d0b3780e65d206946f3976889b'}
-          - {track: beta, run: 46000977621, artifact: 15197803727, version: '1.1.0-beta.1', sha256: '4ce12623d94d334844877bb2c09f1a206b28db9b337a60e82e68c63e2e99dd6b'}
+          - {track: stable, run: 46017522690, artifact: 15211462028, version: '1.0.0', sha256: '11df201f81a8d0daf64e8787d24d7856065d17891205f4b824aedad84ebd1ab4'}
+          - {track: beta, run: 46017522690, artifact: 15211969548, version: '1.1.0-beta.1', sha256: '89165622a480b64d59fd906c37947e10df7e6f2d6898e28f1f9aa47a4c31fec7'}
         profile: [isolated-path, pre-equipped]
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +36,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: exact-native-${{ matrix.candidate.track }}-${{ matrix.profile }}
+          name: corrected-native-${{ matrix.candidate.track }}-${{ matrix.profile }}
           path: native-evidence/
           if-no-files-found: warn
