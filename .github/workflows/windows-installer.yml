@@ -56,6 +56,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Wheel provenance evidence rejected.' }
           python -m pip check
           if ($LASTEXITCODE -ne 0) { throw 'Candidate dependency conflict.' }
+      - name: Validate workflow test targets and manifest entry point
+        run: python -m pytest -q tests/test_windows_build_contract.py
       - name: Verify redistribution tooling
         if: github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'release/beta-packaging-hardening'
         run: python -m pytest -q tests/test_wheel_evidence.py tests/test_redistribution_gate.py tests/test_windows_zip_paths.py tests/test_prune_qt.py tests/test_runtime_evidence.py tests/test_update_service.py
@@ -70,7 +72,7 @@ jobs:
       # Full Windows and Ubuntu regression remain independent release gates in Tests.
       # This job produces internal artifacts only and must not repeat the long GUI suite.
       - name: Verify packaging contracts and academic credits
-        run: python -m pytest -q tests/test_candidate_manifest.py tests/test_windows_build_contract.py tests/test_localization.py tests/test_collect_notices.py tests/test_instructor_evidence.py tests/test_instructor_gallery.py tests/test_translator_isolation.py tests/test_visual_tokens.py tests/test_first_beta_version.py
+        run: python -m pytest -q tests/test_candidate_manifest.py tests/test_windows_build_contract.py tests/test_localization.py tests/test_collect_notices.py tests/test_instructor_evidence.py tests/test_instructor_gallery.py tests/test_translator_isolation.py tests/test_visual_tokens.py tests/test_release_channel.py tests/test_verify_installed.py
       - name: Verify focused instructor UI
         if: github.head_ref == 'release/v1-candidate' || github.head_ref == 'quality/redistribution-gate'
         run: python -m pytest -q -o faulthandler_timeout=60 tests/test_workspace.py -k instructor_splash_variants

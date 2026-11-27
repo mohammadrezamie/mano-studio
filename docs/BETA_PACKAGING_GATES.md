@@ -35,3 +35,6 @@
 - Clean Windows machine, normal-user install, offline first launch, upgrade/uninstall, native Persian/English scaling and keyboard behavior, signing and owner authorization remain separate acceptance gates.
 
 **Decision rule:** this PR may produce an internal Beta development candidate only. No green test, manifest, wheel hash or smoke report independently authorizes a public Beta or Stable release.
+
+## Windows CI correction — 2026-11-27
+Run 45916721921 passed all 63 redistribution-tooling tests after the raw ZIP fixture correction, then stopped because the workflow referenced the nonexistent historical test file `tests/test_first_beta_version.py`. Replaced it with the actual release-channel suite (including the 1.1.0 forward-line assertion) and added installed-file parity tests to the focused packaging gate. All 17 distinct referenced test files were checked against this source tree before committing. Added a separately executed workflow-target preflight and a real module CLI invocation test. Fresh exact-head CI remains required; no package was built by that failed run and no release is approved.

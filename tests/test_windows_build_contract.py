@@ -37,3 +37,24 @@ def test_installed_smoke_clears_developer_python_and_qt_paths():
         assert f"'{name}'" in script
     assert "SetEnvironmentVariable($name, $null, 'Process')" in script
     assert "SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process')" in script
+
+
+def test_installer_workflow_test_targets_exist():
+    import re
+    root = BUILD_SCRIPT.parents[1]
+    workflow = (root / ".github" / "workflows" / "windows-installer.yml").read_text(encoding="utf-8")
+    targets = set(re.findall(r"tests/test_[a-z_0-9]+\.py", workflow))
+    assert "tests/test_release_channel.py" in targets
+    assert "tests/test_verify_installed.py" in targets
+    missing = sorted(target for target in targets if not (root / target).is_file())
+    assert not missing, f"Missing workflow test files: {missing}"
+
+
+def test_candidate_manifest_module_entry_point():
+    import subprocess
+    import sys
+    root = BUILD_SCRIPT.parents[1]
+    result = subprocess.run([sys.executable, "-m", "installer.candidate_manifest", "--help"],
+                            cwd=root, capture_output=True, text=True, timeout=15)
+    assert result.returncode == 0, result.stderr
+    assert "--sha" in result.stdout and "--root" in result.stdout
