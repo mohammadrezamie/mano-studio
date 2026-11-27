@@ -52,3 +52,24 @@ def test_notice_consent_and_relabel(window, monkeypatch):
 def test_response_limit():
     with pytest.raises(ValueError):
         parse_release_payload(b" " * 2_000_001)
+
+
+def test_preferences_enables_only_metadata_verified_download(window):
+    from ui.preferences import Preferences
+    from update_service import ReleaseInfo
+    from update_download import Asset
+
+    dialog = Preferences(window)
+    asset = Asset(
+        "https://github.com/mohammadrezamie/mano-studio/releases/download/v1.0.1/ManoStudio-Setup-v1.0.1-x64.exe",
+        "ManoStudio-Setup-v1.0.1-x64.exe", 1024, "a" * 64,
+    )
+    dialog.show_result(ReleaseInfo("v1.0.1", "notes", 1024, asset), "")
+    assert not dialog.download_button.isHidden()
+    assert dialog.download_button.isEnabled()
+    assert "Automatic installation is not enabled" in dialog.status.text()
+
+    dialog.show_result(ReleaseInfo("v1.0.1", "notes", None, None), "")
+    assert dialog.download_button.isHidden()
+    assert not dialog.download_button.isEnabled()
+    dialog.close()

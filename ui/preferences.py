@@ -174,7 +174,7 @@ class Preferences(QDialog):
             self.releases.show()
             self.asset=release.asset
             self.download_button.setVisible(self.asset is not None)
-            self.download_button.setEnabled(False)
+            self.download_button.setEnabled(self.asset is not None)
         else:
             self.status.setText(self.text("No newer version in this channel.", "نسخه جدیدتری در این کانال یافت نشد."))
 
