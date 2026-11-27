@@ -14,11 +14,19 @@ if (-not $ReuseFrozen) {
     python -m PyInstaller --noconfirm --clean --onedir --windowed --icon $icon --name ManoStudio --add-data 'rtl_translator.py;.' --add-data 'LICENSE;.' --add-data 'examples;examples' --add-data 'docs;docs' main.py
     if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed.' }
     $dist = Join-Path $PWD 'dist\ManoStudio'
+    python -m installer.prune_qt $dist
+    if ($LASTEXITCODE -ne 0) { throw 'Qt Virtual Keyboard payload pruning failed.' }
     $notices = Join-Path $dist 'third-party-notices'
     New-Item -ItemType Directory -Force $notices | Out-Null
-    # Preserve notices shipped in the installed distributions; legal review is still required before public release.
+    # Preserve notices shipped in installed distributions; this is evidence, not legal approval.
     python installer/collect_notices.py $notices
     if ($LASTEXITCODE -ne 0) { throw 'Notice collection failed.' }
+    # Copy the same upstream Qt texts as the frozen Stable candidate; this does not grant redistribution clearance.
+    $qtTexts = Join-Path $notices 'qt-license-texts'
+    New-Item -ItemType Directory -Force $qtTexts | Out-Null
+    foreach ($name in @('LGPL-3.0-only.txt','GPL-3.0-only.txt','README.md')) {
+        Copy-Item -LiteralPath (Join-Path $PSScriptRoot "licenses\$name") -Destination $qtTexts -ErrorAction Stop
+    }
 }
 if (-not (Test-Path 'dist\ManoStudio\ManoStudio.exe')) { throw 'Frozen app missing.' }
 if ($PortableOnly) { exit 0 }

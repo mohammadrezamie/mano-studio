@@ -1,3 +1,20 @@
+# Workspace lifecycle benchmark pilot
+
+Independent CI-only child to investigate test window cleanup, compare exact passing test membership and durations on both platforms. No confirmed speedup or production change. See WORKSPACE_LIFECYCLE_CI.md.
+
+---
+
+# Live status — 2026-11-27 (authoritative; historical checkpoints follow)
+
+- **Beta integration:** PR [#36](https://github.com/mohammadrezamie/mano-studio/pull/36) is the forward 1.1.0 development line on `integration/first-beta`, exact head `2b19fe4f0fcbdccb5f8d136cf509f1aaa28ea77d`. Combined focused integration run [45905561920](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905561920) passed 622 core + 60 Qt + 20 workspace tests (702 focused checks; not the full suite). Visual run [45905561919](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905561919) passed with 36 unique images independently checked against the manifest.
+- **Beta packaging:** draft child PR [#37](https://github.com/mohammadrezamie/mano-studio/pull/37), product-code checkpoint `4cb85e53b7fab6dfeaf6b0ef0b421b591a277f51`, targets `integration/first-beta`. It adds pinned Windows wheel evidence, safe Qt Virtual Keyboard pruning, raw notice metadata, Windows ZIP namespace validation, redistribution and OpenSSL runtime reports, strict candidate-manifest checks, and a full Windows/Ubuntu regression plus separate Windows Setup workflow. All new exact-head runs and artifacts remain pending until independently inspected; do not merge or publish on the parent-head evidence alone.
+- **Stable:** draft PR [#26](https://github.com/mohammadrezamie/mano-studio/pull/26), current head `92039c8560dc94f87b693ac84467ecd2319f76f5`. Exact-head full tests [45910546581](https://github.com/mohammadrezamie/mano-studio/actions/runs/45910546581) have Ubuntu in progress and Windows queued at last check; installer [45910546563](https://github.com/mohammadrezamie/mano-studio/actions/runs/45910546563) is queued. Earlier attempts were cancelled by newer commits and are not failures; only the latest exact-head runs count.
+- **Dependency security:** Stable evidence found PySide6/Qt 6.12.0 and OpenSSL 3.5.9, below the 3.5.10 review baseline. PySide6 6.12.1 and OpenSSL 3.5.10 must be aligned through official packages before any final release build; do not hand-replace DLLs.
+- **Academic contract:** only root `rtl_translator.py` is the isolated, downloadable, standard-library-only converter. The GUI delegates to the same module; no in-app source viewer/editor. Verify its exact source hash in each final candidate.
+- **Release state:** no public GitHub Release or tag exists. Beta stays semantically ahead of Stable; each track is independently accepted. No version/date shortcut and no Stable promotion from Beta without a separate gate.
+
+---
+
 # Live status — 2026-11-27 (authoritative; historical checkpoints follow)
 
 - **Beta:** PR [#36](https://github.com/mohammadrezamie/mano-studio/pull/36), source `integration/first-beta` at `007fd2ad`, integrates bilingual polish, ten CPU examples, cycle inspection and keyboardless bilingual RTL authoring. Version `1.1.0-dev.1` is intentionally ahead of Stable `1.0.0`; proposed first prerelease is `v1.1.0-beta.1`. A stale screenshot-count assertion (36 expected vs 48 hard-coded) was corrected; fresh combined Next-beta run 45904681178 and Windows visual run 45904681078 are queued. The older failure 45901184553 was only this test mismatch. No Beta release/tag exists.

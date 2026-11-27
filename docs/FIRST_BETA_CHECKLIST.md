@@ -1,5 +1,15 @@
 # First beta candidate — delivery checklist
+
 Internal test build, not a published release. Target Windows 10/11 x64. Version in this commit: 1.1.0-dev.1. Proposed first public version: v1.1.0-beta.1; separate Stable candidate: 1.0.0. The public Beta must remain semantically ahead of Stable; publish only after every Beta gate passes and the owner approves.
+
+## Live acceptance checkpoint — 2026-11-27
+- [x] Parent PR #36 focused integration run passed 702 checks (622 core, 60 Qt, 20 workspace) on exact head `2b19fe4f`.
+- [x] Parent PR #36 visual acceptance passed on exact head with 36/36 unique images matching the visual manifest.
+- [ ] Child PR [#37](https://github.com/mohammadrezamie/mano-studio/pull/37) full Windows/Ubuntu regression and exact-head Windows installer workflows.
+- [ ] Independently inspect #37 portable and Setup artifacts, SHA-256 files, PE inventory, raw notice inventory, installed-payload comparison, OpenSSL runtime flags and redistribution-preflight output.
+- [ ] Resolve Qt LGPL/GPL corresponding-source and module-specific notice obligations; wheel hashes and automated inventory are not legal approval.
+- [ ] Clean-machine/native Windows keyboard, scaling, Persian, file-workflow and offline acceptance; signed installer; owner approval.
+- No public Beta tag/release is confirmed. Do not treat parent PR focused tests or the visual artifact as package acceptance.
 
 ## Source and scope
 - Standalone RTL-to-ASM source; 25 documented instruction templates; provisional classroom dialect.

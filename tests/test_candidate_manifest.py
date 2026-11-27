@@ -48,11 +48,22 @@ def candidate(tmp_path):
     (root / "docs" / "TRANSLATOR.md").write_bytes(translator_doc)
     portable = root / "portable-output"
     setup = root / "installer" / "output"
+    constraints = root / "installer" / "windows-candidate-constraints.txt"
+    constraints.parent.mkdir(parents=True, exist_ok=True)
+    constraints.write_text("PySide6==6.12.0\n", encoding="utf-8")
+    reports = {
+        "redistribution-preflight.json": {"flags": ["fixture review required"], "manual_review_required": True, "public_release_approved": False},
+        "runtime-evidence.json": {"kind": "runtime-evidence", "flags": [], "manual_review_required": True, "public_release_approved": False},
+        "wheel-evidence.json": {"kind": "pip-wheel-download-evidence", "packages": {"pyside6": {"version": "6.12.0", "url": "https://files.pythonhosted.org/packages/pyside6.whl", "sha256": "a" * 64}}, "independent_authenticity_verified": False, "redistribution_approved": False},
+    }
     for folder in (portable, setup):
         folder.mkdir(parents=True)
         (folder / "commit.txt").write_text("SHA=" + SHA)
         (folder / "portable-smoke.txt").write_text("PASS\n")
-        (folder / "build-dependencies.txt").write_text("PySide6==6.8.0\n")
+        (folder / "build-dependencies.txt").write_text("PySide6==6.12.0\n")
+        (folder / "windows-candidate-constraints.txt").write_bytes(constraints.read_bytes())
+        for name, report in reports.items():
+            (folder / name).write_text(json.dumps(report), encoding="utf-8")
     (setup / "installed-smoke.txt").write_text("PASS\n")
     z = portable / "ManoStudio-v1.1.0-dev.1-Windows-x64.zip"
     app = pe()
@@ -96,6 +107,8 @@ def test_candidate_evidence(candidate):
     root, z, exe = candidate
     record = validate(root, SHA)
     assert record["installed_payload"]["result"] == "PASS"
+    assert record["review_evidence"]["public_release_approved"] is False
+    assert record["review_evidence"]["wheel_packages"] == 1
     assert record["source_sha"] == SHA
     assert record["portable_smoke"] == record["installed_smoke"] == "PASS"
     assert not record["public_release"] and not record["native_acceptance"]
@@ -191,9 +204,14 @@ def test_reject_other_unlisted_binary(candidate, path):
 def test_reject_ambiguous_archive_path(candidate, path):
     root, z, _ = candidate
     with zipfile.ZipFile(z, "a") as archive:
-        archive.writestr(path, b"unexpected")
+        archive.writestr(path.replace(chr(92), "/"), b"unexpected")
+    if chr(92) in path:
+        raw = z.read_bytes()
+        canonical = path.replace(chr(92), "/").encode("utf-8")
+        assert raw.count(canonical) == 2
+        z.write_bytes(raw.replace(canonical, path.encode("utf-8")))
     checksum(z)
-    with pytest.raises(ValueError, match="[Uu]nsafe|case-colliding"):
+    with pytest.raises(ValueError, match="Unsafe Windows|Ambiguous Windows|Unexpected archive path"):
         validate(root, SHA)
 
 
@@ -216,4 +234,55 @@ def test_reject_stale_installed_payload_report(candidate, damage):
             report["native_acceptance"] = True
         path.write_text(json.dumps(report))
     with pytest.raises(ValueError, match="[Ii]nstalled payload report"):
+        validate(root, SHA)
+
+
+@pytest.mark.parametrize("filename", [
+    "redistribution-preflight.json", "runtime-evidence.json", "wheel-evidence.json",
+    "windows-candidate-constraints.txt",
+])
+def test_reject_missing_review_evidence(candidate, filename):
+    root, _, _ = candidate
+    (root / "portable-output" / filename).unlink()
+    with pytest.raises(ValueError):
+        validate(root, SHA)
+
+
+def test_reject_mismatched_review_evidence(candidate):
+    root, _, _ = candidate
+    (root / "installer" / "output" / "runtime-evidence.json").write_text("{}")
+    with pytest.raises(ValueError, match="differ"):
+        validate(root, SHA)
+
+
+def test_reject_unsafe_windows_archive_path(candidate):
+    root, z, _ = candidate
+    rewrite_zip(z, add={"ManoStudio/CON.txt": b"reserved"})
+    with pytest.raises(ValueError, match="Unsafe Windows"):
+        validate(root, SHA)
+
+
+@pytest.mark.parametrize("filename,field,value", [
+    ("redistribution-preflight.json", "public_release_approved", True),
+    ("redistribution-preflight.json", "manual_review_required", False),
+    ("runtime-evidence.json", "public_release_approved", True),
+    ("runtime-evidence.json", "manual_review_required", False),
+    ("wheel-evidence.json", "independent_authenticity_verified", True),
+    ("wheel-evidence.json", "redistribution_approved", True),
+])
+def test_reject_review_evidence_that_claims_approval(candidate, filename, field, value):
+    root, _, _ = candidate
+    path = root / "portable-output" / filename
+    report = json.loads(path.read_text())
+    report[field] = value
+    path.write_text(json.dumps(report), encoding="utf-8")
+    (root / "installer" / "output" / filename).write_text(json.dumps(report), encoding="utf-8")
+    with pytest.raises(ValueError):
+        validate(root, SHA)
+
+
+def test_reject_dependency_constraints_changed_after_build(candidate):
+    root, _, _ = candidate
+    (root / "installer" / "output" / "windows-candidate-constraints.txt").write_text("PySide6==9.9.9\\n")
+    with pytest.raises(ValueError, match="constraints differ"):
         validate(root, SHA)

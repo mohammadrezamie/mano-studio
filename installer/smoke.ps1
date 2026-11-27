@@ -24,8 +24,24 @@ try {
     if ($source.Count -ne 1) { throw 'Expected exactly one installed academic source.' }
     $expected = (Get-FileHash -LiteralPath (Join-Path $PWD 'rtl_translator.py') -Algorithm SHA256).Hash
     if ((Get-FileHash -LiteralPath $source[0].FullName -Algorithm SHA256).Hash -ne $expected) { throw 'Installed academic source does not match checkout.' }
-    Run-Checked (Join-Path $target 'ManoStudio.exe') "--smoke-test `"$report`""
-    if (!(Test-Path $report) -or (Get-Content $report -Raw).Trim() -ne 'PASS') { throw 'Frozen app smoke test failed.' }
+    # Launch the installed app without developer Python, Qt or virtual-environment paths.
+    $savedEnvironment = @{}
+    $names = @('PATH','PYTHONHOME','PYTHONPATH','QT_PLUGIN_PATH','QT_QPA_PLATFORM_PLUGIN_PATH','QT_QPA_FONTDIR','QML_IMPORT_PATH','QML2_IMPORT_PATH','VIRTUAL_ENV','CONDA_PREFIX')
+    foreach ($name in $names) {
+        $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+    }
+    try {
+        $env:PATH = "$env:SystemRoot\System32;$env:SystemRoot"
+        foreach ($name in $names) {
+            if ($name -ne 'PATH') { [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+        }
+        Run-Checked (Join-Path $target 'ManoStudio.exe') "--smoke-test `"$report`""
+        if (!(Test-Path $report) -or (Get-Content $report -Raw).Trim() -ne 'PASS') { throw 'Frozen app smoke test failed.' }
+    } finally {
+        foreach ($name in $names) {
+            [Environment]::SetEnvironmentVariable($name, $savedEnvironment[$name], 'Process')
+        }
+    }
 } finally {
     Run-Checked (Join-Path $target 'unins000.exe') '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART'
 }

@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "source": "daac5fc790db726d5d9ebfab0610b24aaa167b16",
+  "platform": "linux",
+  "run_id": 45917806901,
+  "sample_count": 2232,
+  "default_ms": 5,
+  "file_defaults_ms": {
+    "tests/test_workspace.py": 400,
+    "tests/test_program_samples_ui.py": 3879,
+    "tests/test_memory_inspector_view.py": 2190,
+    "tests/test_universal_view.py": 5102,
+    "tests/test_update_view.py": 4050,
+    "tests/test_vivid_refresh.py": 2244,
+    "tests/test_program_samples_view.py": 4765,
+    "tests/test_instruction_builder_acceptance.py": 1533,
+    "tests/test_cpu_guard_view.py": 599,
+    "tests/test_logic_workflow.py": 39,
+    "tests/test_arithmetic_algorithms.py": 163,
+    "tests/test_microprogram.py": 77,
+    "tests/test_state_assignment_oracle.py": 497,
+    "tests/test_state_encoding.py": 338,
+    "tests/test_universal_gates.py": 100,
+    "tests/test_state_synthesis.py": 151,
+    "tests/test_cpu_session_view.py": 1050
+  },
+  "weights_ms": {},
+  "note": "Historic hash-pilot file mean estimates; workspace estimate reduced after measured cleanup, other means conservative. Recalibrate after accepted run."
+}

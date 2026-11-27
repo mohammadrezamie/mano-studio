@@ -1,0 +1,112 @@
+name: Workspace lifecycle pilot
+on:
+  pull_request:
+    branches: [release/beta-packaging-hardening]
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  test:
+    if: github.head_ref == 'ci/workspace-lifecycle-pilot' && github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.os == 'windows-latest' && (github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'ci/workspace-lifecycle-pilot') && '3.14.10' || '3.12' }}
+      - name: Install Linux Qt runtime libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libdbus-1-3 fonts-noto-core fonts-dejavu-core
+      - name: Install ordinary regression dependencies
+        if: matrix.os != 'windows-latest' || (github.head_ref != 'quality/redistribution-gate' && github.head_ref != 'ci/workspace-lifecycle-pilot')
+        run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - name: Isolate exact Windows regression environment
+        if: matrix.os == 'windows-latest' && (github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'ci/workspace-lifecycle-pilot')
+        shell: pwsh
+        run: |
+          python -m venv (Join-Path $env:RUNNER_TEMP 'mano-regression-venv')
+          if ($LASTEXITCODE -ne 0) { throw 'Regression venv failed.' }
+          (Join-Path $env:RUNNER_TEMP 'mano-regression-venv\Scripts') >> $env:GITHUB_PATH
+      - name: Install exact Windows candidate dependencies
+        if: matrix.os == 'windows-latest' && (github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'ci/workspace-lifecycle-pilot')
+        run: |
+          python -m pip --isolated install --index-url https://pypi.org/simple --only-binary=:all: --report regression-wheel-report.json -c installer/windows-candidate-constraints.txt -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned regression dependencies failed.' }
+          python -m installer.wheel_evidence regression-wheel-report.json installer/windows-candidate-constraints.txt regression-wheel-evidence.json
+          if ($LASTEXITCODE -ne 0) { throw 'Regression wheel evidence rejected.' }
+          python -m pip check
+          if ($LASTEXITCODE -ne 0) { throw 'Regression dependency conflict.' }
+      - run: python -c "import PySide6"
+      - name: Use installed Windows fonts in offscreen Qt
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $fonts = Join-Path $env:WINDIR 'Fonts'
+          if (!(Test-Path $fonts)) { throw 'Windows font directory missing' }
+          "QT_QPA_FONTDIR=$fonts" >> $env:GITHUB_ENV
+      - name: Reject missing Latin, Persian and technical glyphs
+        run: python render_preflight.py
+      - name: Record regression source and environment
+        run: |
+          git rev-parse HEAD > regression-source.txt
+          python --version > regression-python.txt
+          python -m pip freeze > regression-dependencies.txt
+      # Repeat the same ordered subset in separate processes, not a replacement
+      # for the release regression. The baseline worktree uses the exact parent.
+      - name: Baseline checkout
+        shell: pwsh
+        run: |
+          $baseline = 'd4adade459c161f32b940420e5e2e66f0cd5a246'
+          git cat-file -e "$baseline^{commit}"
+          if ($LASTEXITCODE -ne 0) { throw 'Exact benchmark baseline unavailable' }
+          git merge-base --is-ancestor $baseline HEAD
+          if ($LASTEXITCODE -ne 0) { throw 'Benchmark baseline is not an ancestor' }
+          git worktree add --detach ../mano-lifecycle-baseline $baseline
+          if ($LASTEXITCODE -ne 0) { throw 'Baseline worktree creation failed' }
+          $actual = (git -C ../mano-lifecycle-baseline rev-parse HEAD).Trim()
+          if ($actual -ne $baseline) { throw 'Benchmark baseline revision mismatch' }
+      - name: Measure unchanged baseline
+        working-directory: ../mano-lifecycle-baseline
+        run: python -m pytest -q --durations=25 --junitxml=baseline.xml tests/test_workspace.py -k "test_settings or test_calm_preferences or test_integrated_circuit_edit or test_procedural_brand_feedback or test_shared_motion_policy or test_instructor_splash_variants or test_exercise_file_actions or test_lab_motion_preference_shared_by_cpu_and_logic or test_karnaugh_equivalence_table"
+      - name: Measure lifecycle cleanup with identical selection
+        run: python -m pytest -q --durations=25 --junitxml=regression.xml tests/test_workspace.py -k "test_settings or test_calm_preferences or test_integrated_circuit_edit or test_procedural_brand_feedback or test_shared_motion_policy or test_instructor_splash_variants or test_exercise_file_actions or test_lab_motion_preference_shared_by_cpu_and_logic or test_karnaugh_equivalence_table"
+      - name: Verify destruction contract
+        run: python -m pytest -q --junitxml=lifecycle.xml tests/test_workspace.py -k test_workspace_disposal_releases_owned_widgets_and_timers
+      - name: Compare identical test outcomes and report timings
+        run: python ci/compare_lifecycle.py ../mano-lifecycle-baseline/baseline.xml regression.xml
+      - name: Collect baseline report into checkout
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path ../mano-lifecycle-baseline/baseline.xml) { Copy-Item ../mano-lifecycle-baseline/baseline.xml baseline.xml }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-${{ matrix.os }}
+          path: |
+            baseline.xml
+            regression.xml
+            lifecycle.xml
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-environment-${{ matrix.os }}
+          path: |
+            regression-source.txt
+            regression-python.txt
+            regression-dependencies.txt
+            regression-wheel-evidence.json
+          if-no-files-found: ignore

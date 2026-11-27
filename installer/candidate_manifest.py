@@ -8,6 +8,8 @@ import re
 import struct
 import zipfile
 
+from installer.windows_zip_paths import validate_windows_paths
+
 
 def digest(path):
     result = hashlib.sha256()
@@ -179,6 +181,60 @@ def verify_installed_report(path, archive):
     return expected_report
 
 
+
+def verify_review_evidence(portable, setup, root):
+    reports = {}
+    specifications = (
+        ("redistribution-preflight.json", "redistribution-preflight"),
+        ("runtime-evidence.json", "runtime-evidence"),
+        ("wheel-evidence.json", "pip-wheel-download-evidence"),
+    )
+    for filename, kind in specifications:
+        portable_path = portable / filename
+        setup_path = setup / filename
+        if not portable_path.is_file() or not setup_path.is_file():
+            raise ValueError("Missing review evidence: " + filename)
+        raw = portable_path.read_bytes()
+        if raw != setup_path.read_bytes():
+            raise ValueError("Portable and Setup review evidence differ: " + filename)
+        report = json.loads(raw)
+        if not isinstance(report, dict):
+            raise ValueError("Invalid review evidence: " + filename)
+        if kind == "redistribution-preflight":
+            if (not isinstance(report.get("flags"), list)
+                    or report.get("manual_review_required") is not True
+                    or report.get("public_release_approved") is not False):
+                raise ValueError("Invalid redistribution review status")
+        elif kind == "runtime-evidence":
+            if (report.get("kind") != kind or not isinstance(report.get("flags"), list)
+                    or report.get("manual_review_required") is not True
+                    or report.get("public_release_approved") is not False):
+                raise ValueError("Invalid runtime review status")
+        else:
+            if (report.get("kind") != kind or not isinstance(report.get("packages"), dict)
+                    or not report["packages"]
+                    or report.get("independent_authenticity_verified") is not False
+                    or report.get("redistribution_approved") is not False):
+                raise ValueError("Invalid wheel provenance status")
+        reports[filename] = report
+
+    constraints = root / "installer" / "windows-candidate-constraints.txt"
+    if not constraints.is_file():
+        raise ValueError("Missing source dependency constraints")
+    expected = constraints.read_bytes()
+    for folder in (portable, setup):
+        copy = folder / "windows-candidate-constraints.txt"
+        if not copy.is_file() or copy.read_bytes() != expected:
+            raise ValueError("Packaged dependency constraints differ from source")
+    return {
+        "redistribution_flags": len(reports["redistribution-preflight.json"]["flags"]),
+        "runtime_flags": len(reports["runtime-evidence.json"]["flags"]),
+        "wheel_packages": len(reports["wheel-evidence.json"]["packages"]),
+        "manual_review_required": True,
+        "public_release_approved": False,
+    }
+
+
 def validate(root, sha):
     if not re.fullmatch(r"[a-f0-9]{40}", sha):
         raise ValueError("Invalid source commit")
@@ -195,6 +251,7 @@ def validate(root, sha):
     exe = setup / f"ManoStudio-Setup-v{version}-x64.exe"
     assets = [asset(z), asset(exe)]
     with zipfile.ZipFile(z) as archive:
+        validate_windows_paths(archive, "ManoStudio/")
         if archive.testzip() is not None:
             raise ValueError("Corrupt portable archive")
         seen_paths = set()
@@ -213,6 +270,7 @@ def validate(root, sha):
                 raise ValueError("Portable executable is not AMD64")
         license_evidence = verify_distribution_payload(root, archive)
         installed_payload = verify_installed_report(setup / "installed-payload.json", archive)
+    review_evidence = verify_review_evidence(portable, setup, root)
     with exe.open("rb") as stream:
         # Inno Setup may use a 32-bit bootstrap for a 64-bit application.
         machine(stream)
@@ -220,6 +278,7 @@ def validate(root, sha):
             "platform": "Windows x64", "portable_smoke": "PASS", "installed_smoke": "PASS",
             "academic_source_sha256": digest(root / "rtl_translator.py"), "assets": assets,
             "license_evidence": license_evidence, "installed_payload": installed_payload,
+            "review_evidence": review_evidence,
             "native_acceptance": False, "public_release": False}
 
 
