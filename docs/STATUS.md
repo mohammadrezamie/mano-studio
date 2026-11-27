@@ -1,3 +1,9 @@
+# Timing-aware CI optimization — 2026-11-27
+
+A separate CI-only child uses historical verified Stable JUnit data (1518 cases) for longest-estimated-first allocation, exact timing-profile digest, per-case timing and reviewed profile export. Historical replay reduces slowest four-shard total from 1053.2s to 857.7s. Focused unit tests pending; do not claim actual speedup. Stable #38 latest full installer and focused contracts green; Beta #37 installer green; existing full release regressions still running. Reactive glass #41 Ubuntu focused success, Windows pending. No release source change or publication.
+
+---
+
 # Parallel regression pilot — 2026-11-27
 
 New CI-only child branch: four deterministic shards per OS and an aggregate completeness gate. Existing serial Beta and Stable release checks are not cancelled or replaced. See PARALLEL_CI.md. Latest Beta installer 45917243329 succeeded; exact serial regression still running at inspection. Stable child 84/84 focused tests per OS and next-gen CPU 57/57 per OS passed. Pilot execution pending; no publication.
