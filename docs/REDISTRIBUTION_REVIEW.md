@@ -17,3 +17,11 @@ Still required before public distribution:
 5. Obtain independent legal review of the LGPL/GPL route and final installer/portable contents.
 
 The release gate remains manual-review-required and public_release_approved=false. Do not publish solely because CI passes.
+
+## Qt Image Formats and exact wheel-byte provenance
+
+The exact Stable and Beta lean portable archives were compared against hash-verified PySide6 Essentials 6.12.0 and Shiboken6 6.12.0 wheels. All 43 bundled Qt/Shiboken DLL/PYD files matched byte-for-byte (38 from PySide6 Essentials, five from Shiboken6); neither candidate had unmatched binaries. This verifies the wheel origin of those bytes, not the exact upstream source revision, build flags, vendor patches or LGPL corresponding-source compliance.
+
+The retained Qt Image Formats 6.12.0 source archive has vendor-checksum-verified SHA-256 `0943132b5db8de6b6a7f1d162682173e8763c7ed94e80fd39113292845f67762`. The shipped qicns, qtga, qtiff, qwbmp, and qwebp plugin source files declare the Qt Commercial/LGPL-3.0-only/GPL-2.0-only/GPL-3.0-only alternatives; their CMake files carry BSD-3-Clause. Qt upstream attribution identifies libtiff 4.7.2 for qtiff and libwebp 1.6.0 for qwebp when system libraries are not found. Their license texts and attribution metadata are copied into each candidate's third-party notices, with exact byte hashes checked by the build gate.
+
+This improves notice completeness but does not resolve the unknown exact wheel build configuration or prove whether libtiff/libwebp were statically embedded. The source archive, source revision/build flags/patch correspondence, compatible relinking instructions, complete source offer and independent legal review remain open. The preflight must continue to report manual review required and public_release_approved=false.

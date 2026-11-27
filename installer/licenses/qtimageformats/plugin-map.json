@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "source": {
+    "project": "Qt Image Formats",
+    "version": "6.12.0",
+    "archive": "qtimageformats-everywhere-src-6.12.0.tar.xz",
+    "sha256": "0943132b5db8de6b6a7f1d162682173e8763c7ed94e80fd39113292845f67762",
+    "vendor_checksum_verified": true,
+    "exact_wheel_build_configuration_verified": false
+  },
+  "plugins": {
+    "qicns": {
+      "binary": "qicns.dll",
+      "source": "src/plugins/imageformats/icns/qicnshandler.cpp",
+      "source_spdx": "LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only",
+      "cmake_spdx": "BSD-3-Clause"
+    },
+    "qtga": {
+      "binary": "qtga.dll",
+      "source": "src/plugins/imageformats/tga/qtgafile.cpp",
+      "source_spdx": "LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only",
+      "cmake_spdx": "BSD-3-Clause"
+    },
+    "qtiff": {
+      "binary": "qtiff.dll",
+      "source": "src/plugins/imageformats/tiff/qtiffhandler.cpp",
+      "source_spdx": "LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only",
+      "cmake_spdx": "BSD-3-Clause",
+      "third_party": "libtiff 4.7.2"
+    },
+    "qwbmp": {
+      "binary": "qwbmp.dll",
+      "source": "src/plugins/imageformats/wbmp/qwbmphandler.cpp",
+      "source_spdx": "LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only",
+      "cmake_spdx": "BSD-3-Clause"
+    },
+    "qwebp": {
+      "binary": "qwebp.dll",
+      "source": "src/plugins/imageformats/webp/qwebphandler.cpp",
+      "source_spdx": "LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only",
+      "cmake_spdx": "BSD-3-Clause",
+      "third_party": "libwebp 1.6.0"
+    }
+  },
+  "third_party": {
+    "libtiff": {
+      "version": "4.7.2",
+      "license_id": "libtiff",
+      "license_file": "libtiff.txt",
+      "upstream_attribution": "libtiff-attribution.json",
+      "used_by": "qtiff if no system libtiff is found"
+    },
+    "libwebp": {
+      "version": "1.6.0",
+      "license_id": "BSD-3-Clause",
+      "license_file": "libwebp-COPYING.txt",
+      "upstream_attribution": "libwebp-attribution.json",
+      "used_by": "qwebp if no system libwebp is found"
+    }
+  },
+  "exact_corresponding_source_verified": false,
+  "redistribution_approved": false
+}

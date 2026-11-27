@@ -35,6 +35,9 @@ if (-not $ReuseFrozen) {
     foreach ($name in @('LGPL-3.0-only.txt','GPL-3.0-only.txt','README.md')) {
         Copy-Item -LiteralPath (Join-Path $PSScriptRoot "licenses\$name") -Destination $qtTexts -ErrorAction Stop
     }
+    $qtImageFormats = Join-Path $qtTexts 'qtimageformats'
+    python -m installer.qt_imageformats_notices (Join-Path $PSScriptRoot 'licenses\qtimageformats') $qtImageFormats
+    if ($LASTEXITCODE -ne 0) { throw 'Qt Image Formats notice collection failed.' }
 }
 if (-not (Test-Path 'dist\ManoStudio\ManoStudio.exe')) { throw 'Frozen app missing.' }
 if ($PortableOnly) { exit 0 }

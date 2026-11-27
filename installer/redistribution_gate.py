@@ -78,6 +78,7 @@ def audit(archive):
         flags.append({'code': 'qt-corresponding-source-and-relink-review'})
     for warning in inventory['warnings']:
         flags.append({'code': 'inventory-warning', 'detail': warning})
+    flags.append(audit_qt_imageformats(archive))
     if not inventory.get('python_license'):
         flags.append({'code': 'missing-python-license'})
     else:
@@ -86,6 +87,34 @@ def audit(archive):
             raise ValueError('Python license evidence mismatch')
     return {'binary_count': len(actual), 'package_count': len(inventory['packages']),
             'flags': flags, 'manual_review_required': True, 'public_release_approved': False}
+
+
+
+def audit_qt_imageformats(archive):
+    base = NOTICES + 'qt-license-texts/qtimageformats/'
+    manifest = json.loads(archive.read(base + 'SUPPLEMENT.json'))
+    if (manifest.get('kind') != 'qt-imageformats-license-supplement'
+            or manifest.get('source_version') != '6.12.0'
+            or manifest.get('source_archive_sha256') != '0943132b5db8de6b6a7f1d162682173e8763c7ed94e80fd39113292845f67762'
+            or manifest.get('review_complete') is not False
+            or manifest.get('exact_corresponding_source_verified') is not False
+            or manifest.get('redistribution_approved') is not False):
+        raise ValueError('Invalid Qt Image Formats notice supplement')
+    expected = {'BSD-3-Clause.txt','libtiff.txt','libwebp-COPYING.txt','NOTICE.md',
+                'plugin-map.json','libtiff-attribution.json','libwebp-attribution.json'}
+    rows = manifest.get('files')
+    if not isinstance(rows, list) or {item.get('file') for item in rows} != expected or len(rows) != len(expected):
+        raise ValueError('Qt Image Formats notice inventory incomplete')
+    for item in rows:
+        name = item['file']
+        data = archive.read(base + name)
+        if len(data) != item.get('bytes') or hashlib.sha256(data).hexdigest() != item.get('sha256'):
+            raise ValueError('Qt Image Formats notice hash mismatch: ' + name)
+    mapping = json.loads(archive.read(base + 'plugin-map.json'))
+    if set(mapping.get('plugins', {})) != {'qicns','qtga','qtiff','qwbmp','qwebp'}:
+        raise ValueError('Qt Image Formats plugin map incomplete')
+    return {'code':'qt-imageformats-notice-and-corresponding-source-review'}
+
 
 
 def main():
