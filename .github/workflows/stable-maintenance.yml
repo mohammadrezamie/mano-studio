@@ -31,5 +31,12 @@ jobs:
         shell: pwsh
         run: '"QT_QPA_FONTDIR=$env:WINDIR\Fonts" >> $env:GITHUB_ENV'
       - run: python render_preflight.py
-      - run: python -m pytest -q tests/test_update_service.py tests/test_release_channel.py tests/test_update_download.py tests/test_update_progress.py tests/test_update_view.py
-      - run: python -m pytest -q tests/test_typography.py tests/test_workspace.py -k 'font_selection or readability_defaults or settings or instructor_source_and_splash or translation_and_stale_output'
+      - run: python -m pytest -q --junitxml=stable-updates.xml tests/test_update_service.py tests/test_release_channel.py tests/test_update_download.py tests/test_update_progress.py tests/test_update_view.py tests/test_update_notice.py
+      - run: python -m pytest -q --junitxml=stable-workspace.xml tests/test_typography.py tests/test_workspace.py -k 'font_selection or readability_defaults or settings or instructor_source_and_splash or translation_and_stale_output'
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stable-maintenance-junit-${{ matrix.os }}-${{ github.sha }}
+          path: stable-*.xml
+          if-no-files-found: error
