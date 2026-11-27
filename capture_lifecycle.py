@@ -15,3 +15,14 @@ def dispose_capture_widget(widget):
     QCoreApplication.sendPostedEvents(widget, QEvent.Type.DeferredDelete)
     if isValid(widget):
         raise RuntimeError("Capture widget survived deferred deletion")
+
+
+def discard_capture_lab(widget):
+    """Destroy only a developer-created disposable lab, never a user document."""
+    if not isValid(widget):
+        return
+    widget.hide()
+    widget.deleteLater()
+    QCoreApplication.sendPostedEvents(widget, QEvent.Type.DeferredDelete)
+    if isValid(widget):
+        raise RuntimeError("Disposable capture lab survived deletion")

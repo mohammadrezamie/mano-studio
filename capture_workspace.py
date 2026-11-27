@@ -8,7 +8,9 @@ import tempfile
 import json
 import hashlib
 from time import perf_counter
-from capture_lifecycle import dispose_capture_widget
+from capture_lifecycle import dispose_capture_widget, discard_capture_lab
+from unittest.mock import patch
+from PySide6.QtWidgets import QMessageBox
 from learning_catalog import TOOLS
 from capture_karnaugh import capture_karnaugh
 from visual_review import build_gallery, image_info
@@ -140,7 +142,7 @@ def capture_active_states(app,window,output,language):
             lambda:"3 ↔ 7" in logic.karnaugh.analysis.toPlainText())
     finally:
         for lab in (logic,computer):
-            dispose_capture_widget(lab)
+            discard_capture_lab(lab)
         app.processEvents()
     return records
 
@@ -185,7 +187,7 @@ def capture_routes(app,window,output):
             records.append({"entry":tool.id,"chapter":tool.chapter,"language":language,
                             "theme":"dark","lab":tool.lab,"route":tool.route,**seen[key]})
         for dialog in (logic,computer):
-            dispose_capture_widget(dialog)
+            discard_capture_lab(dialog)
         app.processEvents()
         active.extend(capture_active_states(app,window,output,language))
     (output/"route-manifest.json").write_text(json.dumps({
@@ -193,7 +195,7 @@ def capture_routes(app,window,output):
         "entries":records,"active_states":active},ensure_ascii=False,indent=2),encoding="utf-8")
 
 
-def main():
+def capture_all():
     app = QApplication([])
     app.setStyle("Fusion")
     output = Path("screenshots")
@@ -268,7 +270,7 @@ def main():
                 if not lab.grab().save(str(target)):
                     raise RuntimeError(f"Could not save {target}")
                 capture_karnaugh(app,lab,output,language,theme)
-                dispose_capture_widget(lab)
+                discard_capture_lab(lab)
                 computer=ProgramLab(window)
                 computer.resize(1360,900)
                 computer.show()
@@ -290,7 +292,7 @@ def main():
                 target=output/f"{language}-{theme}-bases.png"
                 if not computer.grab().save(str(target)):
                     raise RuntimeError(f"Could not save {target}")
-                dispose_capture_widget(computer)
+                discard_capture_lab(computer)
                 app.processEvents()
                 print(f'Captured {language}/{theme}: {perf_counter()-started:.3f}s', flush=True)
         started=perf_counter()
@@ -299,6 +301,17 @@ def main():
         print(f'Captured and validated all routes: {perf_counter()-started:.3f}s', flush=True)
         window.editor.document().setModified(False)
         dispose_capture_widget(window)
+
+
+def main():
+    # Unexpected modal prompts must fail, not hang or be auto-accepted.
+    def unexpected(*args, **kwargs):
+        raise RuntimeError("Unexpected message box during capture: " + str(args[1:3]))
+    from contextlib import ExitStack
+    with ExitStack() as stack:
+        for name in ("question", "warning", "information", "critical"):
+            stack.enter_context(patch.object(QMessageBox, name, side_effect=unexpected))
+        capture_all()
 
 
 if __name__ == "__main__":
