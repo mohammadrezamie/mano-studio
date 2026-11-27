@@ -1,3 +1,9 @@
+# Future development checkpoint — 2026-11-27
+
+Source-based 13-chapter gap review and first cursor-reactive native glass rim on a separate branch, based on #39 (57/57 focused tests green per OS). See TEXTBOOK_AND_UX_GAPS.md. No release candidate runtime changes; new visual tests pending. Native performance and actual edition reconciliation remain open.
+
+---
+
 # Next-generation CPU algorithms — proposed, 2026-11-27
 
 Separate Beta feature branch based on integrated #36 source, without modifying release candidates. Adds three native runnable examples (13 total): repeated-addition multiplication, indirect array sum, De Morgan OR. Expected final states and step counts are hand-derived; independent bitwise and multiplication edge-case oracles and existing bilingual menu contracts included. Focused CI pending; do not mark tested or merge until green. No changes to the standalone RTL translator or packaging. Stable #26 and Beta packaging #37 remain separate.
