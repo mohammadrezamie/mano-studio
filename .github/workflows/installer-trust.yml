@@ -1,7 +1,7 @@
 name: stable installer trust contracts
 on:
   pull_request:
-    branches: [feature/stable-update-notice]
+    branches: [maintenance/stable-next]
     types: [opened, synchronize, reopened, ready_for_review]
 permissions:
   contents: read
