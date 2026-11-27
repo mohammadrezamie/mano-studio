@@ -85,6 +85,7 @@ jobs:
           import subprocess
           import tempfile
           import zipfile
+          from urllib.parse import urlencode
 
           e = os.environ
           repo, source, version = e["GH_REPO"], e["SOURCE"], e["VERSION"]
@@ -105,12 +106,15 @@ jobs:
                       f"Required workflow {run_id} not successful")
           check_run(e["BUILD"], "Build lean release candidates")
           check_run(e["NATIVE"], "Lean exact installer acceptance")
+          check_run("46048466661", "Exact candidate full regression (10-way parallel)")
+          check_run("46050465305", "Attest exact reviewed release assets")
           jobs = api(f"{base}/actions/runs/{e['BUILD']}/jobs")["jobs"]
           require(any(j["conclusion"] == "success" and j["name"].startswith(f"build ({e['TRACK']}, {source}, ") for j in jobs), "Exact source build job absent")
           endpoint = f"{base}/releases/{e['RELEASE_ID']}"
+          placeholder = {"stable": "untagged-e438c6988649501c973e", "beta": "untagged-786f71ed7a05b8f89b03"}[e["TRACK"]]
           def draft():
               r = api(endpoint)
-              require(r["draft"] is True and r["prerelease"] == (e["TRACK"] == "beta") and r["tag_name"] == tag,
+              require(r["id"] == int(e["RELEASE_ID"]) and r["draft"] is True and r["prerelease"] == (e["TRACK"] == "beta") and r["tag_name"] in (tag, placeholder),
                       "Not the expected private draft")
               return r
           draft()
@@ -180,8 +184,10 @@ jobs:
               notes = (f"# Mano Studio {tag} — PRIVATE DRAFT, NOT APPROVED FOR PUBLICATION\n\n"
                        f"Exact source: {source}\n\nBuild: https://github.com/{repo}/actions/runs/{e['BUILD']}\n\n"
                        f"Hosted Windows acceptance: https://github.com/{repo}/actions/runs/{e['NATIVE']}\n\n"
-                       "Draft refresh in progress. Do not publish. Exact full regression, independent visual/native acceptance, "
-                       "security, publisher authenticity and corresponding-source/relink approval remain open. "
+                       "Full regression: https://github.com/" + repo + "/actions/runs/46048466661\n\n"
+                       "Signed post-build verification: https://github.com/" + repo + "/actions/runs/46050465305\n\n"
+                       "Draft refresh in progress. Do not publish. Independent native acceptance, "
+                       "security and corresponding-source/relink approval remain open. "
                        "Source REVIEW-ONLY archive is not a complete corresponding-source offer. Installer unsigned. "
                        "Previous assets retained with OLD-REVIEW-ONLY prefix; remove them before any eventual publication.\n")
               def patch_notes(body):
@@ -202,7 +208,9 @@ jobs:
                       require(backup not in existing, "Backup already exists")
                       gh("api", "--method", "PATCH", f"{base}/releases/assets/{a['id']}", "-f", "name=" + backup)
                   draft()
-                  gh("release", "upload", tag, str(p))
+                  upload_url = f"https://uploads.github.com/{base}/releases/{e['RELEASE_ID']}/assets?" + urlencode({"name": p.name})
+                  uploaded = json.loads(gh("api", "--method", "POST", upload_url, "--header", "Content-Type: application/octet-stream", "--input", str(p)))
+                  require(uploaded.get("name") == p.name and uploaded.get("digest") == expected[p.name], "Upload response mismatch")
                   fresh = {a["name"]: a for a in draft()["assets"]}
                   require(fresh.get(p.name, {}).get("digest") == expected[p.name], "Uploaded digest mismatch")
               fresh = {a["name"]:a for a in draft()["assets"]}
