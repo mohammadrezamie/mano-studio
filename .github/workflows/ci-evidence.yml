@@ -1,0 +1,31 @@
+name: CI evidence contracts
+on:
+  pull_request:
+    branches: [ci/weighted-regression]
+permissions:
+  contents: read
+jobs:
+  evidence:
+    if: github.head_ref == 'ci/junit-evidence' && github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest -q --junitxml=ci-evidence.xml tests/test_ci_shard.py tests/test_ci_junit.py tests/test_ci_calibrate.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-evidence-${{ matrix.os }}
+          path: ci-evidence.xml
+          if-no-files-found: ignore
