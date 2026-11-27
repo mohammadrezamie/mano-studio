@@ -1,0 +1,124 @@
+name: Exact candidate full regression (10-way parallel)
+on:
+  push:
+    branches: [release/notice-rebuild]
+    paths:
+      - '.github/workflows/candidate-regression.yml'
+      - 'scripts/run_test_shard.py'
+      - 'docs/RELEASE_REGRESSION_SHARDING.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: candidate-regression-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  regression:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/notice-rebuild'
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      max-parallel: 20
+      matrix:
+        include:
+          - {track: stable, source: '8184129b13e5e80eb0571f90d37694fe26654c72', os: ubuntu-latest}
+          - {track: stable, source: '8184129b13e5e80eb0571f90d37694fe26654c72', os: windows-latest}
+          - {track: beta, source: '8cac2d66ddc18f0e7501ea37c64d4b2d4e50e03e', os: ubuntu-latest}
+          - {track: beta, source: '8cac2d66ddc18f0e7501ea37c64d4b2d4e50e03e', os: windows-latest}
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    name: ${{ matrix.track }} / ${{ matrix.os }} / shard ${{ matrix.shard }}
+    runs-on: ${{ matrix.os }}
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14.10'
+          architecture: x64
+      - name: Install Linux Qt runtime libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libdbus-1-3 fonts-noto-core fonts-dejavu-core
+      - name: Install exact candidate regression dependencies
+        shell: bash
+        run: |
+          python -m pip --isolated install --index-url https://pypi.org/simple --only-binary=:all: --report regression-wheel-report.json -c installer/windows-candidate-constraints.txt -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
+          python -m pip check
+          python -c "import PySide6"
+      - name: Use installed Windows fonts in offscreen Qt
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $fonts = Join-Path $env:WINDIR 'Fonts'
+          if (!(Test-Path $fonts)) { throw 'Windows font directory missing' }
+          "QT_QPA_FONTDIR=$fonts" >> $env:GITHUB_ENV
+      - name: Validate Latin, Persian and technical glyph coverage
+        run: python render_preflight.py
+      - name: Record exact candidate and environment
+        shell: bash
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ matrix.source }}"
+          printf 'track=%s\nsource=%s\nos=%s\nshard=%s\n' "${{ matrix.track }}" "${{ matrix.source }}" "${{ matrix.os }}" "${{ matrix.shard }}" > regression-context.txt
+          python --version > regression-python.txt
+          python -m pip freeze > regression-dependencies.txt
+      - name: Run deterministic test shard
+        run: python scripts/run_test_shard.py --shard ${{ matrix.shard }} --total 10 --junitxml regression-shard-${{ matrix.shard }}.xml
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: regression-${{ matrix.track }}-${{ matrix.os }}-${{ matrix.shard }}
+          path: |
+            regression-shard-${{ matrix.shard }}.xml
+            regression-context.txt
+            regression-python.txt
+            regression-dependencies.txt
+            regression-wheel-report.json
+          if-no-files-found: warn
+          retention-days: 30
+  visual:
+    needs: regression
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/notice-rebuild'
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include:
+          - {track: stable, source: '8184129b13e5e80eb0571f90d37694fe26654c72', os: ubuntu-latest}
+          - {track: stable, source: '8184129b13e5e80eb0571f90d37694fe26654c72', os: windows-latest}
+          - {track: beta, source: '8cac2d66ddc18f0e7501ea37c64d4b2d4e50e03e', os: ubuntu-latest}
+          - {track: beta, source: '8cac2d66ddc18f0e7501ea37c64d4b2d4e50e03e', os: windows-latest}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.source }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14.10'
+      - name: Install Linux Qt runtime libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libdbus-1-3 fonts-noto-core fonts-dejavu-core
+      - name: Install exact candidate dependencies
+        shell: bash
+        run: |
+          python -m pip --isolated install --index-url https://pypi.org/simple --only-binary=:all: -c installer/windows-candidate-constraints.txt -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
+          python -m pip check
+      - name: Set Windows font path
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: "QT_QPA_FONTDIR=$env:WINDIR\Fonts" >> $env:GITHUB_ENV
+      - run: python capture_workspace.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: candidate-previews-${{ matrix.track }}-${{ matrix.os }}
+          path: screenshots/
+          if-no-files-found: error
+          retention-days: 30
