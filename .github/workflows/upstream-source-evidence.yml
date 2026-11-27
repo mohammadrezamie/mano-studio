@@ -7,6 +7,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: upstream-source-evidence-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   archive:
     if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
@@ -51,8 +54,22 @@ jobs:
           set -euo pipefail
           mkdir -p evidence
           name="${URL##*/}"
-          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 90 --retry 2 --max-filesize 4096 "$URL.sha256" -o evidence/vendor.sha256
-          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 1000 --retry 2 --max-filesize 1800000000 "$URL" -o "evidence/$name"
+          alternate="${URL/\/archive\/qt\//\/official_releases\/qt\/}"
+          for candidate in "$URL" "$alternate"; do
+            if curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 60 --retry 1 --max-filesize 4096 "$candidate.sha256" -o evidence/vendor.sha256; then
+              printf '%s\n' "$candidate.sha256" > evidence/checksum-url.txt
+              break
+            fi
+          done
+          test -s evidence/checksum-url.txt
+          for candidate in "$URL" "$alternate"; do
+            if curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 600 --retry 1 --max-filesize 1800000000 "$candidate" -o "evidence/$name"; then
+              printf '%s\n' "$candidate" > evidence/archive-url.txt
+              break
+            fi
+            rm -f "evidence/$name"
+          done
+          test -s evidence/archive-url.txt
           python - <<'PY'
           import hashlib, json, os, re, tarfile
           from pathlib import Path
@@ -60,11 +77,12 @@ jobs:
           name = url.rsplit("/", 1)[-1]
           p = Path("evidence") / name
           tokens = Path("evidence/vendor.sha256").read_text(encoding="ascii").split()
-          if len(tokens) != 2 or tokens[1].lstrip("*") != name or not re.fullmatch(r"[0-9a-fA-F]{64}", tokens[0]):
+          if (len(tokens) not in (1, 2) or not re.fullmatch(r"[0-9a-fA-F]{64}", tokens[0])
+                  or (len(tokens) == 2 and tokens[1].lstrip("*").rsplit("/", 1)[-1] != name)):
               raise ValueError("Unexpected vendor checksum record")
           expected = tokens[0].lower()
           if os.environ["PINNED"] and expected != os.environ["PINNED"]:
-              raise ValueError("Vendor checksum differs from independently recorded pin")
+              raise ValueError("Vendor checksum differs from recorded vendor mirrorlist pin")
           with p.open("rb") as stream:
               actual = hashlib.file_digest(stream, "sha256").hexdigest()
           if actual != expected:
@@ -79,8 +97,11 @@ jobs:
           if not count or not notices:
               raise ValueError("Missing archive files or license inventory")
           result = dict(kind="upstream-source-review-evidence", module=os.environ["MODULE"],
-                        scope=os.environ["SCOPE"], url=url, sha256=actual, bytes=p.stat().st_size,
-                        vendor_checksum_verified=True, independently_pinned=bool(os.environ["PINNED"]),
+                        scope=os.environ["SCOPE"], url=Path("evidence/archive-url.txt").read_text().strip(),
+                        checksum_url=Path("evidence/checksum-url.txt").read_text().strip(),
+                        sha256=actual, bytes=p.stat().st_size,
+                        vendor_checksum_verified=True, recorded_vendor_pin=bool(os.environ["PINNED"]),
+                        independently_pinned=False,
                         tar_members=count, license_members=notices[:200],
                         exact_wheel_correspondence_verified=False, redistribution_approved=False)
           Path("evidence/report.json").write_text(json.dumps(result, indent=2)+"\n")
