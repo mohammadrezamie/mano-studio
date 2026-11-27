@@ -1,18 +1,45 @@
-# Instructor-ready v1 visual and academic acceptance
+# Stable candidate — instructor and visual acceptance
 
-Owner direction 2026-11-26: the first stable release is targeted for Monday 2026-11-30. The assignment is RTL-to-Assembly, not complete textbook coverage. Presentation quality is an explicit acceptance criterion, alongside correctness and stability. Add features until the deadline only after independent verification and rechecking the exact integrated release candidate. Maintain independent next-generation development. No arbitrary package-size or library restriction; choose technology for actual UX, offline reliability, licensing and testability.
+**Status: internal candidate only.** This document defines acceptance for the Stable desktop application. It does not announce a release date or approve publication.
 
-## Implemented candidate changes
+## Academic assignment contract
 
-- Derived from exact successful installable beta ecb6647c38a93a4eb9c2171c99c10392abd15e72, without changing PR #22 or its running tests.
-- Current stack retained deliberately: Python 3.10+ standalone core, PySide6 / Qt desktop, original Qt-painted and SVG visual assets, PyInstaller and Inno Setup Windows x64 packaging. No rewrite or new dependency needed for this pass.
-- Version 1.0.0 is an internal candidate until all release gates pass. Central version policy permits exactly 1.0.0 and existing 0.x prereleases; manifest still marks native acceptance and public release false. Version-specific updater and manifest tests updated, no relaxation of checksums, license or smoke gates.
-- Layered workspace editor panels, clearer typographic hierarchy, version chip, reorganized brand header and visible Translator source action. Refined splash card with dedicated credits and startup-message footer. Three themes, glass/plain and reduced-motion options remain.
-- Source viewer shows exact bundled standalone rtl_translator.py, with Python token highlighting, line numbers, read-only display, copy, standalone command and atomic .py export. No app dependency or change to academic file. Source export avoids overwriting original or its hard link.
-- Dedicated instructor acceptance matrix captures actual Qt workspace at 1360×900 and 1024×768, source dialog and splash for each of two locales × three themes × glass/plain (48 images expected). Verify the real screenshots for clipping, typography, contrast and presentation quality; offscreen screenshots do not establish native Windows usability.
+The instructor-facing deliverable is exactly one independently downloadable Python file at the repository root: `rtl_translator.py`.
 
-## Evidence and outstanding gates
+- The file contains the RTL-to-Assembly conversion core and its explanatory comments/docstrings.
+- It uses only Python's standard library and must run independently of the desktop application.
+- The GUI delegates to this file; it must not duplicate the conversion engine.
+- The desktop application must not include an in-app source viewer, source editor, source-export helper or academic-source dialog.
+- The user downloads and studies the one Python file separately. Optional labs, simulators and visual features remain outside this core file.
+- The installer and portable manifest must include the exact same translator bytes as the repository source.
 
-Local actual 18 pytest passes (0.04s): five source export/atomicity/path cases and 13 version policy cases. Exact tested blobs: academic_source.py a28b908f0952c112cc0ea064fd0e227f811b5e13; test aec18c197fec85b7952a172c736be2065ddfd546; installer/version_policy.py 52b0c8b9fb9d70c30db90117441f23589faac686; test ffd580f3d09c7df73ebf3624fd3a5aba570b6a8b. Extracted the exact 198-line academic source from verified portable beta, normalized Windows CRLF to Git LF, matched Git blob dc495ca2bf2484a28fa9aa440e7868ea6932254c. Isolated python -I -S actual CLI produced LDA/ADD/STA/HLT; invalid RTL rejected without overwriting previous valid result. No modification to translator.
+## Application acceptance
 
-Qt and PowerShell unavailable locally. Candidate UI, splash, full versioned manifest tests and packaging have not yet executed. New focused GUI regression and screenshot capture required on Windows candidate installer workflow, plus full cross-platform regression, native installed demo, redistribution acceptance and verified release assets. Do not publish or label accepted stable before these gates. The independently built beta is a fallback. Next-beta improvements require tested, selective promotion; no blind merge.
+- Windows x64 desktop application with a genuine Setup installer and portable build.
+- Offline-first operation: no startup network calls or telemetry; only explicit update checks may contact GitHub.
+- English and Persian UI, persistent language choice, three themes, glass/plain appearance and reduced-motion behavior.
+- Clean install and first launch without separately installing Python, Qt or pip; app-private runtime must not overwrite shared system components.
+- Verify ordinary install, pre-equipped machine behavior, reinstall/upgrade, offline smoke and clean uninstall.
+- Verify the visible UI at practical window sizes, including Persian typography, RTL layout, readable code editors, splash/credits, keyboard navigation and error guidance.
+
+## Instructor visual evidence
+
+The automated visual evidence matrix contains exactly **36 PNGs**:
+
+- 2 UI languages: English and Persian.
+- 3 themes: Dark, Light and Night.
+- 2 appearance modes: glass and plain.
+- 3 surfaces for every language/theme/appearance combination: 1360×900 workspace, 1024×768 workspace and splash.
+
+The capture validator must confirm the complete matrix, unique filenames, exact workspace dimensions, PNG readability and SHA-256 consistency. A local bilingual HTML gallery accompanies the images. These offscreen screenshots support visual review but do not replace native Windows DPI, display scaling or usability acceptance.
+
+## Release gates — all mandatory
+
+1. Exact-source full regression on Windows and Ubuntu, with no unexplained failures, errors or skips.
+2. Fresh exact-source 36-image capture, integrity validation and human visual review.
+3. Fresh portable and Setup builds; complete binary inventory, dependency provenance, license notices, checksums and manifest validation.
+4. Offline portable and installed smoke tests, including install, first launch and uninstall on clean and pre-equipped Windows systems.
+5. Qt/PySide6 LGPL and GPL module review, corresponding-source/notice obligations and aligned patched Python/Qt/OpenSSL runtime review.
+6. Installer signing, native bilingual acceptance and owner approval before any public release.
+
+A successful build, a passing subset of tests, a draft PR or an internal artifact is not a public release. Keep Stable and the forward Beta independent; selectively promote only verified features. No fixed Stable release date is promised.

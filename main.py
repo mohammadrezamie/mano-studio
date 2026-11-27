@@ -108,4 +108,7 @@ def main():
 if __name__ == "__main__":
     if len(sys.argv) == 3 and sys.argv[1] == "--smoke-test":
         raise SystemExit(smoke_test(sys.argv[2]))
+    if len(sys.argv) == 3 and sys.argv[1] == "--runtime-probe":
+        from installer.standalone_probe import write_report
+        raise SystemExit(write_report(sys.argv[2]))
     raise SystemExit(main())

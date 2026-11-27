@@ -1,3 +1,21 @@
+# Live Stable continuation — 2026-11-27 (authoritative; historical notes follow)
+
+## Current Stable source and academic contract
+PR #24 remains the Stable release umbrella; draft child PR #26 contains the redistribution gate and the current standalone-translator alignment. The app must not contain a source viewer, source editor, exporter helper or duplicate conversion engine. The sole instructor handoff is the individually downloadable root `rtl_translator.py`; the GUI imports and delegates to it.
+
+The Stable branch now removes `academic_source.py`, `ui/academic_view.py`, and `tests/test_academic_source.py`; removes the in-app action and translations; and preserves the splash/credits tests. The installer workflow checks the isolated translator contract instead.
+
+## Instructor visual evidence
+The capture now produces 36 real Qt images: English/Persian × Dark/Light/Night × glass/plain × (1360×900 workspace, 1024×768 workspace, splash). The strict evidence validator rejects missing, duplicate, extra, wrongly sized or hash-mismatched images. A local bilingual HTML gallery is generated alongside the images. Offscreen capture is not native Windows acceptance.
+
+## Required fresh gates
+All prior test and installer artifacts refer to earlier source revisions and must not be used to approve the updated candidate. Run exact-head Windows and Ubuntu regression, focused splash UI checks, 36-image capture and visual inspection, fresh Windows Setup and portable builds, complete manifests/checksums, and offline install/first-launch/reinstall/uninstall smoke. Keep PR #26 draft until these gates and the separate redistribution/security/legal/native/signing/owner-approval gates are satisfied.
+
+## Parallel channels
+Forward Beta remains separate and ahead in PR #36. Do not merge Beta wholesale into Stable. No fixed Stable date is committed, and no public Release/tag is confirmed.
+
+---
+
 # Start here — continuation checkpoint
 
 **Current priority:** isolated `release/beta-integrated` first beta candidate; see final integrated checkpoint. No further optional feature work until release gates pass. Historical checkpoints below.
@@ -152,3 +170,14 @@ PR #22 advances the final v0.3.0-beta.1 verification target. Previous #19 Ubuntu
 
 ## 2026-11-26 — actual Windows freeze succeeded; metadata failure corrected
 Installer run 45784063114 job 139786288200 passed initial packaging and font checks. PyInstaller logged successful EXE/COLLECT and Build complete, then collect_notices.py failed at str(dist.metadata) with email.errors.HeaderParseError on the PyInstaller long Description. No portable archive, Setup, smoke result or downloadable artifact was produced. Replace reserialization with installed METADATA/PKG-INFO text, retaining complete text and failing closed if missing. Local 11/11 tests passed (0.06s), including real PathDistribution fixtures for header-like description lines, Unicode, fallback and missing metadata. License inventory and all smoke/manifest checks remain mandatory. Add notice collector tests to targeted packaging checks. A new exact-head build is required; the old full Windows regression was running and Ubuntu queued at observation. This corrective commit intentionally supersedes the failed package head; no new runtime features, no academic translator change, no release yet.
+
+## Guarded Qt payload remediation — 2026-11-26
+On the downloaded exact v1 archive, GNU objdump -p successfully inspected all 112 binary import tables. Only qtvirtualkeyboardplugin.dll directly imported Qt6VirtualKeyboard.dll; neither was a direct import of retained binaries. Only these two archive paths contain virtualkeyboard. Default-branch code search returned no QtVirtualKeyboard or QT_IM_MODULE matches (not exhaustive for candidate/dynamic usage). New installer/prune_qt.py inspects all retained PE normal and delay imports using build-time pefile, refuses unexpected matching payload or retained dependency, then removes precisely the two named targets before collecting notices. Disposable copy of the actual archive passed removal using local objdump ordinary-import reader; no matching files remained, original archive unchanged. Four new fixture tests pass; 12 combined tests pass (0.05s); exact blobs prune_qt.py b62e53cb1342cba4964a9d213a46fafb46970823 and test_prune_qt.py a658cc94da09414b142c179da9197b8c5652f927. Actual pefile path, Windows build and native/offline smoke not run locally; dynamic/plugin behavior must be verified. Qt license texts, source/provenance, attribution and review remain open. #22/#24 frozen, no publication.
+
+## Maintained Python diagnostic and TLS evidence — 2026-11-26
+Internal #26 Windows diagnostic switches only its own PR builds to Python 3.14.10 (official release 2026-10-25). Other frozen candidates retain existing runtime. This supersedes queued 3.12 diagnostic run 45804344694; branch-specific concurrency may cancel it. Python migration is not proven compatible or sufficient to fix OpenSSL. Official OpenSSL November 24 advisory CVE-2026-121482 lists 3.5.0 before 3.5.10 affected; use 3.5.10 as explicit dated review baseline, not an automatic release/security approval. New runtime_evidence.py scans actual portable ZIP for SSL/crypto DLL embedded versions and SHA-256 plus build interpreter ssl version. Reports flags and always requires manual review; string scan is heuristic, not PE import or loaded-runtime attestation. Seven local pytest fixtures passed (0.04s); local blobs 302f81d034e8222e2e244f56c80fbde73b346cf2 and e5f0a80c3b1bb5a84bdb9237354192c25c56995d. Actual old v1 archive produced four DLL rows, three flags: 3.0.16, 3.5.9 and known historical build SSL 3.0.16 (supplied from prior evidence, not measured in Linux). New Windows build pending, no approval. Sources: https://www.python.org/downloads/release/python-31410/ and https://openssl-library.org/news/vulnerabilities-3.5/ .
+
+Owner requirement: [standalone Windows installation](STANDALONE_INSTALLATION.md) is a permanent gate for both channels. Setup must not require separate Python/Qt/pip, reinstall compatible shared prerequisites or modify global PATH. App-private bundling is intentional. Clean and pre-equipped Windows acceptance remains pending.
+
+## Exact-head regression and upstream security checkpoint — 2026-11-26
+Previous full regression run 45851712083: Ubuntu 1,490 passed / 1 failed because the old update fixture omitted explicit GitHub `prerelease` metadata; product release-channel code correctly fails closed. Fixture fixed only (commit 697b13e2c01e9ff1cc0711a45581ba18f54c116d). Fresh full regression 45862218582 and Windows installer 45862218587 are queued; do not call the old run a pass. Current candidate still has OpenSSL 3.5.9 and PySide6 6.12.0; official OpenSSL 3.5.10 is scheduled 1 Dec, and PySide6 6.12.1 is still being prepared as of 26 Nov despite Qt 6.12.1 itself being available. Qt6Core and Qt6Network are present in the verified candidate binary set. Security gate details and official advisories are in docs/REDISTRIBUTION_PREFLIGHT.md. No DLL mixing, unsupported replacement, publication or Stable approval.

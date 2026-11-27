@@ -103,9 +103,6 @@ class Workspace(QMainWindow):
         identity.addWidget(self.label("Build. Translate. Learn.", "subtitle"))
         header.addLayout(identity)
         header.addStretch()
-        self.academic_button = self.button("Translator source", self.open_academic_source)
-        self.academic_button.setObjectName("academicAction")
-        header.addWidget(self.academic_button)
         self.languages = QComboBox()
         self.languages.addItem("English", "en")
         self.languages.addItem("فارسی", "fa")
@@ -326,7 +323,7 @@ class Workspace(QMainWindow):
         widget.clicked.connect(lambda checked=False: action())
         self.labels.append((widget, key))
         names = {"Open RTL":"open","Choose file":"open","Translate":"translate","Export ASM":"export",
-                 "Settings":"settings","Undo":"undo","Redo":"redo","Instruction reference":"search","Translator source":"codes"}
+                 "Settings":"settings","Undo":"undo","Redo":"redo","Instruction reference":"search"}
         if key in names:
             self.icon_buttons.append((widget,names[key]))
         return widget
@@ -666,21 +663,6 @@ class Workspace(QMainWindow):
         self.centralWidget().enabled = enabled
         self.centralWidget().snap()
         self.centralWidget().update()
-
-    def academic_dialog(self):
-        from ui.academic_view import AcademicSourceDialog
-        return AcademicSourceDialog(self,self.theme,self.language=="fa")
-
-    def open_academic_source(self):
-        try:
-            dialog=self.academic_dialog()
-        except (OSError,UnicodeError,ValueError):
-            QMessageBox.warning(self,self.t("File error"),self.t("Translator source unavailable"))
-            return
-        try:
-            dialog.exec()
-        finally:
-            dialog.deleteLater()
 
     def open_preferences(self):
         from ui.preferences import Preferences

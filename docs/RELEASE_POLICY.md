@@ -1,3 +1,13 @@
+# Current owner release policy — 2026-11-27 (supersedes historical targets below)
+
+- Maintain two independent tracks: Stable 1.0.0 and forward Beta 1.1.0. Beta must remain semantically ahead of Stable; Beta features do not silently flow into Stable. Release each only after its own exact-source acceptance gates and explicit owner approval.
+- The first Beta candidate is PR #36 on the forward line, proposed public prerelease v1.1.0-beta.1. The old v0.3.0-beta.1 branch is fallback-only. Stable PR #24 / child #26 remains a candidate, not an accepted release. No fixed publication date overrides quality/security gates.
+- The academic assignment deliverable is exactly one standalone, downloadable root rtl_translator.py using only the Python standard library. The GUI may call its public translate() function but must not embed an in-app source viewer/editor or duplicate converter implementation. Remove the older viewer from Stable before final acceptance.
+- Stable release requires aligned patched Qt/PySide and OpenSSL dependencies, verified redistribution/source obligations, full exact-head Windows/Ubuntu regression, actual bilingual visual review, clean/pre-equipped Windows install and offline smoke, uninstall/upgrade checks, publisher signing/authenticity review, and explicit owner approval. Do not mix or hand-replace native DLLs.
+- No public GitHub release or tag is confirmed. Do not call CI artifacts public downloads or describe unsigned executables as signed.
+
+---
+
 # Product comfort and pre-release policy
 Owner decisions, 2026-11-24. Applies to all development branches and supersedes older release targets.
 ## Calm by design

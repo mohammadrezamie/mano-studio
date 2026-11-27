@@ -4,7 +4,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 pytest.importorskip("PySide6")
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QSettings, QCoreApplication, QEvent
 from PySide6.QtWidgets import QApplication
 from ui.workspace import Workspace
 
@@ -14,13 +14,44 @@ def app():
     return QApplication.instance() or QApplication([])
 
 
+def dispose_test_window(window):
+    """Destroy the owned test widget tree after normal close handling."""
+    from shiboken6 import isValid
+    if isValid(window):
+        window.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    assert not isValid(window), "Qt test window survived deferred deletion"
+
+
 @pytest.fixture
 def workspace(app, tmp_path):
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
     window = Workspace(settings)
-    yield window
-    window.editor.document().setModified(False)
-    window.close()
+    try:
+        yield window
+    finally:
+        try:
+            window.editor.document().setModified(False)
+            window.close()
+        finally:
+            dispose_test_window(window)
+
+
+def test_workspace_disposal_releases_owned_widgets_and_timers(app, tmp_path):
+    from shiboken6 import isValid
+    from PySide6.QtCore import QTimer
+    from PySide6.QtWidgets import QWidget
+    window = Workspace(QSettings(str(tmp_path / "lifecycle.ini"), QSettings.Format.IniFormat))
+    child = QWidget(window)
+    timer = QTimer(child)
+    timer.start(1000)
+    try:
+        assert isValid(child) and timer.isActive()
+        window.editor.document().setModified(False)
+        window.close()
+    finally:
+        dispose_test_window(window)
+    assert not isValid(child) and not isValid(timer)
 
 
 def test_translation_and_stale_output(workspace):
@@ -54,10 +85,15 @@ def test_settings(workspace):
     assert workspace.settings.value("theme") == "night"
     assert int(workspace.settings.value("input_mode")) == 2
     restored = Workspace(workspace.settings)
-    assert restored.language == "fa"
-    assert restored.theme == "night"
-    assert restored.tabs.currentIndex() == 2
-    restored.close()
+    try:
+        assert restored.language == "fa"
+        assert restored.theme == "night"
+        assert restored.tabs.currentIndex() == 2
+    finally:
+        try:
+            restored.close()
+        finally:
+            dispose_test_window(restored)
 
 
 def test_error_marker_and_cursor_navigation(workspace):
@@ -1061,7 +1097,7 @@ def test_shared_motion_policy(workspace,app):
     from ui.preferences import Preferences
     from PySide6.QtCore import QAbstractAnimation
     from PySide6.QtWidgets import QWidget
-    tabs=MotionTabs()
+    tabs=MotionTabs(workspace)
     tabs.addTab(QWidget(),"First")
     tabs.addTab(QWidget(),"Second")
     tabs.resize(400,220);tabs.show();app.processEvents()
@@ -1754,37 +1790,11 @@ def test_lab_motion_preference_shared_by_cpu_and_logic(workspace, language):
         logic.close()
 
 
-@pytest.mark.parametrize("language",["en","fa"])
-@pytest.mark.parametrize("theme",["dark","light","night"])
-def test_instructor_source_and_splash(workspace,tmp_path,monkeypatch,language,theme):
-    from PySide6.QtWidgets import QFileDialog
-    from PySide6.QtCore import Qt
-    from academic_source import read_source
+@pytest.mark.parametrize("language", ["en", "fa"])
+@pytest.mark.parametrize("theme", ["dark", "light", "night"])
+def test_instructor_splash_variants(workspace, language, theme):
     from ui.splash import splash_pixmap
     from update_service import VERSION
-    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
-    workspace.themes.setCurrentIndex(workspace.themes.findData(theme))
-    workspace.editor.setPlainText("AC ← 0")
-    workspace.run_translation()
-    before=workspace.editor.toPlainText(),workspace.output.toPlainText()
-    dialog=workspace.academic_dialog()
-    try:
-        dialog.show()
-        QApplication.processEvents()
-        assert workspace.academic_button.text()==workspace.t("Translator source")
-        assert dialog.editor.isReadOnly()
-        assert dialog.editor.layoutDirection()==Qt.LayoutDirection.LeftToRight
-        assert dialog.raw==read_source()
-        assert dialog.editor.toPlainText().splitlines()==dialog.raw.decode("utf-8-sig").splitlines()
-        path=tmp_path/"exact.py"
-        monkeypatch.setattr(QFileDialog,"getSaveFileName",lambda *args:(str(path),""))
-        dialog.save_source()
-        assert path.read_bytes()==read_source()
-        assert (workspace.editor.toPlainText(),workspace.output.toPlainText())==before
-        assert not dialog.grab().isNull()
-        for glass in (True,False):
-            pix=splash_pixmap(theme,glass,VERSION,language=="fa")
-            assert pix.width()==680 and pix.height()==360 and not pix.isNull()
-    finally:
-        dialog.close()
-        dialog.deleteLater()
+    for glass in (True, False):
+        pix = splash_pixmap(theme, glass, VERSION, language == "fa")
+        assert pix.width() == 680 and pix.height() == 360 and not pix.isNull()

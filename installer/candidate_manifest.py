@@ -9,6 +9,11 @@ import struct
 import zipfile
 
 if __package__:
+    from .windows_zip_paths import validate_windows_paths
+else:
+    from windows_zip_paths import validate_windows_paths
+
+if __package__:
     from .version_policy import allowed
 else:
     from version_policy import allowed
@@ -164,7 +169,26 @@ def verify_distribution_payload(root, archive):
     }
 
 
-def validate(root, sha):
+def verify_installed_report(path, archive):
+    if not path.is_file():
+        raise ValueError("Missing installed payload report")
+    report = json.loads(path.read_text(encoding="utf-8-sig"))
+    expected = {
+        info.filename[len("ManoStudio/"):]: {
+            "size": info.file_size, "sha256": digest_member(archive, info.filename)
+        }
+        for info in archive.infolist() if not info.is_dir()
+    }
+    canonical = json.dumps(expected, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    expected_report = {"kind": "installed-payload-comparison", "result": "PASS", "files": len(expected),
+                       "payload_sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
+                       "native_acceptance": False}
+    if report != expected_report or type(report.get("files")) is not int or report.get("native_acceptance") is not False:
+        raise ValueError("Installed payload report does not match portable archive")
+    return expected_report
+
+
+def validate(root, sha, require_review=False):
     if not re.fullmatch(r"[a-f0-9]{40}", sha):
         raise ValueError("Invalid source commit")
     version = source_version(root)
@@ -180,6 +204,7 @@ def validate(root, sha):
     exe = setup / f"ManoStudio-Setup-v{version}-x64.exe"
     assets = [asset(z), asset(exe)]
     with zipfile.ZipFile(z) as archive:
+        validate_windows_paths(archive, "ManoStudio/")
         if archive.testzip() is not None:
             raise ValueError("Corrupt portable archive")
         if len(archive.namelist()) != len(set(archive.namelist())):
@@ -189,13 +214,19 @@ def validate(root, sha):
             if machine(program) != 0x8664:
                 raise ValueError("Portable executable is not AMD64")
         license_evidence = verify_distribution_payload(root, archive)
+        installed_payload = verify_installed_report(setup / "installed-payload.json", archive)
+        review_evidence = None
+        if require_review:
+            from installer.review_evidence import verify as verify_review
+            review_evidence = verify_review(root, archive)
     with exe.open("rb") as stream:
         # Inno Setup may use a 32-bit bootstrap for a 64-bit application.
         machine(stream)
     return {"kind": "internal-development-candidate", "version": version, "source_sha": sha,
             "platform": "Windows x64", "portable_smoke": "PASS", "installed_smoke": "PASS",
             "academic_source_sha256": digest(root / "rtl_translator.py"), "assets": assets,
-            "license_evidence": license_evidence,
+            "license_evidence": license_evidence, "installed_payload": installed_payload,
+            "review_evidence": review_evidence,
             "native_acceptance": False, "public_release": False}
 
 
@@ -203,8 +234,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--sha", required=True)
+    parser.add_argument("--require-review", action="store_true")
     args = parser.parse_args()
-    manifest = validate(args.root, args.sha)
+    manifest = validate(args.root, args.sha, require_review=args.require_review)
     path = args.root / "installer" / "output" / "candidate-manifest.json"
     path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 

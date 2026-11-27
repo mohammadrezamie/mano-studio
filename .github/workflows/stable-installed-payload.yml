@@ -1,0 +1,31 @@
+name: Stable installed payload contracts
+on:
+  pull_request:
+    branches: [quality/redistribution-gate]
+permissions:
+  contents: read
+jobs:
+  contracts:
+    if: github.head_ref == 'quality/stable-installed-payload' && github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest -q --junitxml=payload-contracts.xml tests/test_verify_installed.py tests/test_linked_payload.py tests/test_candidate_manifest.py tests/test_windows_zip_paths.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installed-payload-contracts-${{ matrix.os }}
+          path: payload-contracts.xml
+          if-no-files-found: ignore

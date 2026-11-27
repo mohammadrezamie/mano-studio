@@ -19,7 +19,7 @@
   <a href="#quick-start">Quick start</a> · <a href="#academic-assignment">Academic core</a> · <a href="#visual-preview">Visual preview</a> · <a href="#development-status">Status</a> · <a href="#documentation">Docs</a>
 </p>
 
-**This branch prepares the actual v0.3.0-beta.1 candidate (PR #22); not yet a release.** Earlier integrated Linux job passed 1,370 tests with one outdated credits assertion, corrected locally (2/2 exact-file tests). The next Windows job successfully froze the EXE but failed collecting dependency metadata; the notice collector has been corrected and tested locally (11 cases). Full exact-head regression and independently produced internal artifacts remain mandatory. [Recovery guide](docs/BETA_DELIVERY_RECOVERY.md).
+**This branch tracks the Stable 1.0.0 internal candidate (PR #24 and redistribution PR #26); it is not a public release.** The latest Stable source now removes the in-app translator viewer and switches instructor evidence to a validated 36-image bilingual matrix. Fresh exact-head Windows/Ubuntu tests and a Windows candidate installer are being rerun; check the [PR checks](https://github.com/mohammadrezamie/mano-studio/pull/26/checks) for live state. Earlier artifacts belong to older source revisions and do not validate this update. Security, LGPL/source, clean-machine, native bilingual and signing gates remain open. The separate forward Beta is 1.1.0-dev.1 in PR #36 and remains ahead of Stable.
 
 ## What you can do
 
@@ -36,11 +36,11 @@ Designed for English and Persian, with persistent language preferences, Light/Da
 
 | Track | Current milestone |
 | --- | --- |
-| **Main — verified source baseline** | PR [#15](https://github.com/mohammadrezamie/mano-studio/pull/15) merged; 1,200 tests passed on each OS in [run 45557009008](https://github.com/mohammadrezamie/mano-studio/actions/runs/45557009008). 42 learning entries across 13 chapters (partial coverage). |
-| **Release — Windows x64 beta** | [PR #22](https://github.com/mohammadrezamie/mano-studio/pull/22), v0.3.0-beta.1 candidate; independent full regression, Windows artifacts, native acceptance and publication gates remain open. #19 retained for diagnostic evidence. |
-| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): 44 learning entries (MSI and Omega); additional Boolean and timing lessons; Qt tests and visual evidence pending. |
+| **Stable — v1.0.0** | [PR #24](https://github.com/mohammadrezamie/mano-studio/pull/24) and [redistribution PR #26](https://github.com/mohammadrezamie/mano-studio/pull/26). Exact-source regression and the Windows candidate installer are being rerun after the standalone-translator and 36-view evidence port; see [live PR checks](https://github.com/mohammadrezamie/mano-studio/pull/26/checks) and [Stable branch Actions](https://github.com/mohammadrezamie/mano-studio/actions?query=branch%3Aquality%2Fredistribution-gate). Older build/smoke artifacts are stale for this source. LGPL, OpenSSL/Qt security, native, clean-VM and signing review remain open.
+| **Forward Beta — v1.1.0** | Draft [PR #36](https://github.com/mohammadrezamie/mano-studio/pull/36), current development version 1.1.0-dev.1, proposed first prerelease v1.1.0-beta.1. Current-head visual acceptance [45905561919](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905561919) passed; exact-head combined integration [45905561920](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905561920) is still running focused Qt regressions. |
+| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta) continues independently; advanced textbook coverage is not a blocker for the first two releases. |
 
-**No downloadable public release has been verified or published.** Development artifacts are not stable releases. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live state. This snapshot is dated 2026-11-26; evidence refers to the named commits/runs, not every later change.
+**No downloadable public release has been verified or published.** The older [PR #22](https://github.com/mohammadrezamie/mano-studio/pull/22) v0.3.0-beta.1 is fallback-only and superseded by the forward 1.1.0 Beta line. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live state. This snapshot is dated 2026-11-27; evidence refers to the named commits/runs, not every later change.
 
 ## Visual preview
 
@@ -75,7 +75,7 @@ Choose a language, enter RTL, translate, and export assembly. Press **Ctrl+K** t
 
 ## Academic assignment
 
-**[rtl_translator.py](rtl_translator.py) is the single standalone source file for instructor review.** It uses only the Python standard library, includes translation and validation, and supports all 25 named Basic Computer instructions in the documented provisional dialect. Optional simulation and UI are separate.
+**[rtl_translator.py](rtl_translator.py) is the single standalone source file for instructor review.** It uses only the Python standard library, includes translation and validation, and supports all 25 named Basic Computer instructions in the documented provisional dialect. The desktop intentionally has no in-app source viewer or source editor: download this file separately for explanation and defense. Optional simulation and UI remain separate.
 
 ```sh
 python rtl_translator.py examples/add.rtl -o result.asm
@@ -129,3 +129,12 @@ Released under the [MIT License](LICENSE). See [references](docs/REFERENCES.md) 
 
 ## Instructor v1.0.0 candidate (not accepted stable)
 This branch prepares the first stable delivery for Monday, 2026-11-30. Priority: standalone RTL-to-Assembly Python file, stability, and premium bilingual presentation. See [instructor acceptance](docs/V1_INSTRUCTOR_ACCEPTANCE.md). Candidate packaging and full tests remain required. Later-generation functionality is promoted only after validation; verified beta artifacts remain independent.
+
+## Public redistribution preflight
+
+The internal v1 Windows archive passed automated smoke and binary integrity checks, but public distribution remains blocked pending Qt license evidence and module review. See [the redistribution preflight](docs/REDISTRIBUTION_PREFLIGHT.md). No public release is approved by this audit.
+
+## Maintained Python diagnostic and TLS evidence — 2026-11-26
+Internal #26 Windows diagnostic switches only its own PR builds to Python 3.14.10 (official release 2026-10-25). Other frozen candidates retain existing runtime. This supersedes queued 3.12 diagnostic run 45804344694; branch-specific concurrency may cancel it. Python migration is not proven compatible or sufficient to fix OpenSSL. Official OpenSSL November 24 advisory CVE-2026-121482 lists 3.5.0 before 3.5.10 affected; use 3.5.10 as explicit dated review baseline, not an automatic release/security approval. New runtime_evidence.py scans actual portable ZIP for SSL/crypto DLL embedded versions and SHA-256 plus build interpreter ssl version. Reports flags and always requires manual review; string scan is heuristic, not PE import or loaded-runtime attestation. Seven local pytest fixtures passed (0.04s); local blobs 302f81d034e8222e2e244f56c80fbde73b346cf2 and e5f0a80c3b1bb5a84bdb9237354192c25c56995d. Actual old v1 archive produced four DLL rows, three flags: 3.0.16, 3.5.9 and known historical build SSL 3.0.16 (supplied from prior evidence, not measured in Linux). New Windows build pending, no approval. Sources: https://www.python.org/downloads/release/python-31410/ and https://openssl-library.org/news/vulnerabilities-3.5/ .
+
+Owner requirement: [standalone Windows installation](docs/STANDALONE_INSTALLATION.md) is a permanent gate for both channels. Setup must not require separate Python/Qt/pip, reinstall compatible shared prerequisites or modify global PATH. App-private bundling is intentional. Clean and pre-equipped Windows acceptance remains pending.

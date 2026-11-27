@@ -3,14 +3,17 @@ import json
 import os
 from pathlib import Path
 import tempfile
+from time import perf_counter
 os.environ.setdefault("QT_QPA_PLATFORM","offscreen")
 from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication
+from capture_lifecycle import dispose_capture_widget
 from ui.workspace import Workspace
 from ui.splash import splash_pixmap
 from update_service import VERSION
-from academic_source import read_source
 from visual_review import image_info
+from instructor_evidence import validate
+from instructor_gallery import write_gallery
 
 
 def capture(output):
@@ -19,6 +22,7 @@ def capture(output):
     app=QApplication.instance() or QApplication([])
     app.setStyle("Fusion")
     records=[]
+    started=perf_counter()
     def save(pix,name):
         if pix.isNull() or not pix.save(str(output/name)):
             raise RuntimeError("Failed real Qt capture: "+name)
@@ -44,21 +48,14 @@ def capture(output):
                             window.show()
                             app.processEvents()
                             save(window.grab(),f"{stem}-workspace-{width}.png")
-                        dialog=window.academic_dialog()
-                        try:
-                            dialog.show()
-                            app.processEvents()
-                            assert dialog.raw==read_source() and dialog.editor.isReadOnly()
-                            save(dialog.grab(),f"{stem}-academic-source.png")
-                        finally:
-                            dialog.close()
-                            dialog.deleteLater()
                         save(splash_pixmap(theme,glass,VERSION,language=="fa"),f"{stem}-splash.png")
                     finally:
                         window.editor.document().setModified(False)
-                        window.close()
-                        window.deleteLater()
+                        dispose_capture_widget(window)
                         app.processEvents()
+    validate(output, records)
+    print(f'Captured and validated {len(records)} instructor images: {perf_counter()-started:.3f}s', flush=True)
+    write_gallery(output, records)
     (output/"manifest.json").write_text(json.dumps({"version":VERSION,"evidence":"actual Qt offscreen; native visual acceptance pending","captures":records},indent=2),encoding="utf-8")
 
 
