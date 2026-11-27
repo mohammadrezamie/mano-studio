@@ -1,0 +1,3 @@
+# Exact frozen installer acceptance
+
+Runs four independent Windows hosted-runner cases against the existing Setup artifacts, not a rebuild. Verify the exact recorded SHA-256 before executing; test fresh application settings and target, isolated PATH or ordinary pre-equipped runner, first install, same-version reinstall, offline application smoke, persistence of a test setting/document, and uninstall. No public distribution, signature, real bare Windows, interactive visual or cross-version upgrade acceptance claimed. The original candidates share AppId and default location; do not advertise side-by-side channels. New channel-specific install identity is a separate design decision. This test does not resolve source licensing or applicable security advisories.
