@@ -16,7 +16,11 @@ permissions:
 jobs:
   focused:
     if: github.event_name == 'push' || (github.event.pull_request.head.repo.full_name == github.repository && (github.event.pull_request.head.ref == 'fix/beta-native-document-integrity' || github.event.pull_request.head.ref == 'feature/cpu-sample-ui-acceptance' || github.event.pull_request.head.ref == 'develop/visual-polish'))
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     env:
       QT_QPA_PLATFORM: offscreen
@@ -29,8 +33,12 @@ jobs:
         with:
           python-version: '3.12'
       - name: Install Qt libraries and fonts
+        if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libdbus-1-3 fonts-noto-core fonts-dejavu-core
       - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: '"QT_QPA_FONTDIR=$env:WINDIR\Fonts" >> $env:GITHUB_ENV'
       - name: Compile and preflight
         id: preflight
         run: |
@@ -57,7 +65,7 @@ jobs:
         run: >-
           python -m pytest -q -o faulthandler_timeout=90 --junitxml=next-qt.xml
           tests/test_timing_view.py tests/test_flipflop_reference_view.py
-          tests/test_storage_view.py tests/test_universal_view.py tests/test_update_view.py tests/test_program_samples_view.py tests/test_program_samples_ui.py tests/test_cpu_session_view.py tests/test_cpu_guard_view.py tests/test_memory_inspector_view.py
+          tests/test_storage_view.py tests/test_universal_view.py tests/test_update_view.py tests/test_update_notice.py tests/test_bidirectional_keypad.py tests/test_shared_code_keypad.py tests/test_program_samples_view.py tests/test_program_samples_ui.py tests/test_cpu_session_view.py tests/test_cpu_guard_view.py tests/test_memory_inspector_view.py
       - name: Integrated workspace regressions
         if: always() && steps.preflight.outcome == 'success'
         run: >-
@@ -67,6 +75,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: next-beta-junit-${{ github.event.pull_request.head.sha || github.sha }}
+          name: next-beta-junit-${{ matrix.os }}-${{ github.event.pull_request.head.sha || github.sha }}
           path: next-*.xml
           if-no-files-found: ignore
