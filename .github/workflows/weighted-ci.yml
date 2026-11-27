@@ -1,0 +1,31 @@
+name: Weighted CI contracts
+on:
+  pull_request:
+    branches: [ci/parallel-regression-pilot]
+permissions:
+  contents: read
+jobs:
+  planner:
+    if: github.head_ref == 'ci/weighted-regression' && github.event.pull_request.head.repo.full_name == github.repository
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest -q --junitxml=weighted-ci.xml tests/test_ci_shard.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: weighted-ci-${{ matrix.os }}
+          path: weighted-ci.xml
+          if-no-files-found: ignore

@@ -62,7 +62,7 @@ jobs:
           git rev-parse HEAD > regression-source.txt
           python --version > regression-python.txt
           python -m pip freeze > regression-dependencies.txt
-      - run: python -m pytest -p ci_shard --shard-index=${{ matrix.shard }} --shard-count=4 --shard-report=shard.json -q --durations=25 --junitxml=regression.xml
+      - run: python -m pytest -p ci_shard --shard-index=${{ matrix.shard }} --shard-count=4 --shard-profile=ci/timing-profile.json --shard-report=shard.json -q --durations=25 --junitxml=regression.xml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -106,4 +106,9 @@ jobs:
         with:
           pattern: shard-*-latest-*
           path: reports
-      - run: python -m ci_shard --reports reports --count 4 --source "${{ github.event.pull_request.head.sha }}"
+      - run: python -m ci_shard --reports reports --count 4 --profile ci/timing-profile.json --profile-out observed-timings --source "${{ github.event.pull_request.head.sha }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-observed-timings
+          path: observed-timings/
+          if-no-files-found: error
