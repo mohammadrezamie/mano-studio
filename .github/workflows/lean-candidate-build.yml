@@ -18,8 +18,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {track: stable, source: '566a8f9bd71e6a19ca0a9785d49e8937aa32bdb9', version: '1.0.0'}
-          - {track: beta, source: 'f96331404188e7b2b96cf315c3b4abe57d9beb09', version: '1.1.0-beta.1'}
+          - {track: stable, source: '17d13c8bc2282b2eaec8e23d9c3c031f4a9c4608', version: '1.0.0'}
+          - {track: beta, source: '6217a9b654dfa6f0517b04619077a9fa069f7625', version: '1.1.0-beta.1'}
     env:
       QT_QPA_PLATFORM: offscreen
       MANO_SOURCE_SHA: ${{ matrix.source }}
@@ -49,7 +49,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) {throw 'Wheel verification failed'}
           python -m pip check
       - name: Verify notice and packaging contracts
-        run: python -m pytest -q tests/test_openssl_notice.py tests/test_collect_notices.py tests/test_runtime_evidence.py tests/test_candidate_manifest.py tests/test_verify_installed.py tests/test_windows_build_contract.py tests/test_release_channel.py tests/test_prune_qml.py tests/test_prune_pdf.py tests/test_review_evidence.py tests/test_redistribution_gate.py
+        run: python -m pytest -q tests/test_openssl_notice.py tests/test_collect_notices.py tests/test_runtime_evidence.py tests/test_candidate_manifest.py tests/test_verify_installed.py tests/test_windows_build_contract.py tests/test_release_channel.py tests/test_prune_qml.py tests/test_prune_pdf.py tests/test_review_evidence.py tests/test_redistribution_gate.py tests/test_qt_imageformats_notices.py
       - run: python render_preflight.py
       - name: Build corrected portable candidate
         shell: pwsh
