@@ -21,10 +21,10 @@ jobs:
       max-parallel: 20
       matrix:
         candidate:
-          - {track: stable, source: '8184129b13e5e80eb0571f90d37694fe26654c72', os: ubuntu-latest}
-          - {track: stable, source: '8184129b13e5e80eb0571f90d37694fe26654c72', os: windows-latest}
-          - {track: beta, source: '8cac2d66ddc18f0e7501ea37c64d4b2d4e50e03e', os: ubuntu-latest}
-          - {track: beta, source: '8cac2d66ddc18f0e7501ea37c64d4b2d4e50e03e', os: windows-latest}
+          - {track: stable, source: '926272ff0ebfa4731cfb0b00c149c7e12b4d5a56', os: ubuntu-latest}
+          - {track: stable, source: '926272ff0ebfa4731cfb0b00c149c7e12b4d5a56', os: windows-latest}
+          - {track: beta, source: '2dd55994d36f2596dd3d17ea54dd3c3e43829ae2', os: ubuntu-latest}
+          - {track: beta, source: '2dd55994d36f2596dd3d17ea54dd3c3e43829ae2', os: windows-latest}
         shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     name: ${{ matrix.candidate.track }} / ${{ matrix.candidate.os }} / shard ${{ matrix.shard }}
     runs-on: ${{ matrix.candidate.os }}
@@ -89,17 +89,16 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
   visual:
-    needs: regression
     if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/notice-rebuild'
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
         include:
-          - {track: stable, source: '8184129b13e5e80eb0571f90d37694fe26654c72', os: ubuntu-latest}
-          - {track: stable, source: '8184129b13e5e80eb0571f90d37694fe26654c72', os: windows-latest}
-          - {track: beta, source: '8cac2d66ddc18f0e7501ea37c64d4b2d4e50e03e', os: ubuntu-latest}
-          - {track: beta, source: '8cac2d66ddc18f0e7501ea37c64d4b2d4e50e03e', os: windows-latest}
+          - {track: stable, source: '926272ff0ebfa4731cfb0b00c149c7e12b4d5a56', os: ubuntu-latest}
+          - {track: stable, source: '926272ff0ebfa4731cfb0b00c149c7e12b4d5a56', os: windows-latest}
+          - {track: beta, source: '2dd55994d36f2596dd3d17ea54dd3c3e43829ae2', os: ubuntu-latest}
+          - {track: beta, source: '2dd55994d36f2596dd3d17ea54dd3c3e43829ae2', os: windows-latest}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     env:
