@@ -1,0 +1,41 @@
+name: Exact frozen installer acceptance
+on:
+  push:
+    branches: [release/exact-native-acceptance]
+    paths: ['.github/workflows/exact-native-acceptance.yml', 'installer/exact_native_acceptance.ps1']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  accept:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/exact-native-acceptance'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        candidate:
+          - {track: stable, run: 45961164498, artifact: 15180752782, version: '1.0.0', sha256: '978f1e02731b6e3aaecf808401f5b66d33b760d0b3780e65d206946f3976889b'}
+          - {track: beta, run: 46000977621, artifact: 15197803727, version: '1.1.0-beta.1', sha256: '4ce12623d94d334844877bb2c09f1a206b28db9b337a60e82e68c63e2e99dd6b'}
+        profile: [isolated-path, pre-equipped]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ matrix.candidate.run }}
+          artifact-ids: ${{ matrix.candidate.artifact }}
+          github-token: ${{ github.token }}
+          path: frozen-setup
+      - shell: pwsh
+        run: |
+          $setups = @(Get-ChildItem frozen-setup -Recurse -File -Filter "ManoStudio-Setup-v${{ matrix.candidate.version }}-x64.exe")
+          if ($setups.Count -ne 1) { throw 'Expected exactly one frozen installer' }
+          ./installer/exact_native_acceptance.ps1 -Setup $setups[0].FullName -ExpectedHash '${{ matrix.candidate.sha256 }}' -Profile '${{ matrix.profile }}'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: exact-native-${{ matrix.candidate.track }}-${{ matrix.profile }}
+          path: native-evidence/
+          if-no-files-found: warn
