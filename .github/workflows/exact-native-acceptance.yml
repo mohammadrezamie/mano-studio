@@ -15,8 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         candidate:
-          - {track: stable, run: 46036183906, artifact: 15218035796, version: '1.0.0', sha256: 'ed66728532cd4cbe71740d6223f476e356cdc866a37eb2eaf112f38c5d5ad673'}
-          - {track: beta, run: 46036183906, artifact: 15217285793, version: '1.1.0-beta.1', sha256: '66af9153aeb1674e7f67200650a8cfcf743e15819429d613b989ed42c5120192'}
+          - {track: beta, run: 46041711466, artifact: 15220751219, version: '1.1.0-beta.1', sha256: '8fcd72cc280892de6c76c76d555ab4c6601b9e9753cb13157ca0c01ee127a0bc'}
         profile: [isolated-path, pre-equipped]
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +35,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: lean-native-${{ matrix.candidate.track }}-${{ matrix.profile }}
+          name: qt-notice-native-${{ matrix.candidate.track }}-${{ matrix.profile }}
           path: native-evidence/
           if-no-files-found: warn
