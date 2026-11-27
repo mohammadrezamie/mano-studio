@@ -1,0 +1,76 @@
+name: Retain verified Qt source review bundle
+on:
+  push:
+    branches: [release/source-evidence]
+    paths: ['.github/workflows/source-review-bundle.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  bundle:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 46009462611
+          artifact-ids: '15209235117,15212256488,15211033341,15210328390,15211957580'
+          github-token: ${{ github.token }}
+          path: acquired
+      - name: Recheck exact vendor archive bytes and preserve review evidence
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, shutil
+          from pathlib import Path
+          records = {
+              "qtbase": ("a951bd163c7b80fc6b8c88d7668fb56abf91c152373e13c10666763238131307", 51220268),
+              "qtsvg": ("e4ab39534ec97987b1b9b60ef7f4d3253d5912a69f8c713a01753174a4029331", 2341876),
+              "pyside": ("099c1a597cf33c1b000e11cf68a0b82d216fb802bf81726efc720394f10c7751", 18211772),
+              "qtshadertools": ("c7d84f436e1aaef39fdcadebf2bd71bdf24dc69497e13f2e0198873cbbfea2ab", 1244684),
+              "qtdeclarative": ("311f3a2603e1973bb59baef9dfa740a376de713157d4782ee043681e889c9260", 39221652),
+          }
+          root = Path("acquired")
+          out = Path("source-review")
+          out.mkdir()
+          reports = list(root.rglob("report.json"))
+          if len(reports) != len(records):
+              raise ValueError("Unexpected source evidence count")
+          seen = set()
+          manifest = []
+          for report in reports:
+              row = json.loads(report.read_text(encoding="utf-8"))
+              module = row["module"]
+              if module in seen or module not in records:
+                  raise ValueError("Unexpected source module")
+              seen.add(module)
+              expected, size = records[module]
+              archives = list(report.parent.glob("*.tar.xz"))
+              if len(archives) != 1:
+                  raise ValueError("Expected one vendor archive")
+              archive = archives[0]
+              with archive.open("rb") as stream:
+                  actual = hashlib.file_digest(stream, "sha256").hexdigest()
+              if actual != expected or archive.stat().st_size != size or row["sha256"] != expected or row.get("vendor_checksum_verified") is not True:
+                  raise ValueError("Source evidence differs from recorded vendor bytes")
+              target = out / module
+              target.mkdir()
+              shutil.copyfile(archive, target / archive.name)
+              for name in ("report.json","vendor.sha256","archive-url.txt","checksum-url.txt"):
+                  shutil.copyfile(report.parent / name, target / name)
+              manifest.append({"module": module, "file": str((target / archive.name).relative_to(out)), "sha256": actual, "bytes": size})
+          if seen != set(records):
+              raise ValueError("Missing source")
+          manifest.sort(key=lambda row: row["module"])
+          (out / "manifest.json").write_text(json.dumps({"kind":"source-review-only","acquisition_run":46009462611,"archives":manifest,"exact_wheel_correspondence_verified":False,"redistribution_approved":False},indent=2)+"\n",encoding="utf-8")
+          (out / "README.txt").write_text("Review-only vendor archives; not a complete corresponding-source offer. QtWebEngine acquisition failed. Determine exact shipped runtime scope, wheel build revisions/configuration/patches and third-party notices before public distribution.\n",encoding="utf-8")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qt-6.12.0-source-review-bundle
+          path: source-review/
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error
