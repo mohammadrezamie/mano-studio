@@ -70,3 +70,22 @@ def save_state(settings, state):
     if state.complete:
         settings.setValue("language", state.language)
     settings.sync()
+
+
+def update_language(settings, language):
+    """Keep completed onboarding and the current locale consistent.
+
+    Legacy profiles keep their existing settings; unknown schema is not overwritten.
+    """
+    if language not in ("en", "fa"):
+        raise ValueError("Invalid language")
+    settings.setValue("language", language)
+    if settings.contains(KEY):
+        try:
+            state = SetupState.decode(settings.value(KEY))
+        except (ValueError, TypeError, KeyError):
+            pass
+        else:
+            if state.complete:
+                settings.setValue(KEY, state.choose(language).encode())
+    settings.sync()

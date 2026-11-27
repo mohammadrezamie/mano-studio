@@ -43,3 +43,20 @@ def test_invalid_completion():
     with pytest.raises(ValueError):
         SetupState(page=True)
     assert SetupState().back().page == 0
+
+
+def test_language_updates_completed_state():
+    from onboarding_state import update_language
+    store = Settings()
+    save_state(store, SetupState("en", LAST_PAGE, True))
+    update_language(store, "fa")
+    assert store["language"] == "fa"
+    assert read_state(store) == SetupState("fa", LAST_PAGE, True)
+
+
+def test_language_preserves_unknown_schema():
+    from onboarding_state import update_language
+    store = Settings({KEY:'{"version":99}', "language":"en"})
+    update_language(store, "fa")
+    assert store[KEY] == '{"version":99}'
+    assert store["language"] == "fa"

@@ -8,6 +8,7 @@ from ui.strings import FA
 from ui.brand import brand_icon
 from ui.splash import splash_pixmap
 from onboarding_state import read_state
+from ui.typography import apply_ui_font
 
 from update_service import VERSION
 
@@ -94,6 +95,7 @@ def main():
         theme = "dark"
     app.setLayoutDirection(Qt.LayoutDirection.RightToLeft if language == "fa" else Qt.LayoutDirection.LeftToRight)
     app.setStyle("Fusion")
+    apply_ui_font(app, language)
     glass_enabled = settings.value("glass_enabled", True, type=bool)
     apply_theme(app, theme, glass_enabled)
     app.setWindowIcon(brand_icon(theme,glass_enabled))
@@ -114,6 +116,7 @@ def main():
         if not accepted:
             return 0
         language = settings.value("language", "en")
+        apply_ui_font(app, language)
         app.setLayoutDirection(Qt.LayoutDirection.RightToLeft if language == "fa" else Qt.LayoutDirection.LeftToRight)
         splash.setPixmap(splash_pixmap(theme,glass_enabled,VERSION,language=="fa"))
         splash.show()

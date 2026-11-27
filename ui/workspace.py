@@ -24,6 +24,7 @@ from ui.credits import COPYRIGHT, REPOSITORY, THANKS, PURPOSE, LICENSE_NOTE, ACA
 from ui.localization import error_text
 from ui.code_editor import CodeEditor
 from ui.glass import GlassRoot
+from ui.typography import apply_ui_font
 
 LTR = Qt.LayoutDirection.LeftToRight
 
@@ -66,6 +67,7 @@ class Workspace(QMainWindow):
         self.language = settings.value("language", "en")
         if self.language not in ("en", "fa"):
             self.language = "en"
+        apply_ui_font(QApplication.instance(), self.language)
         self.theme = settings.value("theme", "dark")
         if self.theme not in PALETTES:
             self.theme = "dark"
@@ -107,12 +109,14 @@ class Workspace(QMainWindow):
         self.academic_button = self.button("Translator source", self.open_academic_source)
         self.academic_button.setObjectName("academicAction")
         header.addWidget(self.academic_button)
-        self.languages = QComboBox()
+        # Internal compatibility adapter for existing tests and capture scripts.
+        # The only visible language selector is in Preferences.
+        self.languages = QComboBox(self)
+        self.languages.hide()
         self.languages.addItem("English", "en")
         self.languages.addItem("فارسی", "fa")
         self.languages.setCurrentIndex(1 if self.language == "fa" else 0)
         self.languages.currentIndexChanged.connect(self.change_language)
-        header.addWidget(self.languages)
         self.themes = QComboBox()
         for name in ("Light", "Dark", "Night"):
             self.themes.addItem(self.t(name), name.lower())
@@ -637,7 +641,11 @@ class Workspace(QMainWindow):
 
     def change_language(self):
         self.language = self.languages.currentData()
-        self.settings.setValue("language", self.language)
+        from onboarding_state import update_language
+        update_language(self.settings, self.language)
+        app = QApplication.instance()
+        apply_ui_font(app, self.language)
+        app.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.relabel()
         self.update_document_title()
@@ -685,7 +693,13 @@ class Workspace(QMainWindow):
 
     def open_preferences(self):
         from ui.preferences import Preferences
-        Preferences(self).exec()
+        while True:
+            dialog = Preferences(self)
+            dialog.exec()
+            reopen = dialog.reopen_for_language
+            dialog.deleteLater()
+            if not reopen:
+                break
 
     def confirm_discard(self):
         if not self.editor.document().isModified():

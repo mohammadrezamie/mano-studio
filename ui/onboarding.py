@@ -1,10 +1,11 @@
 """First-run language choice and a short, bilingual workspace introduction."""
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QRadioButton,
+from PySide6.QtWidgets import (QApplication, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QRadioButton,
                                QButtonGroup, QPushButton, QProgressBar, QFrame)
 from onboarding_state import LAST_PAGE, read_state, save_state
 from ui.brand import BrandMark
 from ui.credits import THANKS
+from ui.typography import apply_ui_font
 
 PAGES = (
     (("Choose your language", "زبان خود را انتخاب کنید"),
@@ -108,6 +109,7 @@ class Onboarding(QDialog):
 
     def render(self):
         fa = self.state.language == "fa"
+        apply_ui_font(QApplication.instance(), self.state.language)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if fa else Qt.LayoutDirection.LeftToRight)
         title, description = PAGES[self.state.page]
         self.title.setText(title[fa])
