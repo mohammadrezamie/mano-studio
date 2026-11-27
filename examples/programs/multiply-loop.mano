@@ -1,0 +1,6 @@
+{
+  "format": "mano-studio",
+  "version": 1,
+  "kind": "asm",
+  "payload": "ORG 100\nCLA\nLOOP, ADD VALUE\nISZ COUNT\nBUN LOOP\nSTA RESULT\nHLT\nRESULT, HEX 0000\nVALUE, DEC 6\nCOUNT, DEC -7\nEND\n"
+}

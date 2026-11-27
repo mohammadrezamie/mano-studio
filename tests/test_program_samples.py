@@ -17,7 +17,7 @@ def test_native_samples(sample):
 
 def test_exact_catalog_and_native_files():
     keys = [sample.key for sample in SAMPLES]
-    assert len(keys) == len(set(keys)) == 10
+    assert len(keys) == len(set(keys)) == 13
     assert {p.stem for p in (ROOT / 'examples/programs').glob('*.mano')} == set(keys)
 
 
@@ -65,3 +65,38 @@ def test_absolute_value_sign_paths(value, expected, steps):
         assert cpu.step() is not None
     assert cpu.halted and cpu.ac == expected
     assert cpu.memory[program.symbols["RESULT"]] == expected
+
+
+@pytest.mark.parametrize("a,b", [(0, 0), (0xFFFF, 0), (0xAAAA, 0x5555), (0x1234, 0x00FF), (0x8000, 1)])
+def test_logical_or_independent_oracle(a, b):
+    from assembler import assemble
+    from simulator import CPU
+    _, source = load_sample("logical-or", ROOT)
+    program = assemble(source)
+    assert program.ok, program.errors
+    cpu = CPU(program.words, program.entry)
+    cpu.memory[program.symbols["FIRST"]] = a
+    cpu.memory[program.symbols["SECOND"]] = b
+    for _ in range(9):
+        assert not cpu.halted
+        assert cpu.step() is not None
+    assert cpu.halted and cpu.ac == a | b
+    assert cpu.memory[program.symbols["RESULT"]] == a | b
+
+
+@pytest.mark.parametrize("value,count", [(0, 1), (6, 7), (0xFFFF, 2), (0x8000, 2)])
+def test_repeated_addition_wraparound(value, count):
+    from assembler import assemble
+    from simulator import CPU
+    _, source = load_sample("multiply-loop", ROOT)
+    program = assemble(source)
+    assert program.ok, program.errors
+    cpu = CPU(program.words, program.entry)
+    cpu.memory[program.symbols["VALUE"]] = value
+    cpu.memory[program.symbols["COUNT"]] = (-count) & 0xFFFF
+    for _ in range(3 * count + 2):
+        assert not cpu.halted
+        assert cpu.step() is not None
+    assert cpu.halted and cpu.ac == (value * count) & 0xFFFF
+    assert cpu.memory[program.symbols["RESULT"]] == (value * count) & 0xFFFF
+    assert cpu.memory[program.symbols["COUNT"]] == 0
