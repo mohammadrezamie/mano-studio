@@ -14,3 +14,8 @@ def test_windows_pyinstaller_data_arguments_use_windows_separator():
     ):
         assert f"--add-data '{source};{destination}'" in command
         assert f"--add-data '{source}:{destination}'" not in command
+
+
+def test_unused_qml_runtime_is_pruned_before_notice_collection():
+    script = BUILD_SCRIPT.read_text(encoding="utf-8")
+    assert "python -m installer.prune_qml $dist" in script

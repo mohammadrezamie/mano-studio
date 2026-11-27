@@ -51,7 +51,7 @@ def test_recompute(candidate):
     with zipfile.ZipFile(archive) as z:
         report = verify(root, z, "3.14.10", (3,5,9))
     assert report["redistribution_flags"] == 1
-    assert report["runtime_flags"] == 2
+    assert report["runtime_flags"] == 0
     assert report["wheel_packages"] == len(REQUIRED)
     assert len(report["evidence_sha256"]) == 5
     assert report["public_release_approved"] is False
