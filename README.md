@@ -11,13 +11,46 @@
   <img alt="Python" src="https://img.shields.io/badge/Python-3.12-3776AB?logo=python&amp;logoColor=white">
   <img alt="Qt for Python" src="https://img.shields.io/badge/PySide6-Qt-41CD52?logo=qt&amp;logoColor=white">
   <img alt="Languages" src="https://img.shields.io/badge/UI-English%20%2F%20Persian-7664D8">
-  <img alt="Release status" src="https://img.shields.io/badge/release-preparing%20beta-E5A344">
+  <img alt="Release status" src="https://img.shields.io/badge/release-in%20review-E5A344">
   <a href="LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-287D65"></a>
 </p>
 
 <p align="center">
-  <a href="#quick-start">Quick start</a> · <a href="#academic-assignment">Academic core</a> · <a href="#visual-preview">Visual preview</a> · <a href="#development-status">Status</a> · <a href="#documentation">Docs</a>
+  <a href="#download">Download</a> · <a href="#quick-start">Quick start</a> · <a href="#academic-assignment">Academic core</a> · <a href="#visual-preview">Visual preview</a> · <a href="#development-status">Status</a> · <a href="#documentation">Docs</a>
 </p>
+
+## Download
+
+<p align="center">
+  <a href="https://github.com/mohammadrezamie/mano-studio/releases"><img alt="Download Windows Setup — official release page" src="https://img.shields.io/badge/Download-Windows%20x64%20Setup-2563eb?style=for-the-badge&amp;logo=windows&amp;logoColor=white"></a>
+  <a href="https://github.com/mohammadrezamie/mano-studio/releases"><img alt="Portable ZIP — official release page" src="https://img.shields.io/badge/Download-Portable%20ZIP-475569?style=for-the-badge"></a>
+</p>
+
+**Publication status:** the initial releases are still under acceptance review. The buttons above open the official Releases page; there is no public installer download there yet. Do not redistribute review builds or treat them as accepted releases.
+
+| Channel | Windows x64 Setup | Windows x64 Portable | Status |
+| --- | --- | --- | --- |
+| Stable **1.0.0** | [Review build (EXE inside ZIP)](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180752782) | [Review build](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180064025) | Private [release draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-e438c6988649501c973e); automated tests passed |
+| Beta **1.1.0-beta.1** | [Review build (EXE inside ZIP)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621/artifacts/15197803727) | [Review build](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621/artifacts/15198955230) | Installer and visual jobs passed; final regression/acceptance not yet complete |
+
+GitHub Actions artifacts are temporary review files (GitHub sign-in may be required), not public releases. The official Releases page is the permanent download location; once a release is published, choose its Setup EXE for installation or its portable ZIP to run without installing. Verify the accompanying SHA-256 checksum. These candidates are not Authenticode-signed.
+
+### Device and system compatibility
+
+| Device / operating system | Support for this build |
+| --- | --- |
+| Windows 11, Intel/AMD **64-bit (x64)** desktop or laptop | Target platform; automated Windows packaging/smoke verified, native acceptance pending |
+| Windows 10, Intel/AMD **64-bit (x64)** | Qt 6.12 supports Windows 10 1809+; exact native OS acceptance is pending; use a security-supported Windows edition |
+| Windows **32-bit (x86)** | No desktop installer; current Qt/PySide6 dependencies do not ship Windows x86 wheels |
+| Windows on ARM (ARM64) | No native package or verified emulation support yet |
+| Linux / macOS | Source development possible on compatible dependencies; no official installer or macOS native acceptance |
+| iPhone / iPad / Android | Not supported by this desktop release |
+
+The Windows Setup bundles its application-private Python/Qt runtime; no separate Python, pip or Qt installation is needed. After installation, core tools work offline. On Windows, open **Settings → System → About → System type** to identify x64, x86 or ARM64 before downloading.
+
+The standalone [RTL translator](rtl_translator.py) uses only the Python standard library and can be run with a compatible 32-bit Python installation, but that is not the full desktop app. A future 32-bit desktop build requires a supported GUI dependency strategy and independent installation and regression evidence. See [Qt supported platforms](https://doc.qt.io/qt-6/supported-platforms.html) and [PySide6 distribution files](https://pypi.org/project/PySide6/6.12.0/#files).
+
+**راهنمای دانلود:** نسخه فعلی برای رایانه و لپ‌تاپ ویندوز ۶۴ بیتی (Intel/AMD) ساخته شده است. برای نصب عادی، Setup و برای اجرای بدون نصب، Portable را انتخاب کنید. فعلاً فایل‌ها آزمایشی‌اند و انتشار عمومی نهایی نشده است. نسخه کامل ویندوز ۳۲ بیتی و ARM64 هنوز تأیید نشده است.
 
 ## What you can do
 
@@ -34,11 +67,11 @@ Designed for English and Persian, with persistent language preferences, Light/Da
 
 | Track | Current milestone |
 | --- | --- |
-| **Main — verified source baseline** | PR [#15](https://github.com/mohammadrezamie/mano-studio/pull/15) merged; 1,200 tests passed on each OS in [run 45557009008](https://github.com/mohammadrezamie/mano-studio/actions/runs/45557009008). 42 learning entries across 13 chapters (partial coverage). |
-| **Release — Windows x64 beta** | [PR #19](https://github.com/mohammadrezamie/mano-studio/pull/19), proposed v0.3.0-beta.1; integrated regression, installer, native acceptance and publication gates remain open. |
-| **Next generation** | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta): MSI cache coherence adds a 43rd entry; Qt tests and visual evidence pending. |
+| Stable | [PR #24](https://github.com/mohammadrezamie/mano-studio/pull/24), 1.0.0 candidate. [1,561 tests per OS](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164536); [installer](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498) passed; verified private release draft created. |
+| Beta | [PR #37](https://github.com/mohammadrezamie/mano-studio/pull/37), 1.1.0-beta.1 candidate. [Installer](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621) passed; [parallel final gate](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977462). |
+| Next generation | [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta), independent feature development. |
 
-**No downloadable public release has been verified or published.** Development artifacts are not stable releases. Follow [release issue #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [curriculum issue #13](https://github.com/mohammadrezamie/mano-studio/issues/13), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live state. This snapshot is dated 2026-11-25; evidence refers to the named commits/runs, not every later change.
+Public release remains subject to actual applicable security review, redistribution/source obligations, native Windows acceptance and authenticity review. Follow [Stable #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [Beta #23](https://github.com/mohammadrezamie/mano-studio/issues/23), and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for current evidence (checkpoint 2026-11-27). No claim of a bug-free application.
 
 ## Visual preview
 
@@ -69,7 +102,7 @@ python -m pip install -r requirements.txt
 python main.py
 ```
 
-Choose a language, enter RTL, translate, and export assembly. Press **Ctrl+K** to open the Learning Center. For regression tests, install `requirements-dev.txt` and run `python -m pytest -q`. Windows installation packages will be listed under Releases only after verification; do not treat a CI archive as an accepted installer.
+Choose a language, enter RTL, translate, and export assembly. Press **Ctrl+K** to open the Learning Center. For regression tests, install `requirements-dev.txt` and run `python -m pytest -q`. See [Download](#download) for the Windows Setup and Portable options, device compatibility and review-build status.
 
 ## Academic assignment
 
@@ -114,7 +147,7 @@ The academic translator remains dependency-free and independently testable. See 
 
 ## Two tracks, one project
 
-The release track stabilizes a Windows-first beta without scope creep. The next-generation track expands the textbook models, visual tools and educational experiments independently. Neither track waits for the other to finish. Full textbook coverage is a goal, not a completion claim. New libraries are welcome when licensing, offline operation, packaging and maintainability are compatible.
+The Stable release track stabilizes the Windows-first app without scope creep; the forward Beta line remains independently versioned. The next-generation track expands the textbook models, visual tools and educational experiments independently. Neither track waits for the other to finish. Full textbook coverage is a goal, not a completion claim. New libraries are welcome when licensing, offline operation, packaging and maintainability are compatible.
 
 **Contributors and agents:** read [AGENTS.md](AGENTS.md) and [CONTINUE.md](docs/CONTINUE.md). Update README and affected documentation in the same work cycle as every meaningful project change. Record actual evidence, not anticipated results.
 
