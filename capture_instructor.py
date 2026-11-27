@@ -3,9 +3,11 @@ import json
 import os
 from pathlib import Path
 import tempfile
+from time import perf_counter
 os.environ.setdefault("QT_QPA_PLATFORM","offscreen")
 from PySide6.QtCore import QSettings
 from PySide6.QtWidgets import QApplication
+from capture_lifecycle import dispose_capture_widget
 from ui.workspace import Workspace
 from ui.splash import splash_pixmap
 from update_service import VERSION
@@ -20,6 +22,7 @@ def capture(output):
     app=QApplication.instance() or QApplication([])
     app.setStyle("Fusion")
     records=[]
+    started=perf_counter()
     def save(pix,name):
         if pix.isNull() or not pix.save(str(output/name)):
             raise RuntimeError("Failed real Qt capture: "+name)
@@ -48,10 +51,10 @@ def capture(output):
                         save(splash_pixmap(theme,glass,VERSION,language=="fa"),f"{stem}-splash.png")
                     finally:
                         window.editor.document().setModified(False)
-                        window.close()
-                        window.deleteLater()
+                        dispose_capture_widget(window)
                         app.processEvents()
     validate(output, records)
+    print(f'Captured and validated {len(records)} instructor images: {perf_counter()-started:.3f}s', flush=True)
     write_gallery(output, records)
     (output/"manifest.json").write_text(json.dumps({"version":VERSION,"evidence":"actual Qt offscreen; native visual acceptance pending","captures":records},indent=2),encoding="utf-8")
 
