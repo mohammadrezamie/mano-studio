@@ -188,7 +188,7 @@ def verify_installed_report(path, archive):
     return expected_report
 
 
-def validate(root, sha):
+def validate(root, sha, require_review=False):
     if not re.fullmatch(r"[a-f0-9]{40}", sha):
         raise ValueError("Invalid source commit")
     version = source_version(root)
@@ -215,6 +215,10 @@ def validate(root, sha):
                 raise ValueError("Portable executable is not AMD64")
         license_evidence = verify_distribution_payload(root, archive)
         installed_payload = verify_installed_report(setup / "installed-payload.json", archive)
+        review_evidence = None
+        if require_review:
+            from installer.review_evidence import verify as verify_review
+            review_evidence = verify_review(root, archive)
     with exe.open("rb") as stream:
         # Inno Setup may use a 32-bit bootstrap for a 64-bit application.
         machine(stream)
@@ -222,6 +226,7 @@ def validate(root, sha):
             "platform": "Windows x64", "portable_smoke": "PASS", "installed_smoke": "PASS",
             "academic_source_sha256": digest(root / "rtl_translator.py"), "assets": assets,
             "license_evidence": license_evidence, "installed_payload": installed_payload,
+            "review_evidence": review_evidence,
             "native_acceptance": False, "public_release": False}
 
 
@@ -229,8 +234,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
     parser.add_argument("--sha", required=True)
+    parser.add_argument("--require-review", action="store_true")
     args = parser.parse_args()
-    manifest = validate(args.root, args.sha)
+    manifest = validate(args.root, args.sha, require_review=args.require_review)
     path = args.root / "installer" / "output" / "candidate-manifest.json"
     path.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
 
