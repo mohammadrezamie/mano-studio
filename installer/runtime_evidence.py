@@ -8,7 +8,7 @@ import ssl
 import sys
 import zipfile
 
-MINIMUM = (3, 5, 9)  # Latest published OpenSSL 3.5 patch as of 2026-11-27; see advisory review.
+MINIMUM = (3, 5, 10)  # Advisory-review threshold, not a dependency installation pin.
 VERSION = re.compile(rb'OpenSSL ([0-9]+)\.([0-9]+)\.([0-9]+)(?![0-9])')
 
 

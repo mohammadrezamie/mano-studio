@@ -4,7 +4,7 @@ import pytest
 from installer.runtime_evidence import scan
 
 
-def run(payload, runtime=(3, 5, 0, 9, 0))
+def run(payload, runtime=(3, 5, 0, 10, 0)):
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, 'w') as z:
         for name, data in payload.items():
@@ -13,17 +13,17 @@ def run(payload, runtime=(3, 5, 0, 9, 0))
         return scan(z, '3.14.10', runtime)
 
 
-@pytest.mark.parametrize('version', [b'3.0.16', b'3.5.8', b'3.6.0'])
+@pytest.mark.parametrize('version', [b'3.0.16', b'3.5.8', b'3.5.9', b'3.6.0'])
 def test_unapproved_series_or_patch(version):
     result = run({'ManoStudio/libcrypto-3.dll': b'OpenSSL ' + version})
     assert result['flags'][0]['code'] == 'crypto-version-review'
 
 
 def test_current_baseline_is_not_release_approval():
-    result = run({'ManoStudio/libcrypto-3.dll': b'OpenSSL 3.5.9',
+    result = run({'ManoStudio/libcrypto-3.dll': b'OpenSSL 3.5.10',
                   'ManoStudio/libssl-3.dll': b'no version string'})
     assert not result['flags']
-    assert result['build_ssl_version'] == [3, 5, 9]
+    assert result['build_ssl_version'] == [3, 5, 10]
     assert result['public_release_approved'] is False
     assert result['manual_review_required'] is True
 
@@ -45,4 +45,4 @@ def test_multiple_embedded_versions_require_review():
 def test_openssl_three_tuple_uses_fourth_patch_component():
     result = run({'libcrypto-3.dll': b'OpenSSL 3.5.9'}, (3, 5, 0, 9, 0))
     assert result['build_ssl_version'] == [3, 5, 9]
-    assert result['flags'] == []
+    assert {flag['code'] for flag in result['flags']} == {'crypto-version-review', 'build-ssl-version-review'}

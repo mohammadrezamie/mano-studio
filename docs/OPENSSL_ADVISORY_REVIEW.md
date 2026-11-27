@@ -10,3 +10,5 @@ The 24 November 2026 low-severity fixes scheduled for 3.5.10 concern:
 - CVE-2026-121482: CMS/PKCS#7 verification with CRL checking enabled. The app does not enable OpenSSL CRL-check flags or process untrusted CMS/PKCS#7 content.
 
 The app uses ordinary HTTPS only for an explicit GitHub release metadata check; it does not use DANE, QUIC, CMS/PKCS#7 verification or CRL checking. This is a source-level reachability assessment, not a vendor-issued exemption or independent penetration test. Keep manual security review open and schedule a rebuild/retest when OpenSSL 3.5.10 is actually published.
+
+The automated review threshold remains 3.5.10, distinct from the latest actually published version (3.5.9). Below-threshold evidence retains advisory-review flags; no dependency pin changes. Synthetic 3.5.10 fixtures test parsing, not availability.
