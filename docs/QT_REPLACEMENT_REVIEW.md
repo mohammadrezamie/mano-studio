@@ -1,0 +1,9 @@
+# Qt library replacement review
+
+The current Windows onedir portable distributions retain Qt and Shiboken as separate DLL/PYD files under `ManoStudio/_internal/PySide6` and `ManoStudio/_internal/shiboken6`. Candidate archives from build 46041711466 are independently pinned by SHA-256. The experiment tests the original portable application, then a disposable copy with a non-code overlay appended to Qt6Core.dll, then restores the original and repeats smoke. It never edits a public asset or disables OS protection. This is a narrow test of accepting changed DLL bytes at the normal library path, not proof that a genuinely source-modified, ABI-compatible Qt build works, nor legal approval.
+
+For the eventual user-facing instructions: extract a portable copy into a separate user-owned folder, close Mano Studio, retain original files, obtain or build the matching architecture/version/configuration of the LGPL library, and replace its corresponding DLL and required compatible dependencies. Start from the copied application directory and check the desired feature. If it fails, restore the originals. Do not overwrite unrelated files, use untrusted DLLs, bypass OS security policies or edit the installed production copy. Mano Studio's MIT license does not restrict modification of LGPL components or reverse engineering for debugging such modifications. Actual source rebuild commands, matching vendor configuration/patches, third-party notices and durable corresponding-source access still need verification before these instructions are designated final. The pilot deliberately does not claim source-level replacement or approve redistribution.
+
+Latest exact portable archives:
+- Stable: bc93823dbea393f17464886abeef406defda22e4151dbaab82293928eae3271e
+- Beta: b6a9e2c0fa4014ce505d68e639a328f6ec193b98655c2f123a93365d3b523109
