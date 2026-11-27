@@ -94,11 +94,12 @@ def verify(reports, count, source, platform, profile=None, profile_sha=None):
     expected = partition(collected, count, profile)
     observed = []
     for index, report in by_index.items():
-        if (report["count"] != count or report["source"] != source or report["platform"] != platform
-                or report["exit"] != 0 or report["collected"] != collected
-                or report["python"] != first["python"] or report["dependencies"] != first["dependencies"]
-                or report.get("profile_sha256") != profile_sha):
-            raise ValueError(f"Inconsistent source, environment, collection or exit: shard {index}")
+        required = {"count": count, "source": source, "platform": platform,
+                    "exit": 0, "collected": collected, "python": first["python"],
+                    "dependencies": first["dependencies"], "profile_sha256": profile_sha}
+        for field, value in required.items():
+            if report.get(field) != value:
+                raise ValueError(f"Inconsistent {field}: shard {index}")
         if report["selected"] != expected[index] or set(report["terminal"]) != set(expected[index]):
             raise ValueError(f"Incomplete or incorrect execution: shard {index}")
         if any(outcome not in ("passed", "skipped") for outcome in report["terminal"].values()):

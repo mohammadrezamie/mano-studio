@@ -106,3 +106,24 @@ def test_weighted_aggregate_recomputes_partition_and_exports_observations():
     r[0]["duration_ms"][r[0]["selected"][0]] = -1
     with pytest.raises(ValueError):
         verify(r, 4, "a"*40, "linux", p, "profile")
+
+
+def test_profile_digest_is_checkout_independent_but_detects_changes(tmp_path):
+    import hashlib
+    from ci_shard_plan import read_profile
+    p = tmp_path / "timing.json"
+    raw = b'{\n "schema":1,"default_ms":1,"file_defaults_ms":{},"weights_ms":{"a":2}\n}\n'
+    p.write_bytes(raw)
+    original = read_profile(p)
+    assert original[1] == hashlib.sha256(raw).hexdigest()
+    p.write_bytes(raw.replace(b'\n', b'\r\n'))
+    assert read_profile(p) == original
+    p.write_bytes(raw.replace(b'"a":2', b'"a":3'))
+    assert read_profile(p)[1] != original[1]
+
+
+def test_profile_mismatch_diagnostic():
+    r = reports()
+    r[0]["profile_sha256"] = "different"
+    with pytest.raises(ValueError, match="Inconsistent profile_sha256: shard 0"):
+        verify(r, 4, "a"*40, "linux")

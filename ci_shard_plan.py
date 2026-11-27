@@ -5,7 +5,9 @@ from pathlib import Path
 
 
 def read_profile(path):
-    raw = Path(path).read_bytes()
+    # Git on Windows may materialize text files with CRLF. Hash the exact
+    # LF-normalized bytes, not platform-dependent checkout representation.
+    raw = Path(path).read_bytes().replace(b'\r\n', b'\n')
     value = json.loads(raw)
     if not isinstance(value, dict) or value.get("schema") != 1:
         raise ValueError("Unknown timing profile")
