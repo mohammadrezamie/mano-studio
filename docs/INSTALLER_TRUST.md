@@ -1,0 +1,3 @@
+# Installer authenticity preflight
+
+Independent beta update branch. Adds a standard-library preflight contract for exact newer same-channel Setup assets, length/SHA-256, file mutation/reparse rejection, Windows Authenticode status and reviewed certificate SHA-256 pin. Pin set is intentionally empty because no genuine publisher certificate has been provisioned. The module does not execute any installer and is not wired to a launch button. Mock-signature tests validate policy only, not real Windows signing. Secure private staging, trusted signing identity, exact live release metadata, real signed/unsigned tests, save/close handoff, upgrade and portable behavior remain required. No change to frozen releases.
