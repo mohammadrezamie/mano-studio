@@ -21,6 +21,8 @@ if (-not $ReuseFrozen) {
     # Preserve notices shipped in installed distributions; this is evidence, not legal approval.
     python installer/collect_notices.py $notices
     if ($LASTEXITCODE -ne 0) { throw 'Notice collection failed.' }
+    python -m installer.openssl_notice $dist (Join-Path $notices 'openssl')
+    if ($LASTEXITCODE -ne 0) { throw 'OpenSSL notice collection failed.' }
     # Copy the same upstream Qt texts as the frozen Stable candidate; this does not grant redistribution clearance.
     $qtTexts = Join-Path $notices 'qt-license-texts'
     New-Item -ItemType Directory -Force $qtTexts | Out-Null
