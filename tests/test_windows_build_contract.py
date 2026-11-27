@@ -33,7 +33,7 @@ def test_unused_qt_virtual_keyboard_is_pruned_with_a_dependency_guard():
     expected = {
         "LGPL-3.0-only.txt": "65c5ca88a67c30becee01c5a8816d964b03862f9",
         "GPL-3.0-only.txt": "94a9ed024d3859793618152ea559a168bbcbb5e2",
-        "README.md": "6285e0ec3360d3384dda61f0d76811fa2099b5ae",
+        "README.md": "eb59c9b4b3075e223fa196aa7e2f8ba783a1bd5a",
     }
     assert "qt-license-texts" in script
     assert "Copy-Item -LiteralPath" in script
@@ -79,3 +79,6 @@ def test_unused_qml_and_pdf_runtime_are_pruned_before_notice_collection():
     script = BUILD_SCRIPT.read_text(encoding="utf-8")
     assert "python -m installer.prune_qml $dist" in script
     assert "python -m installer.prune_pdf $dist --apply" in script
+    assert script.index("python -m installer.prune_qml $dist") < script.index("python installer/collect_notices.py")
+    assert script.index("python -m installer.prune_pdf $dist --apply") < script.index("python installer/collect_notices.py")
+    assert script.index("python installer/collect_notices.py") < script.index("python -m installer.openssl_notice")
