@@ -1,0 +1,21 @@
+name: Binary review map contracts
+on:
+  pull_request:
+    branches: [quality/redistribution-gate]
+permissions:
+  contents: read
+jobs:
+  review-map:
+    if: github.head_ref == 'quality/binary-review-map' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pytest -q tests/test_binary_review_map.py tests/test_redistribution_gate.py
