@@ -21,6 +21,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+          fetch-depth: 2
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.os == 'windows-latest' && (github.head_ref == 'quality/redistribution-gate' || github.head_ref == 'ci/workspace-lifecycle-pilot') && '3.14.10' || '3.12' }}
@@ -74,13 +75,18 @@ jobs:
         run: python -m pytest -q --junitxml=lifecycle.xml tests/test_workspace.py -k test_workspace_disposal_releases_owned_widgets_and_timers
       - name: Compare identical test outcomes and report timings
         run: python ci/compare_lifecycle.py ../mano-lifecycle-baseline/baseline.xml regression.xml
+      - name: Collect baseline report into checkout
+        if: always()
+        shell: pwsh
+        run: |
+          if (Test-Path ../mano-lifecycle-baseline/baseline.xml) { Copy-Item ../mano-lifecycle-baseline/baseline.xml baseline.xml }
 
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: regression-${{ matrix.os }}
           path: |
-            ../mano-lifecycle-baseline/baseline.xml
+            baseline.xml
             regression.xml
             lifecycle.xml
           if-no-files-found: ignore
