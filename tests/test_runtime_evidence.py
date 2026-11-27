@@ -4,7 +4,7 @@ import pytest
 from installer.runtime_evidence import scan
 
 
-def run(payload, runtime=(3, 5, 10)):
+def run(payload, runtime=(3, 5, 0, 9, 0))
     buffer = io.BytesIO()
     with zipfile.ZipFile(buffer, 'w') as z:
         for name, data in payload.items():
@@ -20,7 +20,7 @@ def test_unapproved_series_or_patch(version):
 
 
 def test_current_baseline_is_not_release_approval():
-    result = run({'ManoStudio/libcrypto-3.dll': b'OpenSSL 3.5.10',
+    result = run({'ManoStudio/libcrypto-3.dll': b'OpenSSL 3.5.9',
                   'ManoStudio/libssl-3.dll': b'no version string'})
     assert not result['flags']
     assert result['build_ssl_version'] == [3, 5, 9]
