@@ -20,21 +20,21 @@ jobs:
       fail-fast: false
       max-parallel: 20
       matrix:
-        include:
+        candidate:
           - {track: stable, source: '8184129b13e5e80eb0571f90d37694fe26654c72', os: ubuntu-latest}
           - {track: stable, source: '8184129b13e5e80eb0571f90d37694fe26654c72', os: windows-latest}
           - {track: beta, source: '8cac2d66ddc18f0e7501ea37c64d4b2d4e50e03e', os: ubuntu-latest}
           - {track: beta, source: '8cac2d66ddc18f0e7501ea37c64d4b2d4e50e03e', os: windows-latest}
         shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    name: ${{ matrix.track }} / ${{ matrix.os }} / shard ${{ matrix.shard }}
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.candidate.track }} / ${{ matrix.candidate.os }} / shard ${{ matrix.shard }}
+    runs-on: ${{ matrix.candidate.os }}
     env:
       QT_QPA_PLATFORM: offscreen
       PYTHONUTF8: '1'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ matrix.source }}
+          ref: ${{ matrix.candidate.source }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -61,16 +61,25 @@ jobs:
       - name: Record exact candidate and environment
         shell: bash
         run: |
-          test "$(git rev-parse HEAD)" = "${{ matrix.source }}"
-          printf 'track=%s\nsource=%s\nos=%s\nshard=%s\n' "${{ matrix.track }}" "${{ matrix.source }}" "${{ matrix.os }}" "${{ matrix.shard }}" > regression-context.txt
+          test "$(git rev-parse HEAD)" = "${{ matrix.candidate.source }}"
+          printf 'track=%s\nsource=%s\nos=%s\nshard=%s\n' "${{ matrix.candidate.track }}" "${{ matrix.candidate.source }}" "${{ matrix.candidate.os }}" "${{ matrix.shard }}" > regression-context.txt
           python --version > regression-python.txt
           python -m pip freeze > regression-dependencies.txt
+      - name: Retrieve trusted orchestration script from exact workflow commit
+        shell: bash
+        run: |
+          git fetch --no-tags --depth=1 origin ${{ github.sha }}
+          git show ${{ github.sha }}:scripts/run_test_shard.py > "$RUNNER_TEMP/mano-run-test-shard.py"
+          test "$(git rev-parse HEAD)" = "${{ matrix.candidate.source }}"
       - name: Run deterministic test shard
-        run: python scripts/run_test_shard.py --shard ${{ matrix.shard }} --total 10 --junitxml regression-shard-${{ matrix.shard }}.xml
+        shell: bash
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: python "$RUNNER_TEMP/mano-run-test-shard.py" --shard ${{ matrix.shard }} --total 10 --junitxml regression-shard-${{ matrix.shard }}.xml
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: regression-${{ matrix.track }}-${{ matrix.os }}-${{ matrix.shard }}
+          name: regression-${{ matrix.candidate.track }}-${{ matrix.candidate.os }}-${{ matrix.shard }}
           path: |
             regression-shard-${{ matrix.shard }}.xml
             regression-context.txt
