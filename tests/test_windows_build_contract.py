@@ -33,7 +33,7 @@ def test_unused_qt_virtual_keyboard_is_pruned_with_a_dependency_guard():
     expected = {
         "LGPL-3.0-only.txt": "65c5ca88a67c30becee01c5a8816d964b03862f9",
         "GPL-3.0-only.txt": "94a9ed024d3859793618152ea559a168bbcbb5e2",
-        "README.md": "eb59c9b4b3075e223fa196aa7e2f8ba783a1bd5a",
+        "README.md": "fa7204f4ce7d09a63afc090a470024c8d20616ee",
     }
     assert "qt-license-texts" in script
     assert "Copy-Item -LiteralPath" in script

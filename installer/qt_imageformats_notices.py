@@ -6,7 +6,7 @@ import shutil
 
 EXPECTED = {
     "BSD-3-Clause.txt": "9f0490f18656c6f2435bd14f603ef0c96434d1825615363dce43abb42ed1dcce",
-    "libtiff.txt": "7e558244926e9b7a3222c55abd73c5a17f71dfada475dba3c126e9d2cc5537f1",
+    "libtiff.txt": "fbd6fed7938541d2c809c0826225fc85e551fdbfa8732b10f0c87e0847acafd7",
     "libwebp-COPYING.txt": "5aec868f669e384a22372a4e8a1a6cd7d44c64cd451f960ca69cc170d1e13acf",
 }
 FILES = tuple(EXPECTED) + ("NOTICE.md", "plugin-map.json", "libtiff-attribution.json", "libwebp-attribution.json")
