@@ -1,7 +1,7 @@
 name: beta installer trust contracts
 on:
   pull_request:
-    branches: [feature/beta-update-notice]
+    branches: [develop/next-beta]
     types: [opened, synchronize, reopened, ready_for_review]
 permissions:
   contents: read

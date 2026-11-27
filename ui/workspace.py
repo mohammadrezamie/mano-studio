@@ -24,6 +24,7 @@ from ui.credits import COPYRIGHT, REPOSITORY, THANKS, PURPOSE, LICENSE_NOTE, ACA
 from ui.localization import error_text
 from ui.code_editor import CodeEditor
 from ui.glass import GlassRoot
+from ui.code_keypad import CodeKeypad
 
 LTR = Qt.LayoutDirection.LeftToRight
 
@@ -279,8 +280,9 @@ class Workspace(QMainWindow):
         self.editor.setAccessibleName(self.t(input_key))
         self.output.setAccessibleName(self.t(output_key))
         self.export_button.setText(self.t("Export RTL" if reverse else "Export ASM"))
-        if reverse and self.tabs.currentIndex()==1:self.tabs.setCurrentIndex(0)
-        self.tabs.setTabEnabled(1,not reverse)
+        self.code_keypad.set_mode(self.direction)
+        self.tabs.setTabEnabled(1, True)
+        self.tabs.setTabText(1, self.t("Assembly keypad" if reverse else "RTL keypad"))
         self.update_preview()
 
     def set_direction(self,direction):
@@ -335,40 +337,17 @@ class Workspace(QMainWindow):
         return widget
 
     def pad(self):
-        page = QWidget()
-        grid = QGridLayout(page)
-        tokens = ["AC", "PC", "AR", "DR", "E", "IR", "TR", "INPR", "OUTR", "IEN",
-                  "FGI", "FGO", "S", "M[", "]", "[", "←", "=", "+", "∧", "¬", "(",
-                  ")", ":", ",", "IF ", " THEN ", "CIR", "CIL", "0", "1", "2", "3",
-                  "4", "5", "6", "7", "8", "9", "A", "B", "C", "D", "E", "F"]
-        for index, token in enumerate(tokens):
-            button = QPushButton(token.strip())
-            button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            button.clicked.connect(lambda checked=False, value=token: self.insert(value))
-            grid.addWidget(button, index // 10, index % 10)
-        for index, (title, action) in enumerate([
-            ("Space", lambda: self.insert(" ")), ("Enter", lambda: self.insert("\n")),
-            ("Backspace", lambda: self.move_cursor("delete")), ("◀", lambda: self.move_cursor("left")),
-            ("▶", lambda: self.move_cursor("right")), ("Undo", self.editor.undo),
-            ("Redo", self.editor.redo)]):
-            grid.addWidget(self.button(title, action), 5, index)
-        return page
+        self.code_keypad = CodeKeypad(self.editor, ("forward", "reverse"), self.button)
+        # Retain public widget handles used by existing captures and tests.
+        self.pad_stack = self.code_keypad.stack
+        self.pad_buttons = self.code_keypad.buttons
+        return self.code_keypad
 
     def insert(self, value):
-        self.editor.insertPlainText(value)
-        self.editor.setFocus()
+        self.code_keypad.insert(value)
 
     def move_cursor(self, direction):
-        cursor = self.editor.textCursor()
-        if direction == "delete":
-            if cursor.hasSelection():
-                cursor.removeSelectedText()
-            else:
-                cursor.deletePreviousChar()
-        else:
-            cursor.movePosition(QTextCursor.MoveOperation.Left if direction == "left" else QTextCursor.MoveOperation.Right)
-        self.editor.setTextCursor(cursor)
-        self.editor.setFocus()
+        self.code_keypad.move_cursor(direction)
 
     def builder(self):
         page = QWidget()
