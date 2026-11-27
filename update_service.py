@@ -1,4 +1,4 @@
-"""Only explicit update checks may use the network; never on startup."""
+"""Release metadata; network checks require manual or opt-in UI authorization."""
 from dataclasses import dataclass
 import json
 from release_channel import version_key, channel, eligible_release
@@ -25,6 +25,11 @@ def release_info(*, explicit=False, opener=urlopen):
     request = Request(RELEASES_URL, headers={"Accept": "application/vnd.github+json", "User-Agent": "ManoStudio-UpdateCheck"})
     with opener(request, timeout=6) as response:
         payload = response.read(2_000_001)
+    return parse_release_payload(payload)
+
+
+def parse_release_payload(payload):
+    """Shared bounded metadata parser; performs no network requests."""
     if len(payload) > 2_000_000:
         raise ValueError("Release response too large")
     data = json.loads(payload)

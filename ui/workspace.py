@@ -248,6 +248,8 @@ class Workspace(QMainWindow):
         self.input_mode_changed(self.tabs.currentIndex())
         self.offline_label = self.label("Offline", "muted")
         self.statusBar().addPermanentWidget(self.offline_label)
+        from ui.update_notice import UpdateNotice
+        self.update_notice = UpdateNotice(self)
         self.update_output_state()
         self.apply_appearance()
         self.statusBar().showMessage(self.t("Ready"))
@@ -640,6 +642,7 @@ class Workspace(QMainWindow):
         self.settings.setValue("language", self.language)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.relabel()
+        self.update_notice.relabel()
         self.update_document_title()
         self.statusBar().showMessage(self.t("Ready"))
 
@@ -976,6 +979,7 @@ class Workspace(QMainWindow):
         if not self.confirm_discard():
             event.ignore()
             return
+        self.update_notice.cancel()
         self.settings.setValue("geometry", self.saveGeometry())
         self.settings.sync()
         event.accept()

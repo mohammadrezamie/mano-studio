@@ -103,6 +103,7 @@ def main():
     window = Workspace(settings)
     window.show()
     splash.finish(window)
+    window.update_notice.schedule()
     if len(sys.argv)==2 and not sys.argv[1].startswith('-'):
         QTimer.singleShot(0,lambda:window.open_path(sys.argv[1]))
     return app.exec()

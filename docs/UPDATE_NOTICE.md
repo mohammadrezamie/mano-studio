@@ -1,0 +1,3 @@
+# Optional update notification — beta track
+
+Off by default; explicit opt-in in Settings. Bounded asynchronous HTTPS metadata request to the fixed GitHub API after the workspace appears; no redirects, no automatic downloads, no installer launch, no telemetry. Same channel parser as manual updates. A persistent status-bar button opens Settings; first notice per tag also appears in the status bar. Cancellation on opt-out or close. Qt network TLS behavior and packaged runtime compatibility require verification on Windows; tests added for default offline, consent, channel filtering, response size, and bilingual notice. Native update installation and publisher trust remain unresolved. No modification to either frozen release candidate.
