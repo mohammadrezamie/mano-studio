@@ -114,7 +114,8 @@ jobs:
       - name: Set Windows font path
         if: runner.os == 'Windows'
         shell: pwsh
-        run: "QT_QPA_FONTDIR=$env:WINDIR\Fonts" >> $env:GITHUB_ENV
+        run: |
+          "QT_QPA_FONTDIR=$env:WINDIR\Fonts" >> $env:GITHUB_ENV
       - run: python capture_workspace.py
       - uses: actions/upload-artifact@v4
         with:
