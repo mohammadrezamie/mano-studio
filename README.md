@@ -17,13 +17,61 @@ and explore digital logic through interactive educational tools.
 [![License](https://img.shields.io/badge/License-MIT-287D65?style=flat-square)](LICENSE)
 [![Release status](https://img.shields.io/badge/Releases-In%20review-E5A344?style=flat-square)](#release-status)
 
-[**Download**](#download-table) · [Explore the workspace](#explore-the-workspace) · [Academic core](#academic-core) · [Quick start](#quick-start) · [Documentation](#documentation)
+[**Download**](#download) · [Explore the workspace](#explore-the-workspace) · [Academic core](#academic-core) · [Quick start](#quick-start) · [Documentation](#documentation)
 
 <a href="docs/assets/screenshots/editor.png"><img src="docs/assets/screenshots/editor.png" width="940" alt="Mano Studio Stable candidate: dark RTL editor and translated assembly"></a>
 
 <sub>Actual Mano Studio 1.0.0 candidate screenshot · Windows CI, dark theme</sub>
 
 </div>
+
+---
+
+## Download
+
+**Windows desktop & laptop · Intel / AMD 64-bit (x64) · Windows 10/11 target**
+
+Choose **Setup** for a normal installation or **Portable** to run without installing. Both contain the same application for their respective version, with the required Python and Qt runtime bundled.
+
+> **Release review:** Both candidates have passed automated regression and Windows packaging. They are not publicly released yet. The download links below are temporary GitHub Actions review artifacts (sign-in may be required), not approved public distribution packages. Do not redistribute them.
+
+### Download table
+
+| Version | Architecture | Setup — recommended | Portable | Release status |
+| :--- | :---: | :---: | :---: | :--- |
+| **1.0.0 Stable** | Windows x64 | [![Setup 35 MB](https://img.shields.io/badge/Setup-35.0%20MB-2563EB?style=flat-square&logo=windows&logoColor=white)](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180752782) | [![Portable 51 MB](https://img.shields.io/badge/ZIP-51.0%20MB-475569?style=flat-square)](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180064025) | [Private draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-e438c6988649501c973e) |
+| **1.1.0-beta.1 Beta** | Windows x64 | [![Setup 36.8 MB](https://img.shields.io/badge/Setup-36.8%20MB-2563EB?style=flat-square&logo=windows&logoColor=white)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621/artifacts/15197803727) | [![Portable 53.6 MB](https://img.shields.io/badge/ZIP-53.6%20MB-475569?style=flat-square)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621/artifacts/15198955230) | [Private prerelease draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-786f71ed7a05b8f89b03) |
+
+<sub>Sizes refer to the actual installer and portable ZIP, not the surrounding Actions archive. Setup review downloads arrive inside an archive; permanent EXE downloads will appear on the official Releases page after approval.</sub>
+
+[![Official GitHub Releases](https://img.shields.io/badge/GitHub-Official%20Releases-24292F?style=for-the-badge&logo=github&logoColor=white)](https://github.com/mohammadrezamie/mano-studio/releases)
+
+### Setup or Portable?
+
+| **Setup (.exe)** | **Portable (.zip)** |
+| --- | --- |
+| Recommended for everyday use and classroom demonstrations. | Useful for temporary use or carrying the program to another compatible PC. |
+| Run the installer; optionally create a desktop shortcut. Launch from Start Menu. | Extract the complete ZIP and run `ManoStudio.exe` from the extracted folder. |
+| Uninstall through Windows settings. | Remove the extracted program folder; preferences may remain in the Windows user profile. |
+
+<details>
+<summary>System compatibility, verification and other platforms</summary>
+
+Check **Settings → System → About → System type** before downloading.
+
+| Platform | Availability |
+| --- | --- |
+| Windows 11 x64 / Windows 10 x64 | Target platforms; exact native OS acceptance is pending. Use a security-supported Windows edition. |
+| Windows x86 (32-bit) | Not available; current Qt/PySide6 dependencies lack official x86 Windows wheels. |
+| Windows ARM64 | No verified native package or emulation support yet. |
+| Linux / macOS | Source development only with compatible dependencies; no official installer. |
+| Android / iOS | Not supported by this desktop application. |
+
+Additional architecture feasibility is tracked in [#54](https://github.com/mohammadrezamie/mano-studio/issues/54). The standalone Python translator remains independent of desktop GUI dependencies.
+
+Verify the matching SHA-256 checksum when a package becomes available on the official Releases page. Neither current candidate is Authenticode-signed. Applicable security, redistribution and native acceptance reviews remain open.
+
+</details>
 
 ---
 
@@ -224,37 +272,3 @@ Contributors: read [AGENTS.md](AGENTS.md) and [CONTINUE.md](docs/CONTINUE.md). K
 An independent educational project for the computer architecture course, inspired by M. Morris Mano's *Computer System Architecture*. Academic acknowledgment and institutional details remain subject to verification; no official endorsement is implied.
 
 Mano Studio source is available under the [MIT License](LICENSE). Third-party components retain their own licenses. See [technical references](docs/REFERENCES.md).
-
----
-
-## Download
-
-<div align="center">
-
-[![Official releases](https://img.shields.io/badge/GitHub-Official%20Releases-24292F?style=for-the-badge&logo=github&logoColor=white)](https://github.com/mohammadrezamie/mano-studio/releases)
-[![Windows setup](https://img.shields.io/badge/Windows-x64%20Setup-2563EB?style=for-the-badge&logo=windows&logoColor=white)](#download-table)
-[![Portable](https://img.shields.io/badge/Portable-ZIP-475569?style=for-the-badge)](#download-table)
-
-</div>
-
-### Choose the right package
-
-- **Setup:** the normal Windows installer for an Intel or AMD 64-bit desktop or laptop.
-- **Portable:** extract the ZIP and run Mano Studio without installation.
-- **Stable / Beta:** Stable is the first reliability-focused candidate; Beta is the forward development candidate. Both remain under review.
-
-Check **Settings → System → About → System type** on Windows before choosing a package. Windows 10/11 x64 is the target; exact native OS compatibility is still under acceptance review. Use a security-supported Windows edition. The current Qt/PySide6 dependencies do not provide official Windows x86 wheels; x86 and ARM64 feasibility are tracked separately in [#54](https://github.com/mohammadrezamie/mano-studio/issues/54). The standalone Python translator is independent of this desktop architecture limitation.
-
-Linux and macOS source development require compatible dependencies; no official installers are available. Android and iOS are not supported by this desktop application.
-
-GitHub Actions files below are temporary **review artifacts**, not public distribution packages, and may require GitHub sign-in. Do not redistribute them. Once approved, permanent downloads will appear on the [Releases page](https://github.com/mohammadrezamie/mano-studio/releases). Verify the matching SHA-256 checksum. Neither current candidate is Authenticode-signed.
-
-### Download table
-
-| Version | Device / OS | Architecture | Setup (install) | Portable (no install) | Status |
-| --- | --- | --- | --- | --- | --- |
-| **1.0.0 Stable** | Windows 10/11 desktop or laptop target | Intel / AMD x64 | [35.0 MB · Review](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180752782) | [51.0 MB · Review](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180064025) | [Private draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-e438c6988649501c973e) |
-| **1.1.0-beta.1 Beta** | Windows 10/11 desktop or laptop target | Intel / AMD x64 | [36.8 MB · Review](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621/artifacts/15197803727) | [53.6 MB · Review](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621/artifacts/15198955230) | [Private draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-786f71ed7a05b8f89b03) |
-| — | Windows 32-bit | x86 | — | — | Not available |
-| — | Windows on ARM | ARM64 | — | — | Not available |
-| — | Linux / macOS | — | — | — | Source only |
