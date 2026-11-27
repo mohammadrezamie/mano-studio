@@ -54,6 +54,18 @@ SAMPLES = (
            ("Indirect LDA/STA and ISZ copy 200–202 to 210–212, advancing both pointers and ending with COUNT=0.",
             "LDA و STA غیرمستقیم و ISZ سه کلمه 200 تا 202 را به 210 تا 212 کپی می‌کنند؛ هر دو اشاره‌گر جلو می‌روند و COUNT صفر می‌شود."),
            18, 0xFFFF, 0, ((0x107, 0x203), (0x108, 0x213), (0x109, 0x0), (0x200, 0x1234), (0x201, 0xA5A5), (0x202, 0xFFFF), (0x210, 0x1234), (0x211, 0xA5A5), (0x212, 0xFFFF),)),
+    Sample("multiply-loop", ("Multiply by repeated addition", "ضرب با جمع تکراری"),
+           ("Add 6 seven times using a negative ISZ counter; RESULT = 42.",
+            "عدد ۶ را هفت بار با شمارنده منفی ISZ جمع کنید؛ RESULT برابر ۴۲ است."),
+           23, 42, 0, ((0x106, 42), (0x108, 0))),
+    Sample("array-sum", ("Sum an array indirectly", "جمع آرایه با آدرس‌دهی غیرمستقیم"),
+           ("Sum 2, 5 and 9 through an indirect pointer. RESULT = 16; PTR ends at 203.",
+            "اعداد ۲، ۵ و ۹ را با اشاره‌گر غیرمستقیم جمع کنید. RESULT برابر ۱۶ و PTR برابر 203 است."),
+           14, 16, 0, ((0x107, 0x203), (0x108, 0), (0x109, 16))),
+    Sample("logical-or", ("OR using De Morgan's law", "عمل OR با قانون دمورگان"),
+           ("Use CMA and AND to compute NOT(NOT A AND NOT B): 0F00 OR 00F3 = 0FF3.",
+            "با CMA و AND طبق قانون دمورگان، OR دو کلمه 0F00 و 00F3 برابر 0FF3 می‌شود."),
+           9, 0x0FF3, 0, ((0x10B, 0xF0FF), (0x10C, 0x0FF3))),
 )
 
 

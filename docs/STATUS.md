@@ -1,3 +1,9 @@
+# Next-generation CPU algorithms — proposed, 2026-11-27
+
+Separate Beta feature branch based on integrated #36 source, without modifying release candidates. Adds three native runnable examples (13 total): repeated-addition multiplication, indirect array sum, De Morgan OR. Expected final states and step counts are hand-derived; independent bitwise and multiplication edge-case oracles and existing bilingual menu contracts included. Focused CI pending; do not mark tested or merge until green. No changes to the standalone RTL translator or packaging. Stable #26 and Beta packaging #37 remain separate.
+
+---
+
 # Live status — 2026-11-27 (authoritative; historical checkpoints follow)
 
 - **Beta:** PR [#36](https://github.com/mohammadrezamie/mano-studio/pull/36), source `integration/first-beta` at `007fd2ad`, integrates bilingual polish, ten CPU examples, cycle inspection and keyboardless bilingual RTL authoring. Version `1.1.0-dev.1` is intentionally ahead of Stable `1.0.0`; proposed first prerelease is `v1.1.0-beta.1`. A stale screenshot-count assertion (36 expected vs 48 hard-coded) was corrected; fresh combined Next-beta run 45904681178 and Windows visual run 45904681078 are queued. The older failure 45901184553 was only this test mismatch. No Beta release/tag exists.

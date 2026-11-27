@@ -1,0 +1,6 @@
+{
+  "format": "mano-studio",
+  "version": 1,
+  "kind": "asm",
+  "payload": "ORG 100\nCLA\nLOOP, ADD PTR I\nISZ PTR\nISZ COUNT\nBUN LOOP\nSTA RESULT\nHLT\nPTR, HEX 200\nCOUNT, DEC -3\nRESULT, HEX 0000\nORG 200\nDEC 2\nDEC 5\nDEC 9\nEND\n"
+}

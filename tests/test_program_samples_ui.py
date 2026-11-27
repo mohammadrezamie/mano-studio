@@ -29,7 +29,7 @@ def test_bilingual_examples_menu_opens_validated_sample_without_running(
         actions = lab.examples_button.menu().actions()
         assert [action.text() for action in actions] == [
             sample.title[0 if language == "en" else 1] for sample in SAMPLES]
-        assert len(actions) == 10
+        assert len(actions) == 13
         sample, source = load_sample("addition")
         monkeypatch.setattr(QMessageBox, "question",
                             lambda *a, **k: QMessageBox.StandardButton.Yes)
