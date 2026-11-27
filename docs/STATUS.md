@@ -1,3 +1,9 @@
+# Workspace lifecycle benchmark pilot
+
+Independent CI-only child to investigate test window cleanup, compare exact passing test membership and durations on both platforms. No confirmed speedup or production change. See WORKSPACE_LIFECYCLE_CI.md.
+
+---
+
 # Live status — 2026-11-27 (authoritative; historical checkpoints follow)
 
 - **Beta integration:** PR [#36](https://github.com/mohammadrezamie/mano-studio/pull/36) is the forward 1.1.0 development line on `integration/first-beta`, exact head `2b19fe4f0fcbdccb5f8d136cf509f1aaa28ea77d`. Combined focused integration run [45905561920](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905561920) passed 622 core + 60 Qt + 20 workspace tests (702 focused checks; not the full suite). Visual run [45905561919](https://github.com/mohammadrezamie/mano-studio/actions/runs/45905561919) passed with 36 unique images independently checked against the manifest.
