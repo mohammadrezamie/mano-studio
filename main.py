@@ -106,6 +106,7 @@ def main():
     window = Workspace(settings)
     window.show()
     splash.finish(window)
+    window.update_notice.schedule()
     return app.exec()
 
 

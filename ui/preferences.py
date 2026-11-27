@@ -83,13 +83,18 @@ class Preferences(QDialog):
         label.setObjectName("section")
         layout.addWidget(label)
         note = QLabel(self.text(
-            "All tools work offline. Only explicit update checks and downloads contact GitHub. No automatic download, installation or telemetry.",
-            "تمام ابزارها آفلاین هستند. فقط با درخواست بررسی یا دریافت به‌روزرسانی به گیت‌هاب متصل می‌شوید. بدون دانلود، نصب خودکار یا ارسال داده."))
+            "All tools work offline. Manual checks, optional startup checks and explicit downloads contact GitHub. No automatic installation or telemetry.",
+            "تمام ابزارها آفلاین هستند. بررسی دستی، بررسی اختیاری هنگام شروع و دریافت با تأیید شما به گیت‌هاب متصل می‌شوند. بدون نصب خودکار یا ارسال داده."))
         note.setWordWrap(True)
         layout.addWidget(note)
         layout.addWidget(QLabel(self.text("Installed version: ", "نسخه نصب‌شده: ")+VERSION))
         channel_name = self.text("Stable", "پایدار") if CHANNEL == "stable" else self.text("Beta", "آزمایشی")
         layout.addWidget(QLabel(self.text("Update channel: ", "کانال به‌روزرسانی: ")+channel_name))
+        self.auto_check = QCheckBox(self.text("Check for updates at startup (optional)",
+                                              "بررسی به‌روزرسانی هنگام شروع (اختیاری)"))
+        self.auto_check.setChecked(workspace.update_notice.enabled())
+        self.auto_check.toggled.connect(workspace.update_notice.set_enabled)
+        layout.addWidget(self.auto_check)
         self.check = MotionButton(self.text("Check for updates", "بررسی به‌روزرسانی"))
         self.check.clicked.connect(self.start_check)
         layout.addWidget(self.check)
