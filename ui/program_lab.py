@@ -13,7 +13,7 @@ from PySide6.QtWidgets import QInputDialog
 from PySide6.QtCore import QTimer, QSignalBlocker
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QPlainTextEdit, QTableWidget, QTableWidgetItem, QHeaderView,
-    QAbstractItemView, QSplitter, QSpinBox, QLineEdit, QTabWidget, QFileDialog, QMessageBox, QWidget, QMenu)
+    QAbstractItemView, QSplitter, QSpinBox, QLineEdit, QTabWidget, QFileDialog, QMessageBox, QWidget, QMenu, QScrollArea)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QTextCursor
 from execution_history import ExecutionHistory
@@ -42,6 +42,7 @@ from cpu_guard import CpuGuard
 from replacement_guard import allow_replace
 from program_samples import SAMPLES, load_sample
 from ui.workspace import code_editor
+from ui.code_keypad import CodeKeypad
 from ui.datapath_view import DatapathView
 
 EXAMPLE = """ORG 000
@@ -87,7 +88,22 @@ class ProgramLab(QDialog):
         panes.addWidget(self.source)
         panes.addWidget(self.machine)
         panes.setSizes([500, 500])
-        layout.addWidget(panes, 2)
+        source_area = QWidget()
+        source_layout = QVBoxLayout(source_area)
+        source_layout.setContentsMargins(0, 0, 0, 0)
+        source_layout.addWidget(panes, 1)
+        self.keypad_toggle = QPushButton(self.t("Assembly keypad", "صفحه‌کلید اسمبلی"))
+        self.keypad_toggle.setCheckable(True)
+        source_layout.addWidget(self.keypad_toggle)
+        self.source_keypad = CodeKeypad(self.source, ("program",), self.keypad_button)
+        self.keypad_scroll = QScrollArea()
+        self.keypad_scroll.setWidgetResizable(True)
+        self.keypad_scroll.setWidget(self.source_keypad)
+        self.keypad_scroll.setMaximumHeight(250)
+        self.keypad_scroll.hide()
+        self.keypad_toggle.toggled.connect(self.toggle_keypad)
+        source_layout.addWidget(self.keypad_scroll)
+        layout.addWidget(source_area, 2)
         controls = QHBoxLayout()
         self.examples_button = QPushButton(self.t("Saved examples", "نمونه‌های ذخیره‌شده"))
         menu = QMenu(self.examples_button)
@@ -251,7 +267,7 @@ class ProgramLab(QDialog):
         self.status = QLabel()
         self.status.setWordWrap(True)
         layout.addWidget(self.status)
-        self.cpu_widgets=(intro,panes,cpu_controls,cpu_io,self.status)
+        self.cpu_widgets=(intro,source_area,cpu_controls,cpu_io,self.status)
         self.tool_pages={"live":self.datapath,"register-memory":memory_panel,"debugger":trace_page,
                          "alu":alu_page,"codes":self.codes,"cycles":self.cycles,
                          "microprogram":self.microprogram,"organization":self.organization,
@@ -316,9 +332,24 @@ class ProgramLab(QDialog):
         with QSignalBlocker(self.source):
             self.source.setPlainText(source)
 
+    def keypad_button(self, title, action):
+        labels = {"Space": "فاصله", "Enter": "خط جدید", "Backspace": "حذف",
+                  "Undo": "واگرد", "Redo": "بازانجام"}
+        button = QPushButton(self.t(title, labels.get(title, title)))
+        button.clicked.connect(lambda checked=False: action())
+        return button
+
+    def toggle_keypad(self, checked):
+        self.keypad_scroll.setVisible(checked and not self.source.isReadOnly())
+
     def set_source_locked(self, locked):
         self.source.setReadOnly(locked)
         self.edit_source_button.setEnabled(locked)
+        if locked:
+            self.keypad_toggle.setChecked(False)
+            self.keypad_scroll.hide()
+        self.keypad_toggle.setEnabled(not locked)
+        self.source_keypad.setEnabled(not locked)
 
     def invalidate(self):
         self.pause()

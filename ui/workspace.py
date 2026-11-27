@@ -6,7 +6,7 @@ from PySide6.QtGui import QFontDatabase, QTextCursor, QTextCharFormat, QSyntaxHi
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QLabel, QPushButton, QComboBox,
     QPlainTextEdit, QLineEdit, QCheckBox, QTabWidget, QSplitter, QVBoxLayout,
-    QHBoxLayout, QGridLayout, QStackedWidget, QTableWidget, QTableWidgetItem, QHeaderView,
+    QHBoxLayout, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView,
     QFileDialog, QMessageBox, QAbstractItemView, QScrollArea, QFrame, QMenu, QDialog, QDialogButtonBox,
 )
 import re
@@ -24,6 +24,7 @@ from ui.credits import COPYRIGHT, REPOSITORY, THANKS, PURPOSE, LICENSE_NOTE, ACA
 from ui.localization import error_text
 from ui.code_editor import CodeEditor
 from ui.glass import GlassRoot
+from ui.code_keypad import CodeKeypad
 
 LTR = Qt.LayoutDirection.LeftToRight
 
@@ -277,7 +278,7 @@ class Workspace(QMainWindow):
         self.editor.setAccessibleName(self.t(input_key))
         self.output.setAccessibleName(self.t(output_key))
         self.export_button.setText(self.t("Export RTL" if reverse else "Export ASM"))
-        self.pad_stack.setCurrentIndex(1 if reverse else 0)
+        self.code_keypad.set_mode(self.direction)
         self.tabs.setTabEnabled(1, True)
         self.tabs.setTabText(1, self.t("Assembly keypad" if reverse else "RTL keypad"))
         self.update_preview()
@@ -334,54 +335,17 @@ class Workspace(QMainWindow):
         return widget
 
     def pad(self):
-        """One editor, two instruction-aware key layouts, shared editing controls."""
-        page = QWidget()
-        page.setLayoutDirection(LTR)
-        outer = QVBoxLayout(page)
-        self.pad_stack = QStackedWidget()
-        self.pad_buttons = {}
-        rtl = ["AC", "PC", "AR", "DR", "E", "IR", "TR", "INPR", "OUTR", "IEN",
-               "FGI", "FGO", "S", "M[", "]", "[", "←", "=", "+", "∧", "¬", "(",
-               ")", ":", ",", "IF ", " THEN ", "CIR", "CIL", *"0123456789ABCDEF"]
-        asm = [name + (" " if "{a}" in template else "")
-               for name, template in TEMPLATES.items()] + list("0123456789ABCDEF") + ["I", ";"]
-        for mode, tokens in (("forward", rtl), ("reverse", asm)):
-            panel = QWidget()
-            grid = QGridLayout(panel)
-            for index, token in enumerate(tokens):
-                button = QPushButton(token.strip())
-                button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                button.setProperty("insertToken", token)
-                button.clicked.connect(lambda checked=False, value=token: self.insert(value))
-                grid.addWidget(button, index // 10, index % 10)
-                self.pad_buttons[(mode, token)] = button
-            self.pad_stack.addWidget(panel)
-        outer.addWidget(self.pad_stack)
-        controls = QHBoxLayout()
-        for title, action in [
-             ("Space", lambda: self.insert(" ")), ("Enter", lambda: self.insert("\n")),
-             ("Backspace", lambda: self.move_cursor("delete")), ("◀", lambda: self.move_cursor("left")),
-             ("▶", lambda: self.move_cursor("right")), ("Undo", self.editor.undo),
-             ("Redo", self.editor.redo)]:
-            controls.addWidget(self.button(title, action))
-        outer.addLayout(controls)
-        return page
+        self.code_keypad = CodeKeypad(self.editor, ("forward", "reverse"), self.button)
+        # Retain public widget handles used by existing captures and tests.
+        self.pad_stack = self.code_keypad.stack
+        self.pad_buttons = self.code_keypad.buttons
+        return self.code_keypad
 
     def insert(self, value):
-        self.editor.insertPlainText(value)
-        self.editor.setFocus()
+        self.code_keypad.insert(value)
 
     def move_cursor(self, direction):
-        cursor = self.editor.textCursor()
-        if direction == "delete":
-            if cursor.hasSelection():
-                cursor.removeSelectedText()
-            else:
-                cursor.deletePreviousChar()
-        else:
-            cursor.movePosition(QTextCursor.MoveOperation.Left if direction == "left" else QTextCursor.MoveOperation.Right)
-        self.editor.setTextCursor(cursor)
-        self.editor.setFocus()
+        self.code_keypad.move_cursor(direction)
 
     def builder(self):
         page = QWidget()
