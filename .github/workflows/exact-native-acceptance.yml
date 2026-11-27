@@ -1,4 +1,4 @@
-name: Corrected exact installer acceptance
+name: Lean exact installer acceptance
 on:
   push:
     branches: [release/exact-native-acceptance]
@@ -15,8 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         candidate:
-          - {track: stable, run: 46017522690, artifact: 15211462028, version: '1.0.0', sha256: '11df201f81a8d0daf64e8787d24d7856065d17891205f4b824aedad84ebd1ab4'}
-          - {track: beta, run: 46017522690, artifact: 15211969548, version: '1.1.0-beta.1', sha256: '89165622a480b64d59fd906c37947e10df7e6f2d6898e28f1f9aa47a4c31fec7'}
+          - {track: stable, run: 46036183906, artifact: 15218035796, version: '1.0.0', sha256: 'ed66728532cd4cbe71740d6223f476e356cdc866a37eb2eaf112f38c5d5ad673'}
+          - {track: beta, run: 46036183906, artifact: 15217285793, version: '1.1.0-beta.1', sha256: '66af9153aeb1674e7f67200650a8cfcf743e15819429d613b989ed42c5120192'}
         profile: [isolated-path, pre-equipped]
     steps:
       - uses: actions/checkout@v4
@@ -36,6 +36,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: corrected-native-${{ matrix.candidate.track }}-${{ matrix.profile }}
+          name: lean-native-${{ matrix.candidate.track }}-${{ matrix.profile }}
           path: native-evidence/
           if-no-files-found: warn
