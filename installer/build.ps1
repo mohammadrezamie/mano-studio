@@ -1,4 +1,4 @@
-param([switch]$PortableOnly, [switch]$ReuseFrozen)
+param([switch]$PortableOnly, [switch]$ReuseFrozen, [switch]$LeanPdf)
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
 if (-not [Environment]::Is64BitProcess) { throw 'Use 64-bit Python and PowerShell.' }
@@ -16,6 +16,12 @@ if (-not $ReuseFrozen) {
     $dist = Join-Path $PWD 'dist\ManoStudio'
     python -m installer.prune_qt $dist
     if ($LASTEXITCODE -ne 0) { throw 'Qt Virtual Keyboard payload pruning failed.' }
+    python -m installer.prune_qml $dist
+    if ($LASTEXITCODE -ne 0) { throw 'Unused Qt QML/Quick pruning failed.' }
+    if ($LeanPdf) {
+        python -m installer.prune_pdf $dist --apply
+        if ($LASTEXITCODE -ne 0) { throw 'Experimental Qt PDF pruning rejected.' }
+    }
     $notices = Join-Path $dist 'third-party-notices'
     New-Item -ItemType Directory -Force $notices | Out-Null
     # Preserve notices shipped in installed distributions; this is evidence, not legal approval.

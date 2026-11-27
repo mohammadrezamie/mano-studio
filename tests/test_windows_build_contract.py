@@ -73,3 +73,9 @@ def test_candidate_manifest_module_entry_point():
                             cwd=root, capture_output=True, text=True, timeout=15)
     assert result.returncode == 0, result.stderr
     assert "--sha" in result.stdout and "--root" in result.stdout
+
+
+def test_unused_qml_and_pdf_runtime_are_pruned_before_notice_collection():
+    script = BUILD_SCRIPT.read_text(encoding="utf-8")
+    assert "python -m installer.prune_qml $dist" in script
+    assert "python -m installer.prune_pdf $dist --apply" in script
