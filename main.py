@@ -129,6 +129,8 @@ def main():
     splash.finish(window)
     if len(sys.argv)==2 and not sys.argv[1].startswith('-'):
         QTimer.singleShot(0,lambda:window.open_path(sys.argv[1]))
+    elif settings.value('onboarding/tour_v1') == 'pending':
+        QTimer.singleShot(0, window.start_product_tour)
     return app.exec()
 
 

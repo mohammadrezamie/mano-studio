@@ -73,6 +73,7 @@ class Workspace(QMainWindow):
             self.theme = "dark"
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.direction = "forward"
+        self.product_tour = None
         self.path = None
         self.active_example = None
         self.result = None
@@ -123,15 +124,18 @@ class Workspace(QMainWindow):
         self.themes.setCurrentIndex(max(0, self.themes.findData(self.theme)))
         self.themes.currentIndexChanged.connect(self.change_theme)
         header.addWidget(self.themes)
-        header.addWidget(self.button("Settings", self.open_preferences))
+        self.settings_button = self.button("Settings", self.open_preferences)
+        header.addWidget(self.settings_button)
         layout.addWidget(header_frame)
         toolbar_frame = QFrame()
         toolbar_frame.setObjectName("glassBar")
         toolbar = QHBoxLayout(toolbar_frame)
         self.menu_actions = []
         for name, entries in [("File", [("New", self.new_file), ("Choose file", self.open_file), ("Save input", self.save_file), ("Save input as", self.save_as)]),
-                              ("Help", [("Instruction reference", self.open_instruction_reference), ("About", self.about)])]:
+                              ("Help", [("Take a tour", self.start_product_tour), ("Instruction reference", self.open_instruction_reference), ("About", self.about)])]:
             button = MotionButton(self.t(name))
+            if name == "Help":
+                self.help_button = button
             self.labels.append((button, name))
             menu = QMenu(button)
             for key, slot in entries:
@@ -145,7 +149,8 @@ class Workspace(QMainWindow):
         self.direction_box.addItem(self.t("ASM → RTL"),"reverse")
         self.direction_box.currentIndexChanged.connect(self.change_direction)
         toolbar.addWidget(self.direction_box)
-        toolbar.addWidget(self.button("Choose file", self.open_file))
+        self.open_button = self.button("Choose file", self.open_file)
+        toolbar.addWidget(self.open_button)
         examples_button = MotionButton(self.t("Examples"))
         self.labels.append((examples_button, "Examples"))
         examples_menu = QMenu(examples_button)
@@ -169,7 +174,8 @@ class Workspace(QMainWindow):
         toolbar.addWidget(labs)
         self.icon_buttons.append((labs, "labs"))
         toolbar.addStretch()
-        toolbar.addWidget(self.button("Translate", self.run_translation, True))
+        self.translate_button = self.button("Translate", self.run_translation, True)
+        toolbar.addWidget(self.translate_button)
         self.export_button = self.button("Export ASM", self.export_file)
         self.export_button.setEnabled(False)
         toolbar.addWidget(self.export_button)
@@ -691,6 +697,13 @@ class Workspace(QMainWindow):
         finally:
             dialog.deleteLater()
 
+    def start_product_tour(self):
+        from ui.product_tour import ProductTour
+        if self.product_tour is None:
+            tour = ProductTour(self)
+            if not tour.finished:
+                self.product_tour = tour
+
     def open_preferences(self):
         from ui.preferences import Preferences
         while True:
@@ -987,6 +1000,8 @@ class Workspace(QMainWindow):
         return dialog
 
     def closeEvent(self, event):
+        if self.product_tour is not None:
+            self.product_tour.finish("skipped")
         if not self.confirm_discard():
             event.ignore()
             return

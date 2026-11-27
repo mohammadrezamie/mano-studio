@@ -69,6 +69,8 @@ def save_state(settings, state):
     settings.setValue(KEY, state.encode())
     if state.complete:
         settings.setValue("language", state.language)
+        if not settings.contains("onboarding/tour_v1"):
+            settings.setValue("onboarding/tour_v1", "pending")
     settings.sync()
 
 
