@@ -244,14 +244,14 @@ The dependency-free academic core is kept separate from the desktop shell and ed
 
 Two independent release tracks, one application. Stable focuses on reliability and Beta advances the educational features.
 
-| Channel | Version | Automated regression | Windows packaging |
+| Channel | Version | Earlier automated regression | Latest build and hosted installation |
 | --- | --- | --- | --- |
-| Stable candidate | `1.0.0` | [1,561 passed per OS](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164536) | [Passed](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498) |
-| Beta candidate | `1.1.0-beta.1` | [2,265 passed per OS; all 12 jobs green](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977462) | [Passed](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977621) |
+| Stable candidate | `1.0.0` | [1,561 passed per OS](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164536) | [Build passed](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466) · [Install passed](https://github.com/mohammadrezamie/mano-studio/actions/runs/46044104396) |
+| Beta candidate | `1.1.0-beta.1` | [2,265 passed per OS; all 12 jobs green](https://github.com/mohammadrezamie/mano-studio/actions/runs/46000977462) | [Build passed](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466) · [Install passed](https://github.com/mohammadrezamie/mano-studio/actions/runs/46043046471) |
 
-Both channels have verified private GitHub Release drafts with Setup, Portable and SHA-256 assets. **Neither is a public release yet.** Applicable dependency security, redistribution and corresponding-source obligations, native Windows acceptance and publisher authenticity remain open. Installers are not Authenticode-signed.
+The [exact rebuilt candidate regression](https://github.com/mohammadrezamie/mano-studio/actions/runs/46048466661) is queued: ten shards per platform per channel, with independent visual capture jobs. The previous test counts above do not certify these new builds. Both channels have private GitHub Release drafts with earlier Setup, Portable and SHA-256 assets; those drafts must not be promoted as the rebuilt candidates. **Neither is a public release yet.** Applicable dependency security, redistribution and corresponding-source obligations, native Windows acceptance and publisher authenticity remain open. Installers are not Authenticode-signed.
 
-Follow [Stable #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [Beta #23](https://github.com/mohammadrezamie/mano-studio/issues/23), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live evidence. Next-generation development continues on [develop/next-beta](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta).
+Follow [Stable #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [Beta #23](https://github.com/mohammadrezamie/mano-studio/issues/23), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live evidence. Next-generation development continues independently on [maintenance/stable-next (1.0.1)](https://github.com/mohammadrezamie/mano-studio/tree/maintenance/stable-next) and [develop/next-beta (1.1.0-beta.2)](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta).
 
 ## Documentation
 
