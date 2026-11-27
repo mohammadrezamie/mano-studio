@@ -1,3 +1,11 @@
+## Next-generation UX priority — 2026-11-27
+
+Owner requested an initial in-app language setup and guided interactive tour, inspired by modern onboarding experiences. Track [#56](https://github.com/mohammadrezamie/mano-studio/issues/56) independently of the frozen initial Stable 1.0.0 and Beta 1.1.0-beta.1 releases. Do not restart their accepted regressions for this new feature.
+
+Sequence: choose English or Persian before the introduction; immediately apply language, typography and text direction; introduce the actual workspaces through a short Next/Back wizard; persist completion; offer an optional spotlight/coach-mark tour with Next, Back, Skip and Finish. Replay via Help, and move persistent language selection into Settings. No accounts, network, forced tour, duplicate translator or artificial delays. Preserve user settings and unsaved work. Validate both languages, all themes, keyboard navigation, reduced motion, scaling and first-run/upgrade persistence. Full acceptance checklist is in #56; implementation is pending.
+
+---
+
 # Roadmap
 One-week target, not guarantee. P0: correct translator + tests, GUI editor and visual builder, file import/export, bilingual interface, Windows installer. P1: assembler and instruction-level simulator, update check, docs and examples. P2: timing visualization, richer debugger, recovery, reports, direct verified update installation.
 Day 1: confirm dialect, implement standalone translator and tests. Day 2: expand verified rules and CLI. Day 3: desktop shell/editors. Day 4: visual builder, file operations and localization. Day 5: assembler/simulator if P0 stable. Day 6: Windows CI, installer, update checks and clean-machine testing. Day 7: fix bugs, defense guide, release candidate. Only explicitly marked 0.x prereleases are permitted for the classroom target. Stable v1.0.0 requires later explicit owner approval; see RELEASE_POLICY.md.
