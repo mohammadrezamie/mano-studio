@@ -41,7 +41,7 @@ FA = {
     "Build. Translate. Learn.": "بسازید. ترجمه کنید. یاد بگیرید.",
     "New": "جدید", "Open RTL": "باز کردن RTL", "Save RTL": "ذخیره RTL",
     "Export ASM": "خروجی اسمبلی", "Translate": "ترجمه", "About": "درباره",
-    "Source": "سورس مترجم", "Editor": "ویرایشگر", "Symbol pad": "صفحه‌کلید نمادها",
+    "Source": "سورس مترجم", "Editor": "ویرایشگر", "Symbol pad": "صفحه‌کلید نمادها", "Take a tour": "آموزش تعاملی",
     "Builder": "سازنده بصری", "RTL input": "ورودی RTL", "Assembly output": "خروجی اسمبلی",
     "Diagnostics": "خطاها و راهنما", "Line": "خط", "Column": "ستون", "Code": "کد",
     "Help": "راهنما", "Ready": "آماده", "Address (HEX)": "آدرس (هگزادسیمال)",

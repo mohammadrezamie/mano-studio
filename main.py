@@ -7,6 +7,8 @@ from ui.theme import PALETTES, apply_theme
 from ui.strings import FA
 from ui.brand import brand_icon
 from ui.splash import splash_pixmap
+from onboarding_state import read_state
+from ui.typography import apply_ui_font
 
 from update_service import VERSION
 
@@ -84,12 +86,16 @@ def main():
     app.setOrganizationName("ManoStudio")
     app.setApplicationName("ManoStudio")
     settings = QSettings()
-    language = settings.value("language", "en")
+    initial_setup = read_state(settings)
+    language = settings.value("language", initial_setup.language)
+    if language not in ("en", "fa"):
+        language = "en"
     theme = settings.value("theme", "dark")
     if theme not in PALETTES:
         theme = "dark"
     app.setLayoutDirection(Qt.LayoutDirection.RightToLeft if language == "fa" else Qt.LayoutDirection.LeftToRight)
     app.setStyle("Fusion")
+    apply_ui_font(app, language)
     glass_enabled = settings.value("glass_enabled", True, type=bool)
     apply_theme(app, theme, glass_enabled)
     app.setWindowIcon(brand_icon(theme,glass_enabled))
@@ -99,12 +105,32 @@ def main():
     splash.show()
     splash.showMessage(FA["Loading workspace…"] if language == "fa" else "Loading workspace…", Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter, QColor(fg))
     app.processEvents()
+    if not initial_setup.complete:
+        from ui.onboarding import Onboarding
+        from PySide6.QtWidgets import QDialog
+        app.setQuitOnLastWindowClosed(False)
+        splash.hide()
+        wizard = Onboarding(settings, theme)
+        accepted = wizard.exec() == QDialog.DialogCode.Accepted
+        wizard.deleteLater()
+        if not accepted:
+            return 0
+        language = settings.value("language", "en")
+        apply_ui_font(app, language)
+        app.setLayoutDirection(Qt.LayoutDirection.RightToLeft if language == "fa" else Qt.LayoutDirection.LeftToRight)
+        splash.setPixmap(splash_pixmap(theme,glass_enabled,VERSION,language=="fa"))
+        splash.show()
+        splash.showMessage(FA["Loading workspace…"] if language == "fa" else "Loading workspace…", Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignHCenter, QColor(fg))
+        app.processEvents()
+        app.setQuitOnLastWindowClosed(True)
     from ui.workspace import Workspace
     window = Workspace(settings)
     window.show()
     splash.finish(window)
     if len(sys.argv)==2 and not sys.argv[1].startswith('-'):
         QTimer.singleShot(0,lambda:window.open_path(sys.argv[1]))
+    elif settings.value('onboarding/tour_v1') == 'pending':
+        QTimer.singleShot(0, window.start_product_tour)
     return app.exec()
 
 
