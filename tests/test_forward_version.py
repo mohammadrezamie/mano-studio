@@ -9,6 +9,8 @@ def test_stable_maintenance_is_next_patch():
     assert channel(VERSION) == "stable"
     assert version_key(VERSION) > version_key("1.0.0")
     assert allowed(VERSION)
+    assert allowed("1.0.0")
+    assert allowed("1.0.2")
 
 
 def test_stable_track_rejects_prereleases_and_beta():
