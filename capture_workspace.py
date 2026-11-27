@@ -7,6 +7,8 @@ from pathlib import Path
 import tempfile
 import json
 import hashlib
+from time import perf_counter
+from capture_lifecycle import dispose_capture_widget
 from learning_catalog import TOOLS
 from capture_karnaugh import capture_karnaugh
 from visual_review import build_gallery, image_info
@@ -71,7 +73,7 @@ def capture_active_states(app,window,output,language):
         capture(computer,"synchronization","atomic-lock",locked,lambda:sync.model.done and sync.model.shared==2)
     finally:
         for lab in (logic,computer):
-            lab.close();lab.deleteLater()
+            dispose_capture_widget(lab)
         app.processEvents()
     return records
 
@@ -89,7 +91,7 @@ def capture_routes(app,window,output):
         center.resize(1100,750);center.show();app.processEvents()
         target=output/f"{language}-dark-learning-center.png"
         if not center.grab().save(str(target)):raise RuntimeError(f"Could not save {target}")
-        center.close();center.deleteLater()
+        dispose_capture_widget(center)
         logic=LogicLab(window);computer=ProgramLab(window)
         logic.resize(1360,900);computer.resize(1360,900)
         lab_by_name={"workspace":window,"logic":logic,"computer":computer}
@@ -116,7 +118,7 @@ def capture_routes(app,window,output):
             records.append({"entry":tool.id,"chapter":tool.chapter,"language":language,
                             "theme":"dark","lab":tool.lab,"route":tool.route,**seen[key]})
         for dialog in (logic,computer):
-            dialog.close();dialog.deleteLater()
+            dispose_capture_widget(dialog)
         app.processEvents()
         active.extend(capture_active_states(app,window,output,language))
     (output/"route-manifest.json").write_text(json.dumps({
@@ -142,6 +144,7 @@ def main():
         for language in ("en", "fa"):
             window.languages.setCurrentIndex(1 if language == "fa" else 0)
             for theme in ("dark", "light", "night"):
+                started=perf_counter()
                 window.themes.setCurrentIndex(window.themes.findData(theme))
                 # Real localized About screen, independently of modal interaction.
                 about = window.about_dialog()
@@ -151,8 +154,7 @@ def main():
                 if not about.grab().save(str(target)):
                     raise RuntimeError(f"Could not save {target}")
                 image_info(output, target.name)
-                about.close()
-                about.deleteLater()
+                dispose_capture_widget(about)
                 app.processEvents()
                 for tab, mode in enumerate(("editor", "pad", "builder")):
                     window.tabs.setCurrentIndex(tab)
@@ -199,7 +201,7 @@ def main():
                 if not lab.grab().save(str(target)):
                     raise RuntimeError(f"Could not save {target}")
                 capture_karnaugh(app,lab,output,language,theme)
-                lab.close()
+                dispose_capture_widget(lab)
                 computer=ProgramLab(window)
                 computer.resize(1360,900)
                 computer.show()
@@ -221,12 +223,15 @@ def main():
                 target=output/f"{language}-{theme}-bases.png"
                 if not computer.grab().save(str(target)):
                     raise RuntimeError(f"Could not save {target}")
-                computer.close()
-                computer.deleteLater();lab.deleteLater()
+                dispose_capture_widget(computer)
+                app.processEvents()
+                print(f'Captured {language}/{theme}: {perf_counter()-started:.3f}s', flush=True)
+        started=perf_counter()
         capture_routes(app,window,output)
         build_gallery(output)
+        print(f'Captured and validated all routes: {perf_counter()-started:.3f}s', flush=True)
         window.editor.document().setModified(False)
-        window.close()
+        dispose_capture_widget(window)
 
 
 if __name__ == "__main__":
