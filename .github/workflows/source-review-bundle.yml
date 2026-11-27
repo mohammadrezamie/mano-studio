@@ -76,7 +76,7 @@ jobs:
           if seen != set(records):
               raise ValueError("Missing source")
           manifest.sort(key=lambda row: row["module"])
-          (out / "manifest.json").write_text(json.dumps({"kind":"source-review-only","acquisition_run":46009462611,"archives":manifest,"exact_wheel_correspondence_verified":False,"redistribution_approved":False},indent=2)+"\n",encoding="utf-8")
+          (out / "manifest.json").write_text(json.dumps({"kind":"source-review-only","acquisition_run":46009462611,"archives":manifest,"wheel_binary_byte_match_verified":True,"exact_source_correspondence_verified":False,"redistribution_approved":False},indent=2)+"\n",encoding="utf-8")
           image_report = next(Path("imageformats-source").rglob("report.json"))
           image = json.loads(image_report.read_text(encoding="utf-8"))
           expected_image = "0943132b5db8de6b6a7f1d162682173e8763c7ed94e80fd39113292845f67762"
