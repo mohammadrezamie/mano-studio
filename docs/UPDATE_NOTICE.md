@@ -6,3 +6,6 @@ Off by default; explicit opt-in in Settings. Bounded asynchronous HTTPS metadata
 ## Explicit download behavior
 
 When GitHub metadata identifies exactly one Windows x64 Setup asset with a valid expected size and SHA-256 digest, Settings enables the Download installer action. The user confirms the download and chooses the destination. The worker downloads to a temporary file, checks the exact size and SHA-256, and only then publishes the file without overwriting an existing destination. SHA-256 is integrity, not publisher authentication. The application does not execute or install the downloaded EXE; the user must independently verify the publisher before running it. Missing/ambiguous digest metadata leaves the download action disabled. Automatic installer launch remains fail-closed pending trusted publisher identity and end-to-end upgrade acceptance.
+
+
+The Stable maintenance line advances from 1.0.0 to the next patch candidate 1.0.1. Update checks remain confined to Stable releases and never offer Beta prereleases to Stable installations.

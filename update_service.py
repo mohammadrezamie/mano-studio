@@ -7,7 +7,7 @@ from update_download import Asset, asset_from_release
 
 RELEASES_URL = "https://api.github.com/repos/mohammadrezamie/mano-studio/releases"
 RELEASES_PAGE = "https://github.com/mohammadrezamie/mano-studio/releases"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 CHANNEL = channel(VERSION)
 
 
