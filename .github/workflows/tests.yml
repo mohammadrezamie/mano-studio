@@ -1,7 +1,13 @@
 name: Tests
 on:
   push:
+    paths-ignore:
+      - 'README.md'
+      - 'docs/assets/screenshots/**'
   pull_request:
+concurrency:
+  group: tests-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
