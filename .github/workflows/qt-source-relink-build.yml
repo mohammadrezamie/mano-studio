@@ -1,0 +1,172 @@
+name: Build source-modified Qt library and verify replacement
+on:
+  push:
+    branches: [release/source-evidence]
+    paths: ['.github/workflows/qt-source-relink-build.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  build:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    runs-on: windows-2022
+    timeout-minutes: 150
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14.10'
+          architecture: x64
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '46040755221'
+          artifact-ids: '15220635288'
+          github-token: ${{ github.token }}
+          path: source-review
+      - name: Verify original vendor sources and apply explicit probe patch
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'mano-qt-src'
+          New-Item -ItemType Directory -Force $root | Out-Null
+          $modules = @{
+            'qtbase'='a951bd163c7b80fc6b8c88d7668fb56abf91c152373e13c10666763238131307'
+            'qtsvg'='e4ab39534ec97987b1b9b60ef7f4d3253d5912a69f8c713a01753174a4029331'
+          }
+          foreach($m in $modules.Keys){
+            $archive=@(Get-ChildItem source-review -Recurse -File -Filter "$m-*.tar.xz")
+            if($archive.Count -ne 1 -or (Get-FileHash $archive[0].FullName -Algorithm SHA256).Hash.ToLower() -ne $modules[$m]){throw "Wrong source $m"}
+            tar -xf $archive[0].FullName -C $root
+            if($LASTEXITCODE -ne 0){throw "Source extraction failed $m"}
+          }
+          $source = Join-Path $root 'qtsvg-everywhere-src-6.12.0/src/svg/qsvgrenderer.cpp'
+          if(!(Test-Path $source)){throw 'Expected QtSvg source missing'}
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          $before=(Get-FileHash $source -Algorithm SHA256).Hash.ToLower()
+          $patch='extern "C" Q_DECL_EXPORT int mano_qt_relink_probe() { return 20261128; }'
+          Add-Content -LiteralPath $source -Encoding utf8 -Value ("`n" + $patch)
+          $after=(Get-FileHash $source -Algorithm SHA256).Hash.ToLower()
+          @{source='qtsvg-everywhere-src-6.12.0/src/svg/qsvgrenderer.cpp';original_sha256=$before;modified_sha256=$after;appended_cpp=$patch;kind='source-relink-pilot';exact_vendor_build_configuration=$false;redistribution_approved=$false} | ConvertTo-Json | Set-Content -Encoding utf8 evidence/source-patch.json
+          Copy-Item $source evidence/qsvgrenderer.cpp
+          "QT_SOURCE_ROOT=$root" >> $env:GITHUB_ENV
+      - name: Build shared QtBase and modified QtSvg from verified source
+        shell: cmd
+        run: |
+          call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          if errorlevel 1 exit /b 1
+          where cl
+          where cmake
+          where ninja
+          mkdir "%RUNNER_TEMP%\mano-qtbase-build"
+          cd /d "%RUNNER_TEMP%\mano-qtbase-build"
+          call "%QT_SOURCE_ROOT%\qtbase-everywhere-src-6.12.0\configure.bat" -opensource -confirm-license -release -shared -nomake examples -nomake tests -no-openssl -prefix "%RUNNER_TEMP%\mano-qt-prefix" > "%GITHUB_WORKSPACE%\evidence\configure-qtbase.log" 2>&1
+          if errorlevel 1 exit /b 1
+          cmake --build . --parallel 4 > "%GITHUB_WORKSPACE%\evidence\build-qtbase.log" 2>&1
+          if errorlevel 1 exit /b 1
+          cmake --install . > "%GITHUB_WORKSPACE%\evidence\install-qtbase.log" 2>&1
+          if errorlevel 1 exit /b 1
+          copy CMakeCache.txt "%GITHUB_WORKSPACE%\evidence\qtbase-CMakeCache.txt"
+          mkdir "%RUNNER_TEMP%\mano-qtsvg-build"
+          cd /d "%RUNNER_TEMP%\mano-qtsvg-build"
+          call "%RUNNER_TEMP%\mano-qt-prefix\bin\qt-configure-module.bat" "%QT_SOURCE_ROOT%\qtsvg-everywhere-src-6.12.0" > "%GITHUB_WORKSPACE%\evidence\configure-qtsvg.log" 2>&1
+          if errorlevel 1 exit /b 1
+          cmake --build . --parallel 4 > "%GITHUB_WORKSPACE%\evidence\build-qtsvg.log" 2>&1
+          if errorlevel 1 exit /b 1
+          cmake --install . > "%GITHUB_WORKSPACE%\evidence\install-qtsvg.log" 2>&1
+          if errorlevel 1 exit /b 1
+          copy CMakeCache.txt "%GITHUB_WORKSPACE%\evidence\qtsvg-CMakeCache.txt"
+          copy "%RUNNER_TEMP%\mano-qt-prefix\bin\Qt6Svg.dll" "%GITHUB_WORKSPACE%\evidence\Qt6Svg.dll"
+          if errorlevel 1 exit /b 1
+          dumpbin /exports "%GITHUB_WORKSPACE%\evidence\Qt6Svg.dll" > "%GITHUB_WORKSPACE%\evidence\exports.txt"
+          findstr /c:"mano_qt_relink_probe" "%GITHUB_WORKSPACE%\evidence\exports.txt"
+          if errorlevel 1 exit /b 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qt-source-relink-build-evidence
+          path: evidence/
+          if-no-files-found: warn
+          retention-days: 90
+  verify:
+    needs: build
+    runs-on: windows-2022
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {track: stable, artifact: '15221357225', version: '1.0.0', sha256: 'bc93823dbea393f17464886abeef406defda22e4151dbaab82293928eae3271e'}
+          - {track: beta, artifact: '15220621215', version: '1.1.0-beta.1', sha256: 'b6a9e2c0fa4014ce505d68e639a328f6ec193b98655c2f123a93365d3b523109'}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14.10'
+          architecture: x64
+      - uses: actions/download-artifact@v4
+        with:
+          name: qt-source-relink-build-evidence
+          path: rebuilt
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '46041711466'
+          artifact-ids: ${{ matrix.artifact }}
+          github-token: ${{ github.token }}
+          path: frozen
+      - name: Verify original, source-recompiled replacement and restored app
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $zip=@(Get-ChildItem frozen -Recurse -File -Filter 'ManoStudio-v${{ matrix.version }}-Windows-x64.zip')
+          if($zip.Count -ne 1 -or (Get-FileHash $zip[0].FullName -Algorithm SHA256).Hash.ToLower() -ne '${{ matrix.sha256 }}'){throw 'Unexpected original portable archive'}
+          $work=Join-Path $env:RUNNER_TEMP 'mano-relink'
+          Expand-Archive -LiteralPath $zip[0].FullName -DestinationPath $work
+          $app=Join-Path $work 'ManoStudio/ManoStudio.exe'
+          $dll=@(Get-ChildItem $work -Recurse -File -Filter Qt6Svg.dll)
+          if($dll.Count -ne 1){throw 'Expected exactly one QtSvg library'}
+          $dll=$dll[0]
+          $replacement=Get-Item rebuilt/Qt6Svg.dll
+          $originalHash=(Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLower()
+          $replacementHash=(Get-FileHash $replacement.FullName -Algorithm SHA256).Hash.ToLower()
+          if($originalHash -eq $replacementHash){throw 'Replacement must differ'}
+          $backup=Join-Path $env:RUNNER_TEMP 'mano-original-Qt6Svg.dll'
+          Copy-Item $dll.FullName $backup
+          New-Item -ItemType Directory -Force results | Out-Null
+          $env:QT_QPA_PLATFORM='offscreen'
+          $env:QT_QPA_FONTDIR=Join-Path $env:WINDIR 'Fonts'
+          function Smoke($phase){
+            $report=Join-Path $PWD "results/$phase.txt"
+            $p=Start-Process -FilePath $app -ArgumentList ('--smoke-test "'+$report+'"') -PassThru
+            if(!$p.WaitForExit(120000)){$p.Kill();throw "$phase timed out"}
+            if($p.ExitCode -ne 0 -or !(Test-Path $report) -or (Get-Content $report -Raw).Trim() -ne 'PASS'){throw "$phase failed"}
+          }
+          Smoke 'original'
+          try{
+            Copy-Item $replacement.FullName $dll.FullName -Force
+            if((Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLower() -ne $replacementHash){throw 'Copy mismatch'}
+            $env:MANO_REPLACEMENT_DLL=$dll.FullName
+            @'
+          import ctypes, os
+          from pathlib import Path
+          p = Path(os.environ["MANO_REPLACEMENT_DLL"])
+          with os.add_dll_directory(str(p.parent)):
+              dll = ctypes.WinDLL(str(p))
+              probe = dll.mano_qt_relink_probe
+              probe.restype = ctypes.c_int
+              assert probe() == 20261128
+          print("source-modified library export executed successfully")
+          '@ | python -
+            if($LASTEXITCODE -ne 0){throw 'Source-modified library probe failed'}
+            Smoke 'modified'
+          } finally {
+            Copy-Item $backup $dll.FullName -Force
+          }
+          if((Get-FileHash $dll.FullName -Algorithm SHA256).Hash.ToLower() -ne $originalHash){throw 'Restore mismatch'}
+          Smoke 'restored'
+          @{track='${{ matrix.track }}';original_portable_sha256='${{ matrix.sha256 }}';original_dll_sha256=$originalHash;source_modified_dll_sha256=$replacementHash;probe_return=20261128;result='PASS';exact_vendor_build_configuration=$false;redistribution_approved=$false} | ConvertTo-Json | Set-Content -Encoding utf8 results/relink.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qt-source-relink-${{ matrix.track }}
+          path: results/
+          retention-days: 90
+          if-no-files-found: warn
