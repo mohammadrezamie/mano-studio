@@ -1,3 +1,20 @@
+# Permanent four-lane delivery policy — owner directive 2026-11-27
+
+This section supersedes conflicting historical scheduling/approval language below.
+
+1. **Stable publication**: publish the verified stable candidate as a real public GitHub Release with Windows x64 Setup, Portable, checksums, honest compatibility and release notes; close applicable security, redistribution, authenticity and install/upgrade gates for the exact bytes.
+2. **Beta publication**: independently publish the verified forward beta as a public prerelease with the same distribution discipline. Beta remains ahead of Stable.
+3. **Stable updates**: continuously maintain the next stable patch on a separate maintenance branch; prioritize reliability, security, compatibility and tested fixes, with independent acceptance.
+4. **Beta updates**: continuously develop, test and integrate the forward feature line; promote only verified changes to Stable when appropriate.
+
+All four lanes remain active concurrently. Do not wait for unrelated feature PRs to publish a qualified previous version; do not replace a frozen release candidate merely to add features. Owner authorizes public releases once applicable gates pass, not a false approval of failed or missing evidence. Maintain the English README download matrix and GitHub Releases metadata. No invented progress percentages or background assistant work.
+
+## Update Center — both channels
+
+Owner requests complete in-app notification, download and installation. Preserve offline core behavior. Offer an explicitly opt-in automatic update check (off by default; bounded nonblocking GitHub requests only), plus manual check. Notify about eligible public newer releases for installed channel only. Show version, notes, size, download progress, cancellation, and explicit Download & Install confirmation. Verify expected official asset URL/name/platform, digest/length and independently trusted publisher identity; SHA-256 from the same release is integrity, not publisher authentication. Reject unsigned, untrusted, tampered, wrong-channel or older installers for automated launch. Preserve preferences/files, prompt to save unsaved work, distinguish Setup from Portable, verify clean upgrade and failure recovery; no silent execution or forced restart. Manual link remains available. No credentials, signing key or publisher identity invented; keep installation disabled until trust provisioning and end-to-end Windows tests pass. Record current status honestly.
+
+---
+
 # Product comfort and pre-release policy
 Owner decisions, 2026-11-24. Applies to all development branches and supersedes older release targets.
 ## Calm by design
