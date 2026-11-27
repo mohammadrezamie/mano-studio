@@ -34,6 +34,23 @@ def candidate(tmp_path):
             "kind": "build-license-evidence", "packages": [], "warnings": [],
             "binaries": [{"path": "libcrypto-3-x64.dll", "size": len(data),
                           "sha256": hashlib.sha256(data).hexdigest()}]}))
+        supplement_files = {
+            "BSD-3-Clause.txt": b"BSD fixture",
+            "libtiff.txt": b"libtiff fixture",
+            "libwebp-COPYING.txt": b"libwebp fixture",
+            "NOTICE.md": b"Qt Image Formats notice",
+            "plugin-map.json": json.dumps({"plugins":{"qicns":{},"qtga":{},"qtiff":{},"qwbmp":{},"qwebp":{}}}).encode(),
+            "libtiff-attribution.json": b"libtiff attribution",
+            "libwebp-attribution.json": b"libwebp attribution",
+        }
+        supplement_rows = [{"file":name,"bytes":len(value),"sha256":hashlib.sha256(value).hexdigest()} for name,value in supplement_files.items()]
+        supplement = {"kind":"qt-imageformats-license-supplement","source_version":"6.12.0",
+                      "source_archive_sha256":"0943132b5db8de6b6a7f1d162682173e8763c7ed94e80fd39113292845f67762",
+                      "files":supplement_rows,"review_complete":False,
+                      "exact_corresponding_source_verified":False,"redistribution_approved":False}
+        for name,value in supplement_files.items():
+            z.writestr("ManoStudio/third-party-notices/qt-license-texts/qtimageformats/"+name,value)
+        z.writestr("ManoStudio/third-party-notices/qt-license-texts/qtimageformats/SUPPLEMENT.json",json.dumps(supplement))
     with zipfile.ZipFile(archive_path) as z:
         values = {"redistribution-preflight.json": audit(z),
                   "runtime-evidence.json": scan(z, "3.14.10", (3,5,9)),
@@ -50,7 +67,7 @@ def test_recompute(candidate):
     root, archive, _, _ = candidate
     with zipfile.ZipFile(archive) as z:
         report = verify(root, z, "3.14.10", (3,5,9))
-    assert report["redistribution_flags"] == 1
+    assert report["redistribution_flags"] == 2
     assert report["runtime_flags"] == 2
     assert report["wheel_packages"] == len(REQUIRED)
     assert len(report["evidence_sha256"]) == 5
