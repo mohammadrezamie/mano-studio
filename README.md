@@ -33,13 +33,13 @@ and explore digital logic through interactive educational tools.
 
 Choose **Setup** for a normal installation or **Portable** to run without installing. Both contain the same application for their respective version, with the required Python and Qt runtime bundled.
 
-> **Release review:** Both candidates have passed automated regression and Windows packaging. They are not publicly released yet. The download links below are temporary GitHub Actions review artifacts (sign-in may be required), not approved public distribution packages. Do not redistribute them.
+> **Release review:** Earlier candidates passed automated regression. The latest notice-corrected candidates passed Windows packaging and hosted installer acceptance; their exact-source full regression and final security, authenticity and redistribution review remain pending. They are not publicly released yet. The download links below are temporary GitHub Actions review artifacts (sign-in may be required), not approved public distribution packages. Do not redistribute them.
 
 ### Download table
 
 | Version | Architecture | Setup — recommended | Portable | Release status |
 | :--- | :---: | :---: | :---: | :--- |
-| **1.0.0 Stable** | Windows x64 | [![Setup 35 MB](https://img.shields.io/badge/Setup-35.0%20MB-2563EB?style=flat-square&logo=windows&logoColor=white)](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180752782) | [![Portable 51 MB](https://img.shields.io/badge/ZIP-51.0%20MB-475569?style=flat-square)](https://github.com/mohammadrezamie/mano-studio/actions/runs/45961164498/artifacts/15180064025) | [Private draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-e438c6988649501c973e) |
+| **1.0.0 Stable** | Windows x64 | [![Setup review](https://img.shields.io/badge/Setup-Review-2563EB?style=flat-square&logo=windows&logoColor=white)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466/artifacts/15221272367) | [![Portable 45 MB](https://img.shields.io/badge/ZIP-45.0%20MB-475569?style=flat-square)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466/artifacts/15221357225) | [Private draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-e438c6988649501c973e) |
 | **1.1.0-beta.1 Beta** | Windows x64 | [![Setup 31.1 MB](https://img.shields.io/badge/Setup-31.1%20MB-2563EB?style=flat-square&logo=windows&logoColor=white)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466/artifacts/15220751219) | [![Portable 45.1 MB](https://img.shields.io/badge/ZIP-45.1%20MB-475569?style=flat-square)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466/artifacts/15220621215) | [Private prerelease draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-786f71ed7a05b8f89b03) |
 
 <sub>Sizes refer to the actual installer and portable ZIP, not the surrounding Actions archive. Setup review downloads arrive inside an archive; permanent EXE downloads will appear on the official Releases page after approval.</sub>
@@ -61,7 +61,7 @@ Check **Settings → System → About → System type** before downloading.
 
 | Platform | Availability |
 | --- | --- |
-| Windows 11 x64 / Windows 10 x64 | Target platforms; exact native OS acceptance is pending. Use a security-supported Windows edition. |
+| Windows 11 x64 / Windows 10 x64 | Target platforms; both candidates passed two hosted Windows installer profiles. Independent clean physical/VM Windows 10/11 compatibility and interactive acceptance remain unverified. Use a security-supported Windows edition. |
 | Windows x86 (32-bit) | Not available; current Qt/PySide6 dependencies lack official x86 Windows wheels. |
 | Windows ARM64 | No verified native package or emulation support yet. |
 | Linux / macOS | Source development only with compatible dependencies; no official installer. |
@@ -69,7 +69,7 @@ Check **Settings → System → About → System type** before downloading.
 
 Additional architecture feasibility is tracked in [#54](https://github.com/mohammadrezamie/mano-studio/issues/54). The standalone Python translator remains independent of desktop GUI dependencies.
 
-Verify the matching SHA-256 checksum when a package becomes available on the official Releases page. Neither current candidate is Authenticode-signed. Applicable security, redistribution and native acceptance reviews remain open.
+Verify the matching SHA-256 checksum when a package becomes available on the official Releases page. Neither current candidate is Authenticode-signed. Applicable security, redistribution, publisher authenticity and independent native acceptance reviews remain open. Existing private drafts still contain earlier assets; the review links point to the rebuilt candidates.
 
 </details>
 
