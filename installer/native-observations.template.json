@@ -1,0 +1,61 @@
+{
+  "kind": "human-native-windows-observations",
+  "source_sha": "",
+  "setup_sha256": "",
+  "scenarios": [
+    {
+      "scenario": "clean-standard-user",
+      "windows_architecture": "",
+      "windows_build": "",
+      "standard_user": null,
+      "network_disabled_during_install_and_first_launch": null,
+      "fixture_reset_before_install": null,
+      "python_qt_preinstalled": null,
+      "checks": {
+        "offline-install": "NOT_RUN",
+        "no-manual-prerequisites": "NOT_RUN",
+        "private-runtime": "NOT_RUN",
+        "no-global-path-change": "NOT_RUN",
+        "offline-first-launch": "NOT_RUN",
+        "rtl-asm-roundtrip": "NOT_RUN",
+        "persian-english-persistence": "NOT_RUN",
+        "three-themes": "NOT_RUN",
+        "glass-and-low-motion": "NOT_RUN",
+        "keyboard-navigation": "NOT_RUN",
+        "display-100-150-200": "NOT_RUN",
+        "save-open-reopen": "NOT_RUN",
+        "reinstall-preserves-settings": "NOT_RUN",
+        "uninstall-preserves-other-apps": "NOT_RUN"
+      },
+      "notes": "",
+      "evidence_sha256": {}
+    },
+    {
+      "scenario": "pre-equipped-standard-user",
+      "windows_architecture": "",
+      "windows_build": "",
+      "standard_user": null,
+      "network_disabled_during_install_and_first_launch": null,
+      "fixture_reset_before_install": null,
+      "python_qt_preinstalled": null,
+      "checks": {
+        "offline-install": "NOT_RUN",
+        "no-manual-prerequisites": "NOT_RUN",
+        "private-runtime": "NOT_RUN",
+        "no-global-path-change": "NOT_RUN",
+        "offline-first-launch": "NOT_RUN",
+        "rtl-asm-roundtrip": "NOT_RUN",
+        "persian-english-persistence": "NOT_RUN",
+        "three-themes": "NOT_RUN",
+        "glass-and-low-motion": "NOT_RUN",
+        "keyboard-navigation": "NOT_RUN",
+        "display-100-150-200": "NOT_RUN",
+        "save-open-reopen": "NOT_RUN",
+        "reinstall-preserves-settings": "NOT_RUN",
+        "uninstall-preserves-other-apps": "NOT_RUN"
+      },
+      "notes": "",
+      "evidence_sha256": {}
+    }
+  ]
+}
