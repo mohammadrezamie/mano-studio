@@ -1,5 +1,26 @@
 # Start here — continuation checkpoint
 
+## Current operative checkpoint — 2026-11-28
+
+This section supersedes historical checkpoints below. Read [RELEASE_POLICY.md](RELEASE_POLICY.md) first: the owner requires four concurrent lanes, public Stable and Beta plus independent next updates. Do not confuse a draft with public release or a passing CI with proof of zero defects.
+
+| Lane | Exact current state |
+| --- | --- |
+| Stable 1.0.0 | Source 926272ff0ebfa4731cfb0b00c149c7e12b4d5a56; private release ID 460598745, exact refreshed assets present |
+| Beta 1.1.0-beta.1 | Source 2dd55994d36f2596dd3d17ea54dd3c3e43829ae2; private release ID 460607136, exact refreshed assets present |
+| Stable 1.0.1 | maintenance/stable-next @ 67a0c3bc9abde203b08afc6663e31238a27ff19c; Windows/Linux focused acceptance passed |
+| Beta 1.1.0-beta.2 | develop/next-beta @ 10bf6327b395aa2d145f1860873fe26bb4303286; new focused CI pending |
+
+Verified evidence: build [46041711466](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466); hosted installer acceptance Stable [46044104396](https://github.com/mohammadrezamie/mano-studio/actions/runs/46044104396), Beta [46043046471](https://github.com/mohammadrezamie/mano-studio/actions/runs/46043046471); all 44 regression/visual jobs [46048466661](https://github.com/mohammadrezamie/mano-studio/actions/runs/46048466661); signed post-build checks [46050465305](https://github.com/mohammadrezamie/mano-studio/actions/runs/46050465305); both private draft refreshes [46067092359](https://github.com/mohammadrezamie/mano-studio/actions/runs/46067092359). Four old review-only assets in each draft must be excluded before public promotion. Exact core is standalone and independently tested in source-evidence branch.
+
+Next active checks: source-modified QtSvg build/replacement [46067177910](https://github.com/mohammadrezamie/mano-studio/actions/runs/46067177910), post-run JUnit reconciliation [46067650375](https://github.com/mohammadrezamie/mano-studio/actions/runs/46067650375), Beta forward acceptance [46067370592](https://github.com/mohammadrezamie/mano-studio/actions/runs/46067370592). Stable forward acceptance [46067334230](https://github.com/mohammadrezamie/mano-studio/actions/runs/46067334230) passed. Read live results before making claims. Reconciliation is an additional evidence audit, not a new full regression; it checks disjoint JUnit identities and cardinality against terminal collection counts, not an independent full node-ID manifest.
+
+Outstanding: applicable dependency security review, exact corresponding source and build configuration / relink obligations, independent native Windows compatibility acceptance. Signed retrospective verification is not Authenticode; manual download may use an explicit unsigned warning under policy after other gates pass, and automatic installation remains disabled. Do not hold release for unrelated future functionality. Do not publish an unapproved draft or replace verified assets to add features. Issues #4, #23, #63; PRs #55, #68, #72, #62. Keep all evidence and version-specific decisions recorded there.
+
+---
+
+## Historical checkpoints (not current instructions)
+
 **Current source baseline:** main 2f3807eabb5f0ca1d9c9f0206a1ce81fe7b00696 (PR #14 merged). Continue draft PR #15 after exact-head CI. Older checkpoints below are historical; see final Integration checkpoint.
 
 PR #9 merged into main as 9eb19971b91af8f218988a0fb9ba294eb1155603 on 2026-11-25. Both pre-merge exact-head runs 45491944270 and 45491959562 succeeded. Post-merge main run 45511520586 succeeded on Windows and Ubuntu: 928 passed, one PytestRemovedIn10Warning each; actual desktop preview capture and upload succeeded, artifacts 14978228331 (Windows) and 14976968147 (Ubuntu). Source integration only; no installer/release or native visual acceptance.
