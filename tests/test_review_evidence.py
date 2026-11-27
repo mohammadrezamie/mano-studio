@@ -74,7 +74,9 @@ def test_reject_inconsistent_evidence(candidate, defect):
         name = ("redistribution-preflight.json" if defect in ("license-flags", "approval", "bool-count")
                 else "runtime-evidence.json" if defect.startswith("runtime") else "wheel-evidence.json")
         report = json.loads((portable / name).read_text())
-        if defect.endswith("flags"):
+        if defect == "runtime-flags":
+            report["flags"] = [{"code": "tampered-runtime-flag"}]
+        elif defect.endswith("flags"):
             report["flags"] = []
         elif defect == "runtime-hash":
             report["binaries"][0]["sha256"] = "b"*64
