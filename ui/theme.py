@@ -1,11 +1,11 @@
 """Mano Glass: shared visual tokens and native Qt palette."""
 PALETTES = {
-    "dark": ("#101722", "#182331", "#243346", "#e7eff8", "#a3b4c8", "#8bcff2", "#3b4e64"),
-    "light": ("#e8eef5", "#f9fbfe", "#e0e8f2", "#172b42", "#52667b", "#175c9c", "#a8bacd"),
+    "dark": ("#10142b", "#171e38", "#263358", "#f0f4ff", "#b0bedb", "#80dfff", "#435784"),
+    "light": ("#e9edfa", "#fbfcff", "#e2e8fa", "#19284b", "#4e6180", "#2456af", "#a3b2d4"),
     "night": ("#211d21", "#30272b", "#403237", "#f3e1d0", "#c6ad9d", "#edb984", "#67504b"),
 }
 SYNTAX = {
-    "dark": ("#91c9f3", "#d4b4ef", "#a0b1c5"),
+    "dark": ("#83ddff", "#e6b0ff", "#aab8d5"),
     "light": ("#195b9b", "#7545a1", "#52677c"),
     "night": ("#eac08d", "#d9a9c1", "#bda69a"),
 }
@@ -45,10 +45,12 @@ def stylesheet(theme, glass_enabled=True):
     good,bad = STATUS[theme]
     light = theme == "light"
     on_accent = "#ffffff" if light else bg
-    glass = "rgba(255,255,255,180)" if light else "rgba(22,32,46,205)" if theme=="dark" else "rgba(48,39,43,215)"
-    shine = "rgba(255,255,255,235)" if light else "rgba(105,132,159,65)"
-    rim = "rgba(255,255,255,245)" if light else "rgba(173,198,224,65)"
+    glass = "rgba(255,255,255,180)" if light else "rgba(27,31,65,208)" if theme=="dark" else "rgba(48,39,43,215)"
+    shine = "rgba(255,255,255,235)" if light else "rgba(137,108,237,88)"
+    rim = "rgba(255,255,255,245)" if light else "rgba(153,179,255,100)"
     gradient = f"qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 {shine},stop:0.18 {glass},stop:1 {glass})"
+    action = "qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #80dfff,stop:1 #d2b1ff)" if theme == "dark" and glass_enabled else accent
+    editor_glass = f"qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 {raised},stop:0.18 {panel},stop:1 {panel})" if glass_enabled else panel
     if not glass_enabled:
         glass,rim,gradient = panel,border,panel
     return f"""
@@ -57,7 +59,12 @@ def stylesheet(theme, glass_enabled=True):
     QWidget#glassRoot {{ background: transparent; }}
     QFrame#glassBar {{ background: {gradient}; border: 1px solid {rim}; border-radius: {RADIUS["shell"]}px; }}
     QFrame#editorPanel {{ background: {panel}; border: 1px solid {border}; border-radius: {RADIUS["panel"]}px; }}
+    QFrame#editorPanel[workspacePane="true"] {{ background: {editor_glass}; border-radius: {RADIUS["panel"]}px; }}
     QLabel {{ background: transparent; }}
+    QLabel#workspaceHeading {{ font-size: {TYPE["section"]}px; font-weight: 600; color: {fg}; padding: 3px 2px; }}
+    QLabel#versionChip {{ background: {raised}; color: {accent}; border: 1px solid {border}; border-radius: 7px; padding: 2px 7px; font-size: {TYPE["caption"]}px; font-weight: 600; }}
+    QPushButton#academicAction {{ color: {accent}; border-color: {accent}; font-weight: 600; }}
+    QPushButton#academicAction:hover {{ background: {raised}; border-color: {fg}; }}
     QLabel#brand {{ font-size: {TYPE["title"]}px; font-weight: 600; color: {fg}; }}
     QLabel#hero {{ font-size: {TYPE["hero"]}px; font-weight: 600; color: {fg}; }}
     QLabel#metric {{ font-size: 24px; font-weight: 600; color: {fg}; }}
@@ -83,7 +90,7 @@ def stylesheet(theme, glass_enabled=True):
     QPushButton:pressed, QPushButton:checked {{ background: {raised}; border-color: {accent}; }}
     QPushButton:focus, QComboBox:focus, QLineEdit:focus, QSpinBox:focus {{ border-color: {accent}; }}
     QPushButton:disabled {{ color: {muted}; background: {panel}; border-color: {border}; }}
-    QPushButton#primary {{ background: {accent}; color: {on_accent}; font-weight: bold; border: 1px solid {accent}; }}
+    QPushButton#primary {{ background: {action}; color: {on_accent}; font-weight: bold; border: 1px solid {accent}; }}
     QPushButton#primary:hover {{ border-color: {fg}; }}
     QPushButton#primary:disabled {{ background: {raised}; color: {muted}; border-color: {border}; }}
     QPushButton#learnAction {{ color: {accent}; border-color: {accent}; font-weight: 600; }}
@@ -101,7 +108,7 @@ def stylesheet(theme, glass_enabled=True):
     QListWidget#learningList::item:selected {{ background: {raised}; border-color: {accent}; color: {fg}; }}
     QListWidget#learningList:focus {{ border-color: {accent}; }}
     QProgressBar {{ border: 0; background: {raised}; border-radius: 4px; min-height: 8px; max-height: 8px; }}
-    QProgressBar::chunk {{ background: {accent}; border-radius: 4px; }}
+    QProgressBar::chunk {{ background: {action}; border-radius: 4px; }}
     QTabBar::tab {{ background: transparent; padding: 8px 13px; border: 1px solid transparent; border-radius: 8px; margin: 2px; }}
     QTabBar::tab:selected {{ background: {raised}; border-color: {border}; color: {accent}; }}
     QTabBar::tab:hover {{ background: {raised}; }}

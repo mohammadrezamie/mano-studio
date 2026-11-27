@@ -8,6 +8,7 @@ from PySide6.QtGui import QPalette
 from PySide6.QtWidgets import (QFrame,QVBoxLayout,QHBoxLayout,QLabel,QPushButton,
     QListWidget,QListWidgetItem,QAbstractItemView)
 from ui.icons import icon
+from ui.motion import MotionButton
 
 
 class NavigationRail(QFrame):
@@ -25,7 +26,7 @@ class NavigationRail(QFrame):
         row=QHBoxLayout();row.setContentsMargins(0,0,0,0)
         self.heading=QLabel(title);self.heading.setObjectName("eyebrow")
         row.addWidget(self.heading,1)
-        self.toggle=QPushButton();self.toggle.setObjectName("railToggle")
+        self.toggle=MotionButton();self.toggle.setObjectName("railToggle")
         self.toggle.setFixedSize(32,32)
         self.toggle.setCheckable(True)
         self.toggle.setAutoDefault(False)

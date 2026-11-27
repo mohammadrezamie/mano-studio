@@ -1,49 +1,129 @@
-name: Windows development installer
+name: Windows candidate installer
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main, release/v1-candidate, quality/redistribution-gate]
+    types: [opened, synchronize, reopened]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '*.md'
 
 permissions:
   contents: read
 concurrency:
-  group: windows-installer-${{ github.ref }}
+  group: windows-installer-${{ github.event.pull_request.head.ref || github.ref }}
   cancel-in-progress: true
 jobs:
   installer:
+    if: github.event_name == 'workflow_dispatch' || (github.event.pull_request.head.repo.full_name == github.repository && (github.head_ref == 'release/first-beta-candidate' || github.head_ref == 'release/beta-integrated' || github.head_ref == 'release/beta-final-prep' || github.head_ref == 'release/v1-candidate' || (github.head_ref == 'quality/redistribution-gate' && github.base_ref == 'release/v1-candidate') || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate')))
     runs-on: windows-latest
-    timeout-minutes: 30
+    timeout-minutes: 120
     env:
       QT_QPA_PLATFORM: offscreen
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record exact source revision
+        shell: pwsh
+        run: |
+          $sha = (git rev-parse HEAD).Trim()
+          if ($LASTEXITCODE -ne 0 -or $sha -notmatch '^[a-f0-9]{40}$') { throw 'Missing source SHA' }
+          "MANO_SOURCE_SHA=$sha" >> $env:GITHUB_ENV
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: ${{ (((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate'))) && '3.14.10' || '3.12' }}
           architecture: x64
-      - name: Install dependencies
-        run: python -m pip install -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
-      - name: Run regression and Qt tests
-        run: python -m pytest -q
-      - name: Build portable development application
+      - name: Isolate pinned Windows candidate build environment
+        if: (((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate')))
         shell: pwsh
-        run: ./installer/build.ps1 -PortableOnly
+        run: |
+          python -m venv (Join-Path $env:RUNNER_TEMP 'mano-candidate-venv')
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate venv failed.' }
+          (Join-Path $env:RUNNER_TEMP 'mano-candidate-venv\Scripts') >> $env:GITHUB_PATH
+      - name: Install dependencies
+        if: ${{ !(((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate'))) }}
+        run: python -m pip install -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
+      - name: Install pinned wheels and verify download evidence
+        if: (((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate')))
+        shell: pwsh
+        run: |
+          python -m pip --isolated install --index-url https://pypi.org/simple --only-binary=:all: --report build-wheel-report.json -c installer/windows-candidate-constraints.txt -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned candidate dependency installation failed.' }
+          python -m installer.wheel_evidence build-wheel-report.json installer/windows-candidate-constraints.txt wheel-evidence.json
+          if ($LASTEXITCODE -ne 0) { throw 'Wheel provenance evidence rejected.' }
+          python -m pip check
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate dependency conflict.' }
+      - name: Verify redistribution tooling
+        if: (((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate')))
+        run: python -m pytest -q tests/test_review_evidence.py tests/test_wheel_evidence.py tests/test_redistribution_gate.py tests/test_windows_zip_paths.py tests/test_prune_qt.py tests/test_prune_pdf.py tests/test_runtime_evidence.py tests/test_standalone_probe.py tests/test_release_channel.py tests/test_update_service.py
+      - name: Configure Windows fonts for offscreen Qt
+        shell: pwsh
+        run: |
+          $fonts = Join-Path $env:WINDIR 'Fonts'
+          if (!(Test-Path $fonts)) { throw 'Windows font directory missing' }
+          "QT_QPA_FONTDIR=$fonts" >> $env:GITHUB_ENV
+      - name: Verify actual Persian and technical glyphs
+        run: python render_preflight.py
+      # Full Windows and Ubuntu regression remain independent release gates in Tests.
+      # This job produces internal artifacts only and must not repeat the long GUI suite.
+      - name: Verify packaging contracts and academic credits
+        run: python -m pytest -q tests/test_candidate_manifest.py tests/test_verify_installed.py tests/test_linked_payload.py tests/test_windows_build_contract.py tests/test_localization.py tests/test_collect_notices.py tests/test_version_policy.py tests/test_instructor_evidence.py tests/test_instructor_gallery.py tests/test_translator_isolation.py tests/test_visual_tokens.py
+      - name: Verify focused instructor UI
+        if: github.head_ref == 'release/v1-candidate' || (((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate')))
+        run: python -m pytest -q -o faulthandler_timeout=60 tests/test_workspace.py -k instructor_splash_variants
+      - name: Capture instructor visual evidence
+        if: github.head_ref == 'release/v1-candidate' || (((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate')))
+        run: python capture_instructor.py instructor-preview
+      - uses: actions/upload-artifact@v4
+        if: github.head_ref == 'release/v1-candidate' || (((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate')))
+        with:
+          name: ManoStudio-v1-instructor-preview
+          path: instructor-preview/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Build portable candidate application
+        shell: pwsh
+        env:
+          LEAN_PDF_EXPERIMENT: ${{ (((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate'))) }}
+        run: |
+          if ($env:LEAN_PDF_EXPERIMENT -eq 'true') { ./installer/build.ps1 -PortableOnly -LeanPdf }
+          else { ./installer/build.ps1 -PortableOnly }
       - name: Smoke test frozen portable application
         shell: pwsh
         run: |
           $report = Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt'
+          if (Test-Path $report) { Remove-Item $report -Force }
           $app = Join-Path $PWD 'dist\ManoStudio\ManoStudio.exe'
           $p = Start-Process -FilePath $app -ArgumentList "--smoke-test `"$report`"" -PassThru
           if (-not $p.WaitForExit(120000)) { $p.Kill(); throw 'Portable smoke timed out.' }
-          if ($p.ExitCode -ne 0 -or (Get-Content $report -Raw).Trim() -ne 'PASS') { throw 'Portable smoke failed.' }
+          if ($p.ExitCode -ne 0 -or !(Test-Path $report) -or (Get-Content $report -Raw).Trim() -ne 'PASS') { throw 'Portable smoke failed.' }
       - name: Archive portable candidate and build evidence
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force portable-output | Out-Null
           $version = (python -c "from update_service import VERSION; print(VERSION)").Trim()
           $zip = "portable-output/ManoStudio-v$version-Windows-x64.zip"
-          Compress-Archive -Path dist/ManoStudio -DestinationPath $zip -Force
+          python -c "import shutil,sys; shutil.make_archive(sys.argv[1],'zip',root_dir='dist',base_dir='ManoStudio')" ($zip -replace '\.zip$', '')
+          if ($LASTEXITCODE -ne 0) { throw 'Portable archive failed.' }
           python -m pip freeze | Set-Content -Encoding utf8 portable-output/build-dependencies.txt
-          "SHA=$env:GITHUB_SHA" | Set-Content -Encoding ascii portable-output/commit.txt
+          "SHA=$env:MANO_SOURCE_SHA" | Set-Content -Encoding ascii portable-output/commit.txt
           (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower() | Set-Content -Encoding ascii "$zip.sha256"
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt') portable-output/portable-smoke.txt
+      - name: Record redistribution review evidence
+        if: (((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate')))
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem portable-output/*.zip | Select-Object -First 1
+          python -m installer.redistribution_gate $zip.FullName | Set-Content -Encoding utf8 portable-output/redistribution-preflight.json
+          if ($LASTEXITCODE -notin @(0,2)) { throw 'Invalid distribution evidence.' }
+          python -m installer.runtime_evidence $zip.FullName portable-output/runtime-evidence.json
+          if ($LASTEXITCODE -ne 0) { throw 'Invalid runtime evidence.' }
+          Copy-Item wheel-evidence.json portable-output/
+          Copy-Item build-wheel-report.json portable-output/
+          Copy-Item installer/windows-candidate-constraints.txt portable-output/
       - uses: actions/upload-artifact@v4
         with:
           name: ManoStudio-Windows-x64-portable-development
@@ -57,15 +137,30 @@ jobs:
             choco install innosetup -y --no-progress
             if ($LASTEXITCODE -ne 0) { throw 'Inno Setup installation failed' }
           }
-      - name: Build development installer
+      - name: Build candidate installer
         shell: pwsh
         run: ./installer/build.ps1 -ReuseFrozen
       - name: Install, run offline smoke test, uninstall
         shell: pwsh
         run: ./installer/smoke.ps1
-      - name: Record build dependency versions
+      - name: Record build dependency versions and source
         shell: pwsh
-        run: python -m pip freeze | Set-Content -Encoding utf8 installer/output/build-dependencies.txt
+        run: |
+          python -m pip freeze | Set-Content -Encoding utf8 installer/output/build-dependencies.txt
+          "SHA=$env:MANO_SOURCE_SHA" | Set-Content -Encoding ascii installer/output/commit.txt
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-smoke.txt') installer/output/installed-smoke.txt
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-standalone-runtime.json') installer/output/standalone-runtime.json
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-installed-payload.json') installer/output/installed-payload.json
+          Copy-Item (Join-Path $env:RUNNER_TEMP 'mano-portable-smoke.txt') installer/output/portable-smoke.txt
+      - name: Include redistribution review evidence with Setup
+        if: (((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate')))
+        shell: pwsh
+        run: |
+          Copy-Item portable-output/redistribution-preflight.json installer/output/
+          Copy-Item portable-output/runtime-evidence.json installer/output/
+          Copy-Item wheel-evidence.json installer/output/
+          Copy-Item build-wheel-report.json installer/output/
+          Copy-Item installer/windows-candidate-constraints.txt installer/output/
       - name: Generate SHA256
         shell: pwsh
         run: |
@@ -73,6 +168,17 @@ jobs:
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
             "$hash  $($_.Name)" | Set-Content -Encoding ascii "$($_.FullName).sha256"
           }
+      - name: Validate both candidate assets and record manifest
+        shell: pwsh
+        env:
+          REQUIRE_REVIEW: ${{ (((github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && github.head_ref == 'release/v1-candidate' && github.base_ref == 'main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/release/v1-candidate')) || (github.head_ref == 'quality/redistribution-gate' || ((github.head_ref == 'quality/stable-installed-payload' || github.head_ref == 'quality/recomputed-release-evidence') && github.base_ref == 'quality/redistribution-gate'))) }}
+        run: |
+          if ($env:REQUIRE_REVIEW -eq 'true') {
+            python -m installer.candidate_manifest --root . --sha "$env:MANO_SOURCE_SHA" --require-review
+          } else {
+            python -m installer.candidate_manifest --root . --sha "$env:MANO_SOURCE_SHA"
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Candidate manifest rejected.' }
       - uses: actions/upload-artifact@v4
         with:
           name: ManoStudio-Windows-x64-development

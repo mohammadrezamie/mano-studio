@@ -4,7 +4,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 pytest.importorskip("PySide6")
-from PySide6.QtCore import QSettings
+from PySide6.QtCore import QSettings, QCoreApplication, QEvent
 from PySide6.QtWidgets import QApplication
 from ui.workspace import Workspace
 
@@ -14,13 +14,44 @@ def app():
     return QApplication.instance() or QApplication([])
 
 
+def dispose_test_window(window):
+    """Destroy the owned test widget tree after normal close handling."""
+    from shiboken6 import isValid
+    if isValid(window):
+        window.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+    assert not isValid(window), "Qt test window survived deferred deletion"
+
+
 @pytest.fixture
 def workspace(app, tmp_path):
     settings = QSettings(str(tmp_path / "settings.ini"), QSettings.Format.IniFormat)
     window = Workspace(settings)
-    yield window
-    window.editor.document().setModified(False)
-    window.close()
+    try:
+        yield window
+    finally:
+        try:
+            window.editor.document().setModified(False)
+            window.close()
+        finally:
+            dispose_test_window(window)
+
+
+def test_workspace_disposal_releases_owned_widgets_and_timers(app, tmp_path):
+    from shiboken6 import isValid
+    from PySide6.QtCore import QTimer
+    from PySide6.QtWidgets import QWidget
+    window = Workspace(QSettings(str(tmp_path / "lifecycle.ini"), QSettings.Format.IniFormat))
+    child = QWidget(window)
+    timer = QTimer(child)
+    timer.start(1000)
+    try:
+        assert isValid(child) and timer.isActive()
+        window.editor.document().setModified(False)
+        window.close()
+    finally:
+        dispose_test_window(window)
+    assert not isValid(child) and not isValid(timer)
 
 
 def test_translation_and_stale_output(workspace):
@@ -54,10 +85,15 @@ def test_settings(workspace):
     assert workspace.settings.value("theme") == "night"
     assert int(workspace.settings.value("input_mode")) == 2
     restored = Workspace(workspace.settings)
-    assert restored.language == "fa"
-    assert restored.theme == "night"
-    assert restored.tabs.currentIndex() == 2
-    restored.close()
+    try:
+        assert restored.language == "fa"
+        assert restored.theme == "night"
+        assert restored.tabs.currentIndex() == 2
+    finally:
+        try:
+            restored.close()
+        finally:
+            dispose_test_window(restored)
 
 
 def test_error_marker_and_cursor_navigation(workspace):
@@ -417,15 +453,37 @@ def test_reverse_builder_and_mapping(workspace):
     workspace.editor.document().setModified(False)
 
 
+@pytest.mark.parametrize(("language", "required"), [
+    ("en", ("Prof. Siawash Eshaghiyeh", "faculty member", "Science & Research Branch")),
+    ("fa", ("سیاوش اسحقیه", "عضو هیئت علمی", "واحد علوم و تحقیقات")),
+])
+def test_about_academic_attribution_is_exact_in_both_languages(workspace, language, required):
+    from PySide6.QtWidgets import QLabel
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    dialog = workspace.about_dialog()
+    try:
+        visible_text = "\n".join(label.text() for label in dialog.findChildren(QLabel))
+        for phrase in required:
+            assert phrase in visible_text
+    finally:
+        dialog.close()
+
+
 def test_persian_credits_and_optional_labs(workspace,monkeypatch):
-    from PySide6.QtWidgets import QMessageBox
+    from PySide6.QtWidgets import QDialog, QLabel
     from ui.program_lab import ProgramLab
     from ui.logic_lab import LogicLab
     workspace.languages.setCurrentIndex(1)
     messages=[]
-    monkeypatch.setattr(QMessageBox,"about",lambda *args:messages.append(args[-1]))
+    def inspect_about(dialog):
+        messages.extend(label.text() for label in dialog.findChildren(QLabel))
+        return 0
+    monkeypatch.setattr(QDialog,"exec",inspect_about)
     workspace.about()
-    assert "سیاوش اسحقی" in messages[0] and "Copyright (c) 2026" in messages[0]
+    assert any("سیاوش اسحقیه" in text for text in messages)
+    assert any("عضو هیئت علمی" in text for text in messages)
+    assert any("واحد علوم و تحقیقات" in text for text in messages)
+    assert any("Copyright (c) 2026" in text for text in messages)
     lab=ProgramLab(workspace,"UNKNOWN")
     assert "ناشناخته" in lab.machine.toPlainText()
     assert lab.arithmetic.representation.horizontalHeaderItem(0).text()=="کلمه"
@@ -1039,7 +1097,7 @@ def test_shared_motion_policy(workspace,app):
     from ui.preferences import Preferences
     from PySide6.QtCore import QAbstractAnimation
     from PySide6.QtWidgets import QWidget
-    tabs=MotionTabs()
+    tabs=MotionTabs(workspace)
     tabs.addTab(QWidget(),"First")
     tabs.addTab(QWidget(),"Second")
     tabs.resize(400,220);tabs.show();app.processEvents()
@@ -1656,3 +1714,87 @@ def test_exercise_file_actions(workspace,language,tmp_path,monkeypatch):
         assert view.exercise()==exercise
         assert lab.document is circuit
     lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_chapter1_map_geometry_and_keyboard(workspace,app,language):
+    from PySide6.QtCore import Qt
+    from PySide6.QtTest import QTest
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.resize(1360,900)
+    lab.select_tool("karnaugh");lab.show();app.processEvents()
+    v=lab.karnaugh
+    for width in (4,2,3,4):
+        v.width.setCurrentIndex(v.width.findData(width));app.processEvents()
+        assert v.grid.rowStretch(0)==0 and v.grid.columnStretch(0)==0
+        assert v.grid.rowStretch(len(v.matrix))==1
+        assert all(h.alignment() & Qt.AlignmentFlag.AlignHCenter for h in v.column_headers)
+        for c,h in enumerate(v.column_headers):
+            cell=v.cells[v.matrix[0][c]]
+            assert abs(h.geometry().center().x()-cell.geometry().center().x())<=2
+            assert h.height()<cell.height()
+        assert v.grid.rowStretch(4)==(1 if width==4 else 0)
+    before=v.values.copy()
+    first,second,below=v.matrix[0][0],v.matrix[0][1],v.matrix[1][1]
+    v.cells[first].setFocus()
+    QTest.keyClick(v.cells[first],Qt.Key.Key_Right)
+    assert v.cells[second].hasFocus()
+    QTest.keyClick(v.cells[second],Qt.Key.Key_Down)
+    assert v.cells[below].hasFocus()
+    assert v.values==before
+    QTest.keyClick(v.cells[below],Qt.Key.Key_Space)
+    assert v.values[below]==1
+    lab.close()
+
+
+@pytest.mark.parametrize("language",["en","fa"])
+def test_state_table_focus_and_row_sizing(workspace,language):
+    from PySide6.QtWidgets import QHeaderView
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    lab=LogicLab(workspace);lab.select_tool("state-design")
+    v=lab.state_design
+    assert v.table.verticalHeader().sectionResizeMode(0)==QHeaderView.ResizeMode.Stretch
+    v.input.setCurrentIndex(1)
+    assert v.table.currentRow()==1
+    v.clock.click()
+    assert v.table.currentRow()==3 and len(v.trace)==1
+    v.width.setCurrentIndex(2)
+    assert v.table.verticalHeader().sectionResizeMode(0)==QHeaderView.ResizeMode.ResizeToContents
+    assert v.table.currentRow()==1 and not v.trace
+    lab.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+def test_lab_motion_preference_shared_by_cpu_and_logic(workspace, language):
+    from PySide6.QtWidgets import QCheckBox
+    from ui.preferences import Preferences
+    from ui.program_lab import ProgramLab
+    from ui.logic_lab import LogicLab
+    workspace.languages.setCurrentIndex(workspace.languages.findData(language))
+    prefs = Preferences(workspace)
+    toggle = prefs.findChild(QCheckBox, "lab_motion")
+    assert toggle is not None
+    assert toggle.text() == ("انیمیشن سیگنال‌های آزمایشگاه" if language == "fa" else "Animate lab signals")
+    toggle.setChecked(False)
+    assert not workspace.settings.value("lab_motion", True, type=bool)
+    prefs.close()
+    cpu = ProgramLab(workspace)
+    logic = LogicLab(workspace)
+    try:
+        assert cpu.datapath.reduced_motion
+        assert logic.diagram.reduced_motion
+    finally:
+        cpu.close()
+        logic.close()
+
+
+@pytest.mark.parametrize("language", ["en", "fa"])
+@pytest.mark.parametrize("theme", ["dark", "light", "night"])
+def test_instructor_splash_variants(workspace, language, theme):
+    from ui.splash import splash_pixmap
+    from update_service import VERSION
+    for glass in (True, False):
+        pix = splash_pixmap(theme, glass, VERSION, language == "fa")
+        assert pix.width() == 680 and pix.height() == 360 and not pix.isNull()

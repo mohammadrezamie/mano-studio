@@ -1,3 +1,13 @@
+# Current owner release policy — 2026-11-27 (supersedes historical targets below)
+
+- Maintain two independent tracks: Stable 1.0.0 and forward Beta 1.1.0. Beta must remain semantically ahead of Stable; Beta features do not silently flow into Stable. Release each only after its own exact-source acceptance gates and explicit owner approval.
+- The first Beta candidate is PR #36 on the forward line, proposed public prerelease v1.1.0-beta.1. The old v0.3.0-beta.1 branch is fallback-only. Stable PR #24 / child #26 remains a candidate, not an accepted release. No fixed publication date overrides quality/security gates.
+- The academic assignment deliverable is exactly one standalone, downloadable root rtl_translator.py using only the Python standard library. The GUI may call its public translate() function but must not embed an in-app source viewer/editor or duplicate converter implementation. Remove the older viewer from Stable before final acceptance.
+- Stable release requires aligned patched Qt/PySide and OpenSSL dependencies, verified redistribution/source obligations, full exact-head Windows/Ubuntu regression, actual bilingual visual review, clean/pre-equipped Windows install and offline smoke, uninstall/upgrade checks, publisher signing/authenticity review, and explicit owner approval. Do not mix or hand-replace native DLLs.
+- No public GitHub release or tag is confirmed. Do not call CI artifacts public downloads or describe unsigned executables as signed.
+
+---
+
 # Product comfort and pre-release policy
 Owner decisions, 2026-11-24. Applies to all development branches and supersedes older release targets.
 ## Calm by design
@@ -25,3 +35,10 @@ Current implementation increment: user-triggered check fetches bounded release m
 
 ## Owner quality-first override (2026-11-24)
 No arbitrary application or installer size cap. Previous guidance about lightweight assets and avoiding new dependencies is a preference superseded where verified quality warrants a larger asset or additional technology. Any new dependency or asset still requires compatible license, provenance, offline operation, security review, graceful fallback and a concrete benefit; responsiveness and accessibility remain quality requirements. No network at startup, telemetry, duplicated engines, or release/installer work without authorization.
+
+## Owner priority override — first beta delivery, 2026-11-25
+Owner requests reaching the initial GitHub release sooner. Freeze optional feature expansion for beta; prioritize existing RTL workflow, integrated visual PR #17 and correctness PR #16, exact-head regression and actual bilingual screenshots, then Windows x64 packaging and acceptance. Installer preparation and internal candidate builds are authorized again. Separate release/first-beta-candidate branch builds only temporary development artifacts initially, not a public tag or release. Exercise the known main baseline first; integrate verified PRs and rebuild the exact final commit before any publication. Proposed public version remains v0.3.0-beta.1, subject to successful portable/installed smoke, redistribution review, native acceptance and release approval. No stable publication. Do not imply a scheduled release or unattended assistant work.
+
+
+## Integrated first beta candidate — 2026-11-25
+Owner requests expedited initial prerelease with high quality. Isolated release/beta-integrated combines exact heads of #16, #17 and #18. No publication or stable claim. Independent source branches retained; combined CI is final source gate. Current version 0.3.0-dev.1; proposed public beta v0.3.0-beta.1. Verify actual Windows installer/portable artifacts, hashes, bilingual screenshots, native acceptance, redistribution/license and owner acceptance before publication. Freeze optional features. Fix obsolete About modal test and require all six actual About captures. No translator changes.
