@@ -1,3 +1,9 @@
+# Stable full regression checkpoint — 2026-11-27
+
+Parent #26 Windows 45910546581: 1517 passed, one failure in the old ZIP fixture (Windows zipfile normalizes backslash), 13614.84s. Ubuntu 1518 passed. Child #38 already has corrected raw ZIP fixture and passing 84 focused contracts on each OS plus successful installer. Beta #43 exact-head benchmark 45923174371: same 17 tests passed baseline vs cleanup, Ubuntu 71.63s -> 5.56s, Windows 137.64s -> 8.01s; root/child/timer destruction test passed on both. Port only the tested fixture lifecycle edits to Stable, preserve all old assertions and add destruction regression. Enable full exact-head unfiltered Windows/Ubuntu regression on #38 with pinned Windows environment and actual visual capture; preflight fixed ZIP and destruction before full suite. No product or translator source changed; not a release approval. All latest exact-head checks still required; prior artifact remains development evidence only.
+
+---
+
 ## Installed payload integrity follow-up — 2026-11-27
 
 Draft Stable child PR #38, independent of the current #26 candidate. Installed-file comparison now rejects root and nested symbolic links and Windows reparse points (including junctions) before descending; rejects reserved uninstaller directory names. Local Linux fixture result: 9 passed, including reparse attribute classification, a real directory symlink loop, root symlink, normal nesting and reserved directory. The exact locally tested Git blobs match the committed verifier `1d177f38998428b03c3d7180bd506f08b2095efc` and tests `e46e0e000ece1d8e5965fa9da095c9a4c187c6c3`. Real Windows reparse-point behavior and full fresh package tests still require CI/native acceptance. Prior Windows CI had one unsafe ZIP fixture normalization failure, corrected separately; fresh child CI required before promotion. No concurrent #26 or #37 source changes, no release authorization.
