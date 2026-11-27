@@ -11,6 +11,7 @@ import subprocess
 import sys
 
 import pytest
+from ci_junit import verify_junit
 from ci_shard_plan import read_profile, weighted_partition, observed_profile
 
 
@@ -123,8 +124,11 @@ def main():
     if args.profile_out and profile is None:
         parser.error("--profile-out requires --profile")
     for os_name, platform in (("ubuntu-latest", "linux"), ("windows-latest", "win32")):
-        reports = [json.loads(p.read_text(encoding="utf-8"))
-                   for p in sorted(args.reports.glob(f"shard-{os_name}-*/shard.json"))]
+        reports = []
+        for path in sorted(args.reports.glob(f"shard-{os_name}-*/shard.json")):
+            report = json.loads(path.read_text(encoding="utf-8"))
+            verify_junit(path.with_name("regression.xml"), report)
+            reports.append(report)
         print(os_name, verify(reports, args.count, args.source, platform, profile, profile_sha))
         if args.profile_out:
             args.profile_out.mkdir(parents=True, exist_ok=True)
