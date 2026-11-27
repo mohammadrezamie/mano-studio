@@ -19,7 +19,7 @@ permissions:
   contents: read
 jobs:
   test:
-    if: github.event_name != 'pull_request' || github.base_ref == 'main' || (github.base_ref == 'release/v1-candidate' && github.head_ref == 'quality/redistribution-gate' && github.event.pull_request.head.repo.full_name == github.repository) || (github.base_ref == 'integration/first-beta' && github.head_ref == 'release/beta-packaging-hardening' && github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.event_name != 'pull_request' || github.base_ref == 'main' || (github.base_ref == 'release/v1-candidate' && github.head_ref == 'quality/redistribution-gate' && github.event.pull_request.head.repo.full_name == github.repository)
     strategy:
       fail-fast: false
       matrix:

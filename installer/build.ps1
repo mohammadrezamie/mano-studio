@@ -21,6 +21,12 @@ if (-not $ReuseFrozen) {
     # Preserve notices shipped in installed distributions; this is evidence, not legal approval.
     python installer/collect_notices.py $notices
     if ($LASTEXITCODE -ne 0) { throw 'Notice collection failed.' }
+    # Copy the same upstream Qt texts as the frozen Stable candidate; this does not grant redistribution clearance.
+    $qtTexts = Join-Path $notices 'qt-license-texts'
+    New-Item -ItemType Directory -Force $qtTexts | Out-Null
+    foreach ($name in @('LGPL-3.0-only.txt','GPL-3.0-only.txt','README.md')) {
+        Copy-Item -LiteralPath (Join-Path $PSScriptRoot "licenses\$name") -Destination $qtTexts -ErrorAction Stop
+    }
 }
 if (-not (Test-Path 'dist\ManoStudio\ManoStudio.exe')) { throw 'Frozen app missing.' }
 if ($PortableOnly) { exit 0 }

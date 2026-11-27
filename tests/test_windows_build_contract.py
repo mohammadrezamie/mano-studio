@@ -27,6 +27,21 @@ def test_unused_qt_virtual_keyboard_is_pruned_with_a_dependency_guard():
     script = BUILD_SCRIPT.read_text(encoding="utf-8")
     assert "python -m installer.prune_qt $dist" in script
     assert "Qt Virtual Keyboard payload pruning failed." in script
+    # Keep the original test identity while adding the distribution-text contract.
+    import hashlib
+    license_dir = BUILD_SCRIPT.parent / "licenses"
+    expected = {
+        "LGPL-3.0-only.txt": "65c5ca88a67c30becee01c5a8816d964b03862f9",
+        "GPL-3.0-only.txt": "94a9ed024d3859793618152ea559a168bbcbb5e2",
+        "README.md": "6285e0ec3360d3384dda61f0d76811fa2099b5ae",
+    }
+    assert "qt-license-texts" in script
+    assert "Copy-Item -LiteralPath" in script
+    for name, digest in expected.items():
+        data = (license_dir / name).read_bytes().replace(b"\r\n", b"\n")
+        blob = b"blob " + str(len(data)).encode("ascii") + b"\0" + data
+        assert hashlib.sha1(blob).hexdigest() == digest
+        assert f"'{name}'" in script
 
 
 def test_installed_smoke_clears_developer_python_and_qt_paths():
