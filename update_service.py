@@ -2,7 +2,7 @@
 from dataclasses import dataclass
 import json
 from release_channel import version_key, channel, eligible_release
-from urllib.request import Request, urlopen
+from urllib.request import Request, HTTPRedirectHandler, build_opener
 from update_download import Asset, asset_from_release
 
 RELEASES_URL = "https://api.github.com/repos/mohammadrezamie/mano-studio/releases"
@@ -19,10 +19,17 @@ class ReleaseInfo:
     asset: Asset | None = None
 
 
-def release_info(*, explicit=False, opener=urlopen):
+class NoMetadataRedirect(HTTPRedirectHandler):
+    """Metadata must come directly from the configured official API endpoint."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        raise ValueError("Unexpected release metadata redirect")
+
+
+def release_info(*, explicit=False, opener=None):
     if not explicit:
         raise PermissionError("Network access requires an explicit update check")
     request = Request(RELEASES_URL, headers={"Accept": "application/vnd.github+json", "User-Agent": "ManoStudio-UpdateCheck"})
+    opener = opener if opener is not None else build_opener(NoMetadataRedirect()).open
     with opener(request, timeout=6) as response:
         payload = response.read(2_000_001)
     return parse_release_payload(payload)
@@ -62,7 +69,7 @@ def parse_release_payload(payload):
     return max(candidates, key=lambda candidate: candidate[0])[1] if candidates else None
 
 
-def check_updates(*, explicit=False, opener=urlopen):
+def check_updates(*, explicit=False, opener=None):
     """Compatibility API for callers needing only the version tag."""
     release = release_info(explicit=explicit, opener=opener)
     return release.tag if release else None
