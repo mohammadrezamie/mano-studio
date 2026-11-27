@@ -1,3 +1,7 @@
+## Installed payload integrity follow-up — 2026-11-27
+
+Draft Stable child PR #38, independent of the current #26 candidate. Installed-file comparison now rejects root and nested symbolic links and Windows reparse points (including junctions) before descending; rejects reserved uninstaller directory names. Local Linux fixture result: 9 passed, including reparse attribute classification, a real directory symlink loop, root symlink, normal nesting and reserved directory. The exact locally tested Git blobs match the committed verifier `1d177f38998428b03c3d7180bd506f08b2095efc` and tests `e46e0e000ece1d8e5965fa9da095c9a4c187c6c3`. Real Windows reparse-point behavior and full fresh package tests still require CI/native acceptance. Prior Windows CI had one unsafe ZIP fixture normalization failure, corrected separately; fresh child CI required before promotion. No concurrent #26 or #37 source changes, no release authorization.
+
 # Live Stable status — 2026-11-27 (authoritative; historical notes follow)
 
 - **Stable candidate:** PR [#26](https://github.com/mohammadrezamie/mano-studio/pull/26) remains a draft child of Stable PR #24. Its `quality/redistribution-gate` branch now carries the standalone-translator alignment: the embedded source viewer/helper and its obsolete tests are removed; the desktop delegates to the single root `rtl_translator.py`.
