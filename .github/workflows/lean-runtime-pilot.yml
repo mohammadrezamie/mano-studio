@@ -1,0 +1,40 @@
+name: Lean frozen runtime experiment
+on:
+  push:
+    branches: [release/lean-runtime-pilot]
+    paths: ['.github/workflows/lean-runtime-pilot.yml', 'installer/lean_runtime_pilot.ps1']
+permissions:
+  contents: read
+  actions: read
+jobs:
+  pilot:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/lean-runtime-pilot'
+    runs-on: windows-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix:
+        candidate:
+          - {track: stable, run: 45961164498, artifact: 15180064025, version: '1.0.0', sha256: '67406b43ee06cc824e6beb3515785756ef74d5235472cc544f97f8960cdee3f7'}
+          - {track: beta, run: 46000977621, artifact: 15198955230, version: '1.1.0-beta.1', sha256: '0c61de8c31b100cb2ae0d0a07e8f3135c077479a6381757c14eb651baf4fc873'}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: ${{ matrix.candidate.run }}
+          artifact-ids: ${{ matrix.candidate.artifact }}
+          github-token: ${{ github.token }}
+          path: frozen-portable
+      - shell: pwsh
+        run: |
+          $archives=@(Get-ChildItem frozen-portable -Recurse -File -Filter "ManoStudio-v${{ matrix.candidate.version }}-Windows-x64.zip")
+          if($archives.Count -ne 1){throw 'Expected exact portable archive'}
+          ./installer/lean_runtime_pilot.ps1 -Archive $archives[0].FullName -ExpectedHash '${{ matrix.candidate.sha256 }}'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lean-pilot-${{ matrix.candidate.track }}
+          path: lean-evidence/
+          if-no-files-found: warn
