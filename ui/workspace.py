@@ -23,6 +23,7 @@ from ui.credits import COPYRIGHT, REPOSITORY, THANKS, PURPOSE, LICENSE_NOTE, ACA
 from ui.localization import error_text
 from ui.code_editor import CodeEditor
 from ui.glass import GlassRoot
+from ui.typography import apply_ui_font
 
 LTR = Qt.LayoutDirection.LeftToRight
 
@@ -65,6 +66,7 @@ class Workspace(QMainWindow):
         self.language = settings.value("language", "en")
         if self.language not in ("en", "fa"):
             self.language = "en"
+        apply_ui_font(QApplication.instance(), self.language)
         self.theme = settings.value("theme", "dark")
         if self.theme not in PALETTES:
             self.theme = "dark"
@@ -634,6 +636,8 @@ class Workspace(QMainWindow):
     def change_language(self):
         self.language = self.languages.currentData()
         self.settings.setValue("language", self.language)
+        self.settings.sync()
+        apply_ui_font(QApplication.instance(), self.language)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.relabel()
         self.update_document_title()
