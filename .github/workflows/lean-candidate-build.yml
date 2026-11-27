@@ -18,8 +18,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - {track: stable, source: '17d13c8bc2282b2eaec8e23d9c3c031f4a9c4608', version: '1.0.0'}
-          - {track: beta, source: '6217a9b654dfa6f0517b04619077a9fa069f7625', version: '1.1.0-beta.1'}
+          - {track: stable, source: 'bf7fd77508670f9e32327486d61f49389bf265c6', version: '1.0.0'}
+          - {track: beta, source: '5239ef30880ef1c516c7407347f1c2ecb57f6c2d', version: '1.1.0-beta.1'}
     env:
       QT_QPA_PLATFORM: offscreen
       MANO_SOURCE_SHA: ${{ matrix.source }}
