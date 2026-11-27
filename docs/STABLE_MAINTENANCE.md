@@ -3,3 +3,6 @@
 Base: frozen Stable 1.0.0 source 5d72fb32867b2e37396ebac433b3bc28795e6c1f. Planned next patch: 1.0.1, not assigned to packages yet. Port only the offline platform-aware font selection and its tests from the tested Beta candidate 4d64fd1da99ae6c407b221c562062a87ec623afd; validate Persian/English layout and startup locale without changing the academic core, conversion behavior, release candidate bytes or dependency pins. Existing source version remains 1.0.0 until a new candidate is deliberately versioned. No release approval or claim of test success. Full exact-head acceptance and packaging required before a new patch release.
 
 Development track: #57/#59/#60/#61 continue on the forward Beta line. Public distribution of existing releases is independent of both update tracks.
+
+## Update Center backport
+Port the previously tested Beta explicit installer-download, bounded official URL, length/SHA-256 validation, cancellation and nonblocking progress to the independent Stable patch. Preserve Stable channel and frozen 1.0.0 release. Automatic notification and trusted installation remain separate work, not enabled. Dedicated tests copied and included in maintenance acceptance. No public release claim.
