@@ -204,9 +204,14 @@ def test_reject_other_unlisted_binary(candidate, path):
 def test_reject_ambiguous_archive_path(candidate, path):
     root, z, _ = candidate
     with zipfile.ZipFile(z, "a") as archive:
-        archive.writestr(path, b"unexpected")
+        archive.writestr(path.replace(chr(92), "/"), b"unexpected")
+    if chr(92) in path:
+        raw = z.read_bytes()
+        canonical = path.replace(chr(92), "/").encode("utf-8")
+        assert raw.count(canonical) == 2
+        z.write_bytes(raw.replace(canonical, path.encode("utf-8")))
     checksum(z)
-    with pytest.raises(ValueError, match="[Uu]nsafe|case-colliding"):
+    with pytest.raises(ValueError, match="Unsafe Windows|Ambiguous Windows|Unexpected archive path"):
         validate(root, SHA)
 
 

@@ -162,7 +162,7 @@ jobs:
             "$hash  $($_.Name)" | Set-Content -Encoding ascii "$($_.FullName).sha256"
           }
       - name: Validate both candidate assets and record manifest
-        run: python installer/candidate_manifest.py --root . --sha "${{ env.MANO_SOURCE_SHA }}"
+        run: python -m installer.candidate_manifest --root . --sha "${{ env.MANO_SOURCE_SHA }}"
       - uses: actions/upload-artifact@v4
         with:
           name: ManoStudio-Windows-x64-development

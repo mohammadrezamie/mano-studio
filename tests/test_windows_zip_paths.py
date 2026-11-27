@@ -34,8 +34,16 @@ def test_reject_windows_aliases_and_unsafe_paths(paths):
         warnings.simplefilter('ignore', UserWarning)
         with zipfile.ZipFile(b, 'w') as archive:
             for path in paths:
-                archive.writestr(path, b'')
-    with zipfile.ZipFile(b) as archive, pytest.raises(ValueError):
+                archive.writestr(path.replace(chr(92), '/'), b'')
+    # zipfile normalizes backslashes when writing on Windows. Inject the
+    # raw filename into both ZIP headers after writing a same-length name.
+    raw = b.getvalue()
+    for path in paths:
+        if chr(92) in path:
+            canonical = path.replace(chr(92), '/').encode('utf-8')
+            assert raw.count(canonical) == 2
+            raw = raw.replace(canonical, path.encode('utf-8'))
+    with zipfile.ZipFile(io.BytesIO(raw)) as archive, pytest.raises(ValueError):
         validate_windows_paths(archive, 'ManoStudio/')
 
 
