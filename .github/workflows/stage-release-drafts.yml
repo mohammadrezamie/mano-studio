@@ -1,0 +1,170 @@
+name: Stage verified release drafts
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage-release-drafts.yml'
+
+permissions: {}
+
+jobs:
+  stage:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: write
+    concurrency:
+      group: release-draft-${{ matrix.track }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - track: stable
+            version: '1.0.0'
+            source: '5d72fb32867b2e37396ebac433b3bc28795e6c1f'
+            branch: release/v1-candidate
+            build: '45961164498'
+            regression: '45961164536'
+            regression_path: .github/workflows/tests.yml
+            setup: '15180752782'
+            portable: '15180064025'
+            setup_outer: cbf9c705b4ca9534a1f785baac4575afd2a0bfea6ba0e2d03e947657cb3c9d31
+            portable_outer: 57bbd9f56f2fd716c7027f57112c9332709061c4ad0134cb97acc8a2f85d1cc3
+            setup_sha: 978f1e02731b6e3aaecf808401f5b66d33b760d0b3780e65d206946f3976889b
+            portable_sha: 67406b43ee06cc824e6beb3515785756ef74d5235472cc544f97f8960cdee3f7
+          - track: beta
+            version: '1.1.0-beta.1'
+            source: '4d64fd1da99ae6c407b221c562062a87ec623afd'
+            branch: release/beta-packaging-hardening
+            build: '46000977621'
+            regression: '46000977462'
+            regression_path: .github/workflows/beta-release-regression.yml
+            setup: '15197803727'
+            portable: '15198955230'
+            setup_outer: 966bc5faea6f9395ac093c8598c8d6d4cef5dd7ad164571b1e1181cc827b97b0
+            portable_outer: bf00549977b9c27bdcf7c307ff90987f546c37d95ae4680abf5ee1cb8a9a0365
+            setup_sha: 4ce12623d94d334844877bb2c09f1a206b28db9b337a60e82e68c63e2e99dd6b
+            portable_sha: 0c61de8c31b100cb2ae0d0a07e8f3135c077479a6381757c14eb651baf4fc873
+    steps:
+      - name: Verify exact runs and stage private draft only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TRACK: ${{ matrix.track }}
+          VERSION: ${{ matrix.version }}
+          SOURCE: ${{ matrix.source }}
+          BRANCH: ${{ matrix.branch }}
+          BUILD: ${{ matrix.build }}
+          REGRESSION: ${{ matrix.regression }}
+          REGRESSION_PATH: ${{ matrix.regression_path }}
+          SETUP_ID: ${{ matrix.setup }}
+          PORTABLE_ID: ${{ matrix.portable }}
+          SETUP_OUTER: ${{ matrix.setup_outer }}
+          PORTABLE_OUTER: ${{ matrix.portable_outer }}
+          SETUP_SHA: ${{ matrix.setup_sha }}
+          PORTABLE_SHA: ${{ matrix.portable_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import subprocess
+          import tempfile
+          import zipfile
+
+          e = os.environ
+          repo, source, version = e["GH_REPO"], e["SOURCE"], e["VERSION"]
+          tag = "v" + version
+          base = f"repos/{repo}"
+          def require(condition, message):
+              if not condition:
+                  raise RuntimeError(message)
+          def gh(*args):
+              return subprocess.check_output(["gh", *args])
+          def api(endpoint):
+              return json.loads(gh("api", endpoint))
+          def sha(data):
+              return hashlib.sha256(data).hexdigest()
+          def check_run(run_id, path):
+              r = api(f"{base}/actions/runs/{run_id}")
+              require(r["head_sha"] == source and r["head_branch"] == e["BRANCH"]
+                      and r["path"].split("@", 1)[0] == path
+                      and r["event"] == "pull_request", "Run identity mismatch")
+              require(r["status"] == "completed" and r["conclusion"] == "success",
+                      f"Required workflow {run_id} has not succeeded")
+          check_run(e["BUILD"], ".github/workflows/windows-installer.yml")
+          check_run(e["REGRESSION"], e["REGRESSION_PATH"])
+          tags = gh("api", "--paginate", f"{base}/git/matching-refs/tags/{tag}",
+                    "--jq", ".[].ref").decode().splitlines()
+          releases = gh("api", "--paginate", f"{base}/releases?per_page=100",
+                        "--jq", ".[].tag_name").decode().splitlines()
+          require(f"refs/tags/{tag}" not in tags and tag not in releases,
+                  "Tag/release already exists; inspect it rather than overwrite")
+          artifacts = api(f"{base}/actions/runs/{e['BUILD']}/artifacts?per_page=100")["artifacts"]
+          by_id = {str(a["id"]): a for a in artifacts}
+          with tempfile.TemporaryDirectory() as tmp:
+              out = pathlib.Path(tmp)
+              assets = []
+              manifests = []
+              for kind, name, artifact_name in (
+                  ("SETUP", f"ManoStudio-Setup-{tag}-x64.exe", "ManoStudio-Windows-x64-development"),
+                  ("PORTABLE", f"ManoStudio-{tag}-Windows-x64.zip", "ManoStudio-Windows-x64-portable-development"),
+              ):
+                  aid = e[kind + "_ID"]
+                  a = by_id.get(aid, {})
+                  require(a.get("name") == artifact_name and a.get("expired") is False
+                          and a.get("digest") == "sha256:" + e[kind + "_OUTER"], "Artifact identity mismatch")
+                  raw = gh("api", f"{base}/actions/artifacts/{aid}/zip")
+                  require(sha(raw) == e[kind + "_OUTER"], "Outer artifact checksum mismatch")
+                  outer = out / (kind + ".zip")
+                  outer.write_bytes(raw)
+                  with zipfile.ZipFile(outer) as z:
+                      require(z.testzip() is None and len(z.namelist()) == len(set(z.namelist())), "Corrupt or duplicate artifact entries")
+                      require(z.read("commit.txt").decode("utf-8-sig").strip() == "SHA=" + source, "Source marker mismatch")
+                      require(z.read("portable-smoke.txt").decode("utf-8-sig").strip() == "PASS", "Portable smoke not passed")
+                      data = z.read(name)
+                      require(sha(data) == e[kind + "_SHA"], "Asset checksum mismatch")
+                      p = out / name
+                      p.write_bytes(data)
+                      checksum = out / (name + ".sha256")
+                      checksum.write_text(sha(data) + "  " + name + "\n", encoding="ascii")
+                      assets.extend([p, checksum])
+                      manifests.append({"name": name, "size": len(data), "sha256": sha(data)})
+                      if kind == "SETUP":
+                          require(z.read("installed-smoke.txt").decode("utf-8-sig").strip() == "PASS", "Installed smoke not passed")
+                          manifest = json.loads(z.read("candidate-manifest.json"))
+                          require(manifest["source_sha"] == source and manifest["version"] == version
+                                  and manifest["public_release"] is False, "Manifest identity mismatch")
+                  if kind == "PORTABLE":
+                      with zipfile.ZipFile(p) as z:
+                          require(z.testzip() is None, "Corrupt portable payload")
+              require(sorted(manifests, key=lambda x: x["name"]) == sorted(manifest["assets"], key=lambda x: x["name"]),
+                      "Manifest assets mismatch")
+              notes = out / "release-notes.md"
+              notes.write_text(
+                  f"# Mano Studio {tag} — PRIVATE DRAFT, NOT APPROVED FOR PUBLICATION\n\n"
+                  f"Source: {source}\n\n"
+                  f"Build: https://github.com/{repo}/actions/runs/{e['BUILD']}\n\n"
+                  f"Regression: https://github.com/{repo}/actions/runs/{e['REGRESSION']}\n\n"
+                  "Automated build and regression passed; exact asset hashes verified.\n\n"
+                  "DO NOT PUBLISH until redistribution/source obligations, applicable security review, "
+                  "native Windows acceptance and publisher authenticity have been resolved for these exact bytes. "
+                  "The current installer is not Authenticode-signed. Replace these draft notes with accepted release notes before publication.\n",
+                  encoding="utf-8")
+              args = ["release", "create", tag, "--draft", "--target", source, "--title",
+                      f"Mano Studio {tag} (review draft)", "--notes-file", str(notes)]
+              if e["TRACK"] == "beta":
+                  args.append("--prerelease")
+              gh(*args, *map(str, assets))
+              result = json.loads(gh("release", "view", tag, "--json", "isDraft,isPrerelease,targetCommitish,url"))
+              require(result["isDraft"] is True and result["isPrerelease"] == (e["TRACK"] == "beta")
+                      and result["targetCommitish"] == source, "Draft status mismatch; inspect immediately")
+              print(result["url"])
+          PY
