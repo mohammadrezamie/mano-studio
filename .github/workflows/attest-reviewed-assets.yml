@@ -1,0 +1,108 @@
+name: Attest exact reviewed release assets
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/attest-reviewed-assets.yml']
+permissions: {}
+jobs:
+  attest:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {track: stable, version: '1.0.0', source: '926272ff0ebfa4731cfb0b00c149c7e12b4d5a56', native: '46044104396', setup: '15221272367', portable: '15221357225', setup_sha: '3525135132eaabe6039e3c543911ac6429e71e453b53792968e91fb1a142ef9c', portable_sha: 'bc93823dbea393f17464886abeef406defda22e4151dbaab82293928eae3271e'}
+          - {track: beta, version: '1.1.0-beta.1', source: '2dd55994d36f2596dd3d17ea54dd3c3e43829ae2', native: '46043046471', setup: '15220751219', portable: '15220621215', setup_sha: '8fcd72cc280892de6c76c76d555ab4c6601b9e9753cb13157ca0c01ee127a0bc', portable_sha: 'b6a9e2c0fa4014ce505d68e639a328f6ec193b98655c2f123a93365d3b523109'}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '46041711466'
+          artifact-ids: ${{ matrix.setup }},${{ matrix.portable }}
+          github-token: ${{ github.token }}
+          path: frozen
+      - name: Verify exact bytes, source and hosted acceptance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TRACK: ${{ matrix.track }}
+          VERSION: ${{ matrix.version }}
+          SOURCE: ${{ matrix.source }}
+          NATIVE: ${{ matrix.native }}
+          SETUP_SHA: ${{ matrix.setup_sha }}
+          PORTABLE_SHA: ${{ matrix.portable_sha }}
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, shutil, subprocess, zipfile
+          e = os.environ
+          def require(ok, reason):
+              if not ok:
+                  raise ValueError(reason)
+          def api(path):
+              return json.loads(subprocess.check_output(["gh", "api", path]))
+          def digest(p):
+              with p.open("rb") as f:
+                  return hashlib.file_digest(f, "sha256").hexdigest()
+          base = "repos/" + e["REPO"]
+          build = api(base + "/actions/runs/46041711466")
+          native = api(base + "/actions/runs/" + e["NATIVE"])
+          require(build["name"] == "Build lean release candidates" and build["conclusion"] == "success", "build not successful")
+          require(native["name"] == "Lean exact installer acceptance" and native["conclusion"] == "success", "native acceptance not successful")
+          jobs = api(base + "/actions/runs/46041711466/jobs")["jobs"]
+          require(any(j["conclusion"] == "success" and j["name"].startswith(f"build ({e['TRACK']}, {e['SOURCE']}, ") for j in jobs), "exact source build job missing")
+          native_jobs = api(base + "/actions/runs/" + e["NATIVE"] + "/jobs")["jobs"]
+          require(len(native_jobs) == 2 and all(j["conclusion"] == "success" and j["name"].startswith(f"accept ({e['TRACK']}, 46041711466, ") for j in native_jobs), "hosted acceptance mismatch")
+          tag = "v" + e["VERSION"]
+          expected = {f"ManoStudio-Setup-{tag}-x64.exe": e["SETUP_SHA"], f"ManoStudio-{tag}-Windows-x64.zip": e["PORTABLE_SHA"]}
+          root = pathlib.Path("frozen")
+          out = pathlib.Path("subjects")
+          out.mkdir()
+          for name, sha in expected.items():
+              matches = list(root.rglob(name))
+              require(len(matches) == 1 and digest(matches[0]) == sha, "asset hash mismatch: " + name)
+              parent = matches[0].parent
+              require((parent / "commit.txt").read_text(encoding="utf-8-sig").strip() == "SHA=" + e["SOURCE"], "source marker mismatch")
+              require((parent / "portable-smoke.txt").read_text(encoding="utf-8-sig").strip() == "PASS", "portable smoke absent")
+              if name.endswith(".exe"):
+                  require((parent / "installed-smoke.txt").read_text(encoding="utf-8-sig").strip() == "PASS", "installed smoke absent")
+                  manifest = json.loads((parent / "candidate-manifest.json").read_text(encoding="utf-8-sig"))
+                  require(manifest["source_sha"] == e["SOURCE"] and manifest["version"] == e["VERSION"] and manifest["public_release"] is False, "manifest identity mismatch")
+                  require({a["name"]:a["sha256"] for a in manifest["assets"]} == expected, "manifest asset mismatch")
+              else:
+                  with zipfile.ZipFile(matches[0]) as z:
+                      require(z.testzip() is None and len(set(z.namelist())) == len(z.namelist()), "portable archive invalid")
+              shutil.copyfile(matches[0], out / name)
+          pathlib.Path("review-predicate.json").write_text(json.dumps({"kind":"post-build asset verification", "repository":e["REPO"], "source_sha":e["SOURCE"], "build_run":46041711466, "hosted_acceptance_run":int(e["NATIVE"]), "track":e["TRACK"], "version":e["VERSION"], "asset_sha256":expected, "public_release_approved":False, "authenticode_verified":False, "corresponding_source_verified":False}, indent=2)+"\n", encoding="utf-8")
+          PY
+      - name: Sign post-build verification (not SLSA build provenance)
+        id: attest
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6
+        with:
+          subject-path: subjects/*
+          predicate-type: https://github.com/mohammadrezamie/mano-studio/attestations/reviewed-asset/v1
+          predicate-path: review-predicate.json
+      - name: Independently verify signed statement
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          for file in subjects/*; do
+            gh attestation verify "$file" --repo "$REPO" --predicate-type "https://github.com/$REPO/attestations/reviewed-asset/v1" --signer-workflow "$REPO/.github/workflows/attest-reviewed-assets.yml"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reviewed-asset-attestation-${{ matrix.track }}
+          path: |
+            review-predicate.json
+            ${{ steps.attest.outputs.bundle-path }}
+          if-no-files-found: error
+          retention-days: 90
