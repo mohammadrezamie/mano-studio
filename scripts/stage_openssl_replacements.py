@@ -16,6 +16,20 @@ from openssl_abi_preflight import validate
 
 SOURCE = "ee8e3a49f3d9ef5bc8aeaa9eac19e8df236d9dbb"
 QT_SHA = "ff82f990a505c2eaf09843937f887a6839a743039eea7efe5837c929b1fbc934"
+FIXES = frozenset("""
+7a14b6e410c881365881596231ea6f88e7d27c6e
+734c6cd7444bdbf589bfec917e47598c1b21ddd3
+468c287cf451a834b370b69ab321b8ffdfac23aa
+1ad851363d5b8588b0d40edcc045fd633e93f0c2
+c8f6d04f8e6d40b1bf83334e4a2ec9daf5943a3d
+f3acb0a3328046741479482c51cec815839e1b05
+9491b0d9cc7950af1f3dc89499bd5433b9cd4f43
+159e1de0c448d7b9f09ad768c8e141def4aa1eb4
+a0051cfe699bf5a047bc1c4faef65f80f7987366
+1a73dc590cbad62d6f0329ea4779eadaa8d8fd75
+f6244675833e097c2429a40d1b206d95385bd42f
+257a3427aa0ef8d9dd2ef5b3e2d1c021a221b116
+""".split())
 FAMILIES = {
     "VC-WIN64A shared no-asm": {"libcrypto-3-x64.dll", "libssl-3-x64.dll"},
     "VC-WIN64A-mano-python shared no-asm": {"libcrypto-3.dll", "libssl-3.dll"},
@@ -50,8 +64,8 @@ def read_build(path, expected_sha, config):
         if {n for n in names if n.lower().endswith(".dll")} != expected:
             raise ValueError("Unexpected DLL archive members")
         ancestors = z.read("advisory-ancestors.txt").decode().splitlines()
-        if len(ancestors) != 12 or len(set(ancestors)) != 12 or not all(
-                re.fullmatch(r"[0-9a-f]{40} ancestor verified", l.strip()) for l in ancestors):
+        if len(ancestors) != len(FIXES) or set(ancestors) != {
+                sha + " ancestor verified" for sha in FIXES}:
             raise ValueError("Incomplete ancestor evidence")
         result = {}
         for row in rows:
