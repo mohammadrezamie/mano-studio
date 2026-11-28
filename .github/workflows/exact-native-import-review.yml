@@ -31,7 +31,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install --only-binary=:all: pefile==2024.8.26
+      - run: |
+          python -m pip install --only-binary=:all: pefile==2024.8.26
       - name: Verify frozen archive and enumerate ordinary and delay-load imports
         env:
           GH_TOKEN: ${{ github.token }}
