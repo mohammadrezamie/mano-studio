@@ -1,5 +1,6 @@
-param([switch]$PortableOnly, [switch]$ReuseFrozen, [switch]$LeanPdf)
+param([switch]$PortableOnly, [switch]$ReuseFrozen, [switch]$LeanPdf, [switch]$LeanMesa)
 $ErrorActionPreference = 'Stop'
+if ($ReuseFrozen -and $LeanMesa) { throw 'LeanMesa requires a fresh frozen build.' }
 Set-Location (Join-Path $PSScriptRoot '..')
 if (-not [Environment]::Is64BitProcess) { throw 'Use 64-bit Python and PowerShell.' }
 $version = (python -c "from update_service import VERSION; print(VERSION)").Trim()
@@ -19,6 +20,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Qt payload pruning failed.' }
 if ($LeanPdf) {
     python -m installer.prune_pdf $dist --apply
     if ($LASTEXITCODE -ne 0) { throw 'Experimental Qt PDF pruning rejected.' }
+}
+if ($LeanMesa) {
+    python -m installer.prune_mesa $dist
+    if ($LASTEXITCODE -ne 0) { throw 'Experimental Mesa pruning rejected.' }
 }
 $notices = Join-Path $dist 'third-party-notices'
 New-Item -ItemType Directory -Force $notices | Out-Null
