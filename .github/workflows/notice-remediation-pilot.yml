@@ -47,7 +47,10 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory evidence | Out-Null
-          python scripts/prepare_notice_remediation.py candidate original/ManoStudio-v${{ matrix.version }}-Windows-x64.zip ${{ matrix.sha }} notices/qt-notice-REVIEW-ONLY.zip evidence/delta.json
+          $portable=@(Get-ChildItem -LiteralPath original -Recurse -File -Filter 'ManoStudio-v${{ matrix.version }}-Windows-x64.zip')
+          $notice=@(Get-ChildItem -LiteralPath notices -Recurse -File -Filter 'qt-notice-REVIEW-ONLY.zip')
+          if($portable.Count -ne 1 -or $notice.Count -ne 1){throw 'Expected exactly one portable archive and one notice archive'}
+          python scripts/prepare_notice_remediation.py candidate $portable[0].FullName ${{ matrix.sha }} $notice[0].FullName evidence/delta.json
           if($LASTEXITCODE -ne 0){throw 'Payload preparation failed'}
       - name: Run both portable platform smoke checks
         shell: pwsh
