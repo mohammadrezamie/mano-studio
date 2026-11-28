@@ -39,8 +39,8 @@ jobs:
           path: original
       - uses: actions/download-artifact@v4
         with:
-          run-id: '46104826735'
-          artifact-ids: '15247465980'
+          run-id: '46105057247'
+          artifact-ids: '15247089189'
           github-token: ${{ github.token }}
           path: notices
       - name: Prepare exact delta and recover original application icon

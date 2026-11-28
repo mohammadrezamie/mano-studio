@@ -15,7 +15,7 @@ import zipfile
 
 MESA = "_internal/PySide6/opengl32sw.dll"
 MESA_SHA = "18aedc7a4b610f53bcc7b7a5c5ed9293c7e86f030e3273ad54ed3bb1ebd36702"
-NOTICE_SHA = "1f621ab771bedbb81e603f657d8e9c3a53fcf2bb6c52950715b2355a4cc1d236"
+NOTICE_SHA = "e0d723b4a78cadc46609c86a14093b3840109c554a18f55b430660033b7dcc65"
 NOTICE = "third-party-notices/qt-upstream-REVIEW-ONLY.zip"
 INVENTORY = "third-party-notices/inventory.json"
 
