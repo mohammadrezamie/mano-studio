@@ -157,6 +157,12 @@ class ProgramLab(QDialog):
         self.memory_address.setPlaceholderText("000–FFF")
         self.memory_address.setAccessibleName(self.t("Memory address", "آدرس حافظه"))
         self.memory_address.returnPressed.connect(self.inspect_memory)
+        self.memory.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.memory.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.memory.currentCellChanged.connect(self.select_memory_address)
+        self.memory.cellClicked.connect(self.select_memory_address)
+        self.memory_address.setToolTip(self.t("Type a HEX address or select a memory row.",
+            "آدرس هگز وارد کنید یا یک ردیف حافظه را انتخاب کنید."))
         memory_tools.addWidget(self.memory_address)
         self.inspect_memory_button = QPushButton(self.t("Inspect address", "مشاهده آدرس"))
         self.inspect_memory_button.clicked.connect(self.inspect_memory)
@@ -593,7 +599,21 @@ class ProgramLab(QDialog):
         self.memory_address.setText(f"{address:03X}")
         return self.inspect_memory()
 
+    def select_memory_address(self, row, *_columns):
+        """An explicit table selection updates the edit target, not the page."""
+        if self.cpu is None or not 0 <= row < len(self.memory_snapshot):
+            return
+        self.memory_address.setText(f"{self.memory_snapshot[row][0]:03X}")
+
     def refresh_memory(self):
+        # Model-driven selection and repaints must not overwrite typed addresses.
+        signals_were_blocked = self.memory.blockSignals(True)
+        try:
+            self._refresh_memory_table()
+        finally:
+            self.memory.blockSignals(signals_were_blocked)
+
+    def _refresh_memory_table(self):
         self.previous_memory_button.setEnabled(self.cpu is not None and adjacent_page(self.inspected_address, -1) is not None)
         self.next_memory_button.setEnabled(self.cpu is not None and adjacent_page(self.inspected_address, 1) is not None)
         self.inspect_memory_button.setEnabled(self.cpu is not None)
