@@ -1,0 +1,127 @@
+name: Promote individually approved release
+on:
+  push:
+    branches: [release/public-promotion-preflight]
+    paths: ['.github/workflows/promote-approved-release.yml', 'scripts/test_release_promotion.py']
+  workflow_dispatch:
+    inputs:
+      track:
+        description: Release channel
+        required: true
+        type: choice
+        options: [stable, beta]
+      publish:
+        description: Publish after all exact-byte approval checks (false = preflight only)
+        required: true
+        type: boolean
+        default: false
+permissions: {}
+jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 scripts/test_release_promotion.py
+  promote:
+    needs: contract-tests
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    concurrency:
+      group: release-draft-${{ inputs.track }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Verify approval record and exact staged assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TRACK: ${{ inputs.track }}
+          PUBLISH: ${{ inputs.publish }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, re, subprocess
+          e = os.environ
+          track = e["TRACK"]
+          version, rid, placeholder = {
+              "stable": ("1.0.0", 460598745, "untagged-e438c6988649501c973e"),
+              "beta": ("1.1.0-beta.1", 460607136, "untagged-786f71ed7a05b8f89b03"),
+          }[track]
+          tag = "v" + version
+          base = "repos/" + e["REPO"]
+          def need(ok, reason):
+              if not ok:
+                  raise ValueError(reason)
+          def gh(*args):
+              return subprocess.check_output(["gh", *args], text=True)
+          def api(path):
+              return json.loads(gh("api", path))
+          # A reviewed main-branch record must exist. Never manufacture approvals.
+          path = pathlib.Path("release-approvals") / (track + ".json")
+          need(path.is_file(), "Missing independently reviewed exact-byte approval record")
+          a = json.loads(path.read_text(encoding="utf-8"))
+          need(a.get("track") == track and a.get("version") == version and a.get("release_id") == rid, "Approval identity mismatch")
+          source = a.get("source_sha", "")
+          need(re.fullmatch("[0-9a-f]{40}", source), "Invalid source SHA")
+          need(api(base + "/commits/" + source)["sha"] == source, "Source commit not found")
+          gates = ("regression", "installed_payload", "native_acceptance", "security", "redistribution", "corresponding_source", "authenticity", "upgrade")
+          for gate in gates:
+              record = a.get("gates", {}).get(gate, {})
+              need(record.get("approved") is True and record.get("source_sha") == source, "Open or mismatched gate: " + gate)
+              need(isinstance(record.get("reviewer"), str) and bool(record["reviewer"].strip()), "Missing accountable reviewer: " + gate)
+              need(isinstance(record.get("evidence"), str) and record["evidence"].startswith("https://github.com/" + e["REPO"] + "/"), "Missing repository evidence: " + gate)
+          expected = a.get("assets", {})
+          need(isinstance(expected, dict) and all(isinstance(k,str) and re.fullmatch("sha256:[0-9a-f]{64}",v) for k,v in expected.items()), "Invalid asset allowlist")
+          setup = "ManoStudio-Setup-" + tag + "-x64.exe"
+          portable = "ManoStudio-" + tag + "-Windows-x64.zip"
+          need({setup, portable, setup+".sha256", portable+".sha256"} <= expected.keys(), "Required distribution assets missing")
+          sources = a.get("corresponding_source_assets", [])
+          need(isinstance(sources,list) and len(sources)>0 and set(sources)<=expected.keys() and all(s.lower().endswith((".zip",".tar.xz",".tar.gz")) for s in sources), "Missing approved corresponding-source assets")
+          need(not any("review-only" in n.lower() for n in expected), "Review-only asset is not distributable")
+          for gate in gates:
+              need(a["gates"][gate].get("distribution_sha256") == {setup:expected[setup],portable:expected[portable]}, "Gate not bound to exact distribution bytes: " + gate)
+          notes_path = pathlib.Path("release-approvals") / (track + "-notes.md")
+          need(notes_path.is_file(), "Missing final release notes")
+          notes = notes_path.read_text(encoding="utf-8")
+          need(tag in notes and "SHA-256" in notes and "PRIVATE DRAFT" not in notes and "REVIEW-ONLY" not in notes, "Incomplete final notes")
+          need(a.get("automatic_install_approved") is False, "Initial manual releases must not authorize automatic execution")
+          if a.get("authenticode_verified") is False:
+              need("unsigned" in notes.lower() and "Windows" in notes, "Unsigned installer disclosure missing")
+          else:
+              need(a.get("authenticode_verified") is True, "Authenticity status missing")
+          endpoint = base + "/releases/" + str(rid)
+          def check_draft():
+              r = api(endpoint)
+              need(r["id"] == rid and r["draft"] is True and r["prerelease"] == (track=="beta"), "Not expected private draft")
+              need(r["tag_name"] in (tag,placeholder) and r["target_commitish"] == source, "Draft target mismatch")
+              actual = {x["name"]:x.get("digest") for x in r["assets"]}
+              need(len(actual) == len(r["assets"]) and actual == expected, "Draft assets differ from approval; clean up review-only files and stage approved assets separately")
+              return r
+          check_draft()
+          refs = api(base + "/git/matching-refs/tags/" + tag)
+          need(not any(r["ref"]=="refs/tags/"+tag for r in refs), "Tag already exists; manual reconciliation required")
+          print("Exact-byte preflight passed for", track, source)
+          if e["PUBLISH"] != "true":
+              print("Preflight only; no release changed")
+          else:
+              check_draft()
+              # One mutation after all checks; never delete assets or alter their bytes here.
+              body = json.dumps({"tag_name":tag,"target_commitish":source,"name":"Mano Studio "+tag,"body":notes,"draft":False,"prerelease":track=="beta","make_latest":"true" if track=="stable" else "false"})
+              import tempfile
+              with tempfile.TemporaryDirectory() as tmp:
+                  payload = pathlib.Path(tmp)/"release.json"
+                  payload.write_text(body, encoding="utf-8")
+                  result=json.loads(gh("api","--method","PATCH",endpoint,"--input",str(payload)))
+              need(result["draft"] is False and result["tag_name"]==tag and result["prerelease"]==(track=="beta"), "Publication response mismatch; inspect GitHub immediately")
+              print(result["html_url"])
+          PY
