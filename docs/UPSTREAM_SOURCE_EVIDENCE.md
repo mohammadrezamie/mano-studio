@@ -10,6 +10,10 @@ This checkpoint supersedes the older candidate inventory below. Current Stable s
 
 No release approval is inferred. Do not rebuild or retest merely because this historical scope has been corrected.
 
+## Qt translation catalog scope — exact Stable archive
+
+The inner Portable archive in artifact 15221357225 contains 99 .qm files under PySide6/translations. Independently enumerated the ZIP members and compared catalog stems with official qttranslations v6.12.0 commit 2811457ceff8f0c24a1c4d14f947a283a17239d0: 96 have matching .ts files under translations/. The three remaining English catalogs (qt_en, qtbase_en, qt_help_en) correspond to the upstream build's generated empty English TS mechanism (generate_empty_ts_file in translations/CMakeLists.txt). This establishes source-name coverage, not proof of identical compiled catalog content or redistribution approval. Retain the official archive, license evidence and relevant build scripts; verify the source archive checksum in run 46121607338. No further catalog discovery workflow is necessary.
+
 ---
 
 # Exact-candidate source acquisition (review only)
