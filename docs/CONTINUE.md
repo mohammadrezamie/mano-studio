@@ -2,25 +2,24 @@
 
 ## Current operative checkpoint — 2026-11-28
 
-Read [RELEASE_POLICY.md](RELEASE_POLICY.md) first. The owner has explicitly authorized continuing toward both public releases and both future update lanes. Publish each only after its exact-byte gates pass. No public release exists yet; both current drafts are private.
+Read RELEASE_POLICY.md and STATUS.md first. The owner requires four active lanes: Stable public release, Beta public release, Stable update, and forward Beta update. No public release exists yet; Stable and Beta are private review drafts.
 
-| Lane | Verified status |
-| --- | --- |
-| Stable 1.0.0 | Frozen source 926272ff0ebfa4731cfb0b00c149c7e12b4d5a56; private draft 460598745; old no-Mesa pilot exists but is review-only; fresh notice-corrected candidate must be built and verified |
-| Beta 1.1.0-beta.1 | Frozen source 2dd55994d36f2596dd3d17ea54dd3c3e43829ae2; private draft 460607136; old no-Mesa pilot passed 46105639178 but uses superseded notice archive; fresh candidate required |
-| Stable 1.0.1 | PR #77 merged 84deb0e86830f6fc0beee56182003e315edf04b5; exact PR download contracts passed Windows/Linux 46105574448; post-merge focused acceptance 46108184881 passed |
-| Beta 1.1.0-beta.2 | PR #78 merged 9b6123a1c2f74258c5694b0d06b33ef523ecfe1c; exact PR download contracts passed Windows/Linux 46105577837; post-merge integration 46108190153 remains queued |
+| Lane | Source / state | Latest exact verification |
+| --- | --- | --- |
+| Stable 1.0.0 | Draft 460598745; frozen source 926272ff0ebfa4731cfb0b00c149c7e12b4d5a56; PR #70 head 7fbd0c94 | Run 46110089096: Ubuntu 1,578 passed in 80.26s; Windows queued; packaging job pending |
+| Beta 1.1.0-beta.1 | Draft 460607136; frozen source 2dd55994d36f2596dd3d17ea54dd3c3e43829ae2; PR #71 head d95b3f49 | Run 46110092703: Ubuntu full suite in progress; Windows queued |
+| Stable 1.0.1 | maintenance/stable-next product source 489dfe61d1fb0ddd85b231629e93e1d8982dee0c | Run 46110206204 queued for full regression + Windows Portable/Setup |
+| Beta 1.1.0-beta.2 | develop/next-beta product source 68425aa542fab4792f40d139d79ab77c7bac553d | Run 46110374115 queued for full regression + Windows candidate; integration 46110374019 queued |
 
-**Current active CI:** PR #70 Stable and PR #71 Beta add OpenSSL license notice, Qt Image Formats notice, and QML pruning. Their earlier notice-only Windows/Linux jobs passed, but their full regression and installer jobs were skipped by branch/PR filters. Added [release-candidate-verification.yml](../.github/workflows/release-candidate-verification.yml) to both branches. Latest full regression runs: Stable [46109585687](https://github.com/mohammadrezamie/mano-studio/actions/runs/46109585687) remains queued. Beta [46109587682](https://github.com/mohammadrezamie/mano-studio/actions/runs/46109587682) has started on Windows: pinned dependencies, pip consistency and glyph preflight passed; full regression is in progress. Beta Ubuntu and both Stable OS jobs remain queued; no full-matrix pass is claimed. They run full Windows+Ubuntu tests, then a Windows portable build, smoke, Setup install/uninstall, exact hashes and candidate manifest.
+PR #70/#71 previously showed green notice-only checks while their generic Tests and installer jobs were skipped by branch filters. New exact-head release-candidate-verification workflows now run the full Windows+Ubuntu suite and then build, smoke-test, install, compare, uninstall and hash the same Windows candidate bytes. Stable Ubuntu has passed 1,578 tests in 80.26 seconds; do not infer Windows or packaging acceptance from that one platform.
 
-Latest corrected notice archive: run 46105057247, artifact 15247089189, 236 files, inner SHA-256 e0d723b4a78cadc46609c86a14093b3840109c554a18f55b430660033b7dcc65; outer/inner ZIP checks and all manifest hashes independently verified. The old review-only remediation pilot used the previous notice archive and must not be promoted. New candidate build job 46108339415 remains queued and should be superseded by the fresh build artifacts from PR #70/#71 once their full verification succeeds.
+Added full verification workflows for Stable 1.0.1 and Beta 1.1.0-beta.2. The Beta candidate manifest's previous regex rejected the actual 1.1.0-beta.2 version; this was fixed and tests now cover prerelease acceptance and stable-version rejection.
 
-Release evidence retained: exact original build 46041711466; hosted installer acceptance 46044104396 and 46043046471; reconciled 7,760 passing test executions, zero skipped (46102530937); retrospective signed checks 46050465305; draft evidence attachment 46103521799. Four OLD-REVIEW-ONLY assets in each draft must be excluded before promotion. QtSvg source-modified replacement build and both probes 46102540836 passed. No-Mesa hosted pilot 46103799520 passed; none of three vendor Mesa archives matched the frozen binary (46104474821). Actual Qt/Shiboken binary continuity: original Stable 43/43, original Beta 43/43, first Beta no-Mesa pilot 42/42; this does not establish exact source correspondence.
+OpenSSL 3.5.9 remains in the frozen payload. The official OpenSSL project scheduled 3.5.10 for 1 December 2026. The expanded advisory applicability review covers the November 10, 17 and 24 issues; source-level non-use is not a complete transitive Qt/Python audit. Do not claim the 3.5.10 fix is already available.
 
-**Security timing:** bundled OpenSSL 3.5.9 is within the affected version range for the 24 Nov advisory; the official announcement schedules fixed OpenSSL 3.5.10 for 1 Dec 2026. Do not use an unpublished build or pretend the fix is already available. Keep security triage explicit, then re-evaluate exact candidate runtime after the official release. See https://www.openssl-library.org/news/vulnerabilities-3.5/ and https://www.openwall.com/lists/oss-security/2026/11/24/14 . Qt/PySide corresponding-source and relink obligations, applicable notices, independent security disposition, and native Windows acceptance remain separate gates. The native handoff is in PR #68; the assistant cannot truthfully claim a physical/independent Windows 10/11 test was performed.
+Latest notice archive: run 46105057247, artifact 15247089189, 236 files, inner SHA-256 e0d723b4a78cadc46609c86a14093b3840109c554a18f55b430660033b7dcc65. Earlier no-Mesa pilot assets are superseded review-only artifacts and must not be promoted. Existing historical evidence (original build, prior acceptance, 7,760 reconciled executions, source review archives) remains supporting history, not a substitute for new exact candidate bytes.
 
-Next: inspect runs 46109585687 and 46109587682; resolve any full-suite or build failures; verify fresh candidate Setup/Portable SHA-256 and exact payload delta; refresh the private drafts only with the newly verified assets. Do not promote old pilot assets. No more generic test runs beyond the focused matrix unless a concrete failure requires them. Automated in-app install remains disabled until trusted publisher identity and end-to-end upgrade acceptance exist.
-
+Next: inspect the five current run IDs above; resolve concrete failures without weakening gates; verify new Portable/Setup SHA-256 and installed-payload evidence; refresh private drafts only with the newly verified artifacts. Complete Qt/PySide source/relink and native Windows acceptance. Automated in-app install remains disabled until trusted publisher identity and end-to-end upgrade acceptance exist.
 ---
 
 ## Historical checkpoints (not current instructions)
