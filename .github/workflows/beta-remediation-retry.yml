@@ -1,0 +1,140 @@
+name: Retry Beta security remediation only
+on:
+  push:
+    branches: [release/beta-remediation-retry]
+    paths: ['.github/workflows/beta-remediation-retry.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  package:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/beta-remediation-retry'
+    runs-on: windows-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {track: beta, version: '1.1.0-beta.1', source: '2dd55994d36f2596dd3d17ea54dd3c3e43829ae2', portable: '15253894494'}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '2fe06bf5c3eccdb2da6a42d582f9868c9b74eec1'
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.source }}
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pefile==2024.8.26
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '46125406201'
+          artifact-ids: '15255533917'
+          github-token: ${{ github.token }}
+          path: staged
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '46114555414'
+          artifact-ids: ${{ matrix.portable }}
+          github-token: ${{ github.token }}
+          path: original
+      - name: Prepare exact four-DLL replacement and original application icon
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory evidence | Out-Null
+          $portable=@(Get-ChildItem -LiteralPath original -Recurse -File -Filter 'REVIEW-ONLY-ManoStudio-v${{ matrix.version }}-Windows-x64.zip')
+          if($portable.Count -ne 1){throw 'Expected exactly one portable archive'}
+          python scripts/prepare_openssl_remediation.py ${{ matrix.track }} $portable[0].FullName staged candidate evidence/delta.json
+          if($LASTEXITCODE -ne 0){throw 'Payload preparation failed'}
+      - name: Load each exact DLL family and exercise native TLS context
+        shell: pwsh
+        run: |
+          @'
+          import ctypes as C
+          import os, sys
+          from pathlib import Path
+          root=Path("candidate/dist/ManoStudio/_internal").resolve()
+          suffix={'qt':'-x64','python':''}[sys.argv[1]]
+          with os.add_dll_directory(str(root)):
+              crypto=C.WinDLL(str(root / ("libcrypto-3"+suffix+".dll")))
+              ssl=C.WinDLL(str(root / ("libssl-3"+suffix+".dll")))
+              crypto.OpenSSL_version.argtypes=[C.c_int]
+              crypto.OpenSSL_version.restype=C.c_char_p
+              print(crypto.OpenSSL_version(0).decode())
+              crypto.RAND_bytes.argtypes=[C.c_void_p,C.c_int]
+              crypto.RAND_bytes.restype=C.c_int
+              buf=C.create_string_buffer(32)
+              if crypto.RAND_bytes(buf,32)!=1:
+                  raise RuntimeError("RAND_bytes failed")
+              ssl.TLS_method.restype=C.c_void_p
+              ssl.SSL_CTX_new.argtypes=[C.c_void_p]
+              ssl.SSL_CTX_new.restype=C.c_void_p
+              ssl.SSL_CTX_free.argtypes=[C.c_void_p]
+              ctx=ssl.SSL_CTX_new(ssl.TLS_method())
+              if not ctx:
+                  raise RuntimeError("SSL_CTX_new failed")
+              ssl.SSL_CTX_free(ctx)
+              print("PASS")
+          '@ | Set-Content -Encoding ascii tls-smoke.py
+          python tls-smoke.py qt | Tee-Object -FilePath evidence/tls-qt.txt
+          if($LASTEXITCODE -ne 0){throw 'Qt OpenSSL DLL smoke failed'}
+          python tls-smoke.py python | Tee-Object -FilePath evidence/tls-python.txt
+          if($LASTEXITCODE -ne 0){throw 'Python OpenSSL DLL smoke failed'}
+          'PASS' | Set-Content -Encoding ascii evidence/tls-context-smoke.txt
+      - name: Run both portable platform smoke checks
+        shell: pwsh
+        run: |
+          $env:QT_QPA_FONTDIR=Join-Path $env:WINDIR 'Fonts'
+          foreach($mode in @('offscreen','windows')){
+            $env:QT_QPA_PLATFORM=$mode
+            $report=Join-Path $PWD "evidence/portable-$mode.txt"
+            $p=Start-Process (Join-Path $PWD 'candidate/dist/ManoStudio/ManoStudio.exe') -ArgumentList ('--smoke-test "'+$report+'"') -PassThru
+            if(!$p.WaitForExit(120000)){$p.Kill();throw 'Smoke timeout'}
+            if($p.ExitCode -ne 0 -or !(Test-Path $report) -or (Get-Content $report -Raw).Trim() -ne 'PASS'){throw "Smoke failed: $mode"}
+          }
+      - name: Compile exact original installer recipe for modified payload
+        shell: pwsh
+        run: |
+          $compiler=Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6/ISCC.exe'
+          if(!(Test-Path $compiler)){
+            choco install innosetup -y --no-progress
+            if($LASTEXITCODE -ne 0){throw 'Compiler setup failed'}
+          }
+          Push-Location candidate
+          try {
+            & $compiler '/DBuildVersion=${{ matrix.version }}' installer/mano-studio.iss
+            if($LASTEXITCODE -ne 0){throw 'Installer compilation failed'}
+            ./installer/smoke.ps1
+            if($LASTEXITCODE -ne 0){throw 'Installed smoke failed'}
+          } finally {Pop-Location}
+          foreach($file in @('mano-installed-payload.json','mano-smoke.txt')){
+            $source=Join-Path $env:RUNNER_TEMP $file
+            if(!(Test-Path -LiteralPath $source)){throw "Missing installed evidence: $file"}
+            Copy-Item -LiteralPath $source -Destination evidence
+          }
+          @{kind='standalone-runtime-probe-coverage'; available=$false; reason='Frozen Beta smoke script does not implement the Stable runtime-probe command; clean-environment installed application smoke passed, separate TLS context smoke passed'; public_release_approved=$false} | ConvertTo-Json | Set-Content -Encoding utf8 evidence/runtime-probe-coverage.json
+          $payload=Get-Content evidence/mano-installed-payload.json -Raw | ConvertFrom-Json
+          if($payload.result -ne 'PASS' -or !$payload.payload_sha256){throw 'Invalid installed payload comparison'}
+      - name: Archive isolated review packages and checksum files
+        shell: pwsh
+        run: |
+          $zip=Join-Path $PWD 'evidence/REVIEW-ONLY-ManoStudio-v${{ matrix.version }}-Windows-x64'
+          python -c "import shutil,sys;shutil.make_archive(sys.argv[1],'zip',root_dir='candidate/dist',base_dir='ManoStudio')" $zip
+          if($LASTEXITCODE -ne 0){throw 'Portable archiving failed'}
+          Copy-Item candidate/installer/output/ManoStudio-Setup-v${{ matrix.version }}-x64.exe evidence/REVIEW-ONLY-ManoStudio-Setup-v${{ matrix.version }}-x64.exe
+          Get-ChildItem evidence -File | Where-Object {$_.Extension -in @('.zip','.exe')} | ForEach-Object {
+            $hash=(Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)" | Set-Content -Encoding ascii ($_.FullName+'.sha256')
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: openssl-remediation-REVIEW-ONLY-${{ matrix.track }}
+          path: evidence/
+          if-no-files-found: warn
+          retention-days: 90
