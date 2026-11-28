@@ -1,3 +1,13 @@
+# Latest owner authorization — 2026-11-28
+
+The owner has explicitly directed the project to continue toward **public Stable and public Beta releases**, while maintaining the next Stable patch and forward Beta development concurrently. This supersedes older historical pauses that said not to prepare releases until the owner asks. That request has now been made.
+
+Proceed with release engineering, candidate builds, evidence collection, and release preparation for both channels. Publish each channel publicly as soon as its own exact-byte gates pass. Do not wait for unrelated future features. Beta remains ahead of Stable.
+
+This authorization is not permission to mislabel failed checks, bypass security or redistribution review, publish unsigned assets as authenticated, or claim independent Windows acceptance that has not occurred. If a gate remains open, record the exact blocker and keep the affected release private until resolved. Manual download and automated in-app installation have separate trust requirements.
+
+---
+
 # Permanent four-lane delivery policy — owner directive 2026-11-27
 
 This section supersedes conflicting historical scheduling/approval language below.
