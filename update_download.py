@@ -71,6 +71,9 @@ def download(asset, destination, *, explicit=False, opener=None, cancelled=None,
         raise PermissionError("Download requires explicit consent")
     if not isinstance(asset, Asset):
         raise ValueError("No verified asset metadata")
+    if (not isinstance(asset.url, str) or not isinstance(asset.name, str)
+            or type(asset.size) is not int or not isinstance(asset.digest, str)):
+        raise ValueError("Invalid asset metadata types")
     prefix=f"https://github.com/{REPO}/releases/download/"
     if not asset.url.startswith(prefix):
         raise ValueError("Untrusted download source")
