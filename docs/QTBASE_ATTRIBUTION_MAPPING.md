@@ -37,3 +37,25 @@ The original artifact 15247465980 retained 235 files, including 87 attribution J
 Concrete collector defect: libjpeg declares LicenseFiles (plural) containing LICENSE and ijg-license.txt, plus CopyrightFile. The first archive omitted ijg-license.txt because its basename did not match the broad filename heuristic. Corrected the collector in 4a1941dc93a4adc068dad2394004d95feda126b0 to parse singular/plural license and copyright fields and retain explicit paths. A local scan of all relaxed-parsed original entries found this one missing explicit referenced file in the original notice archive. New collection run 46105057247; do not treat it as complete until verified. Existing remediation pilot 46104979539 uses the older pinned review archive and is an experiment only, not an approved package.
 
 Other runtime entries with no explicit file (e.g., Emoji Segmenter, Unicode UCD/CLDR, MD4/MD5, SHA-1, SipHash, SQLite, Wintab, tl::expected, Apache Tika, SPIRV-Cross) need applicability and text mapping rather than automatic rejection. The archive already contains QtBase LICENSES/Apache-2.0.txt, CC0-1.0.txt, Unicode-3.0.txt and LicenseRef-SHA1-Public-Domain.txt. A matching generic text does not replace any component-specific copyright or notice. No independent legal, security, or native acceptance decision is claimed.
+
+
+## Explicit license identifier crosswalk — verified against the first archive
+
+Independent local inspection of artifact 15247465980 resolved all 16 missing-singular-LicenseFile warning entries to actual license text files in the same upstream module's LICENSES directory, with original attribution and copyright data retained. This is a mapping of existing bytes, not a determination that a component is shipped or that all obligations are satisfied.
+
+| Attribution | License text(s) retained |
+| --- | --- |
+| Emoji Segmenter; Apache Tika MimeType Definitions | QtBase Apache-2.0.txt |
+| LibJPEG-turbo | QtBase IJG.txt and BSD-3-Clause.txt |
+| MD4; MD5; SipHash; tl::expected | QtBase CC0-1.0.txt |
+| SHA-1 | QtBase LicenseRef-SHA1-Public-Domain.txt |
+| SQLite | QtBase blessing.txt |
+| Wintab API | QtBase LicenseRef-Lcs-Telegraphics.txt |
+| Unicode UCD and CLDR | QtBase Unicode-3.0.txt |
+| SBOM test parent / child | QtBase MIT.txt / BSD-3-Clause.txt |
+| Selected Material Icons (example) | PySide Apache-2.0.txt |
+| SPIRV-Cross | QtShaderTools Apache-2.0.txt and LicenseRef-MIT-Khronos-old.txt |
+
+**Correction to the preceding omission finding:** the specific libjpeg/ijg-license.txt path was absent in the first archive, but the exact same text was already retained as QtBase LICENSES/IJG.txt (SHA-256 1cb448f5e2e6d3aca60943f4eee1a04675628dc0266a074a42bc1560ebc28d61). The collector fix still preserves all explicitly referenced paths. Do not characterize this as missing IJG license text. All 16 SPDX-like identifier mappings resolve, including the two compound AND expressions; seven malformed original JSON documents remain preserved. No legal review or exact build-configuration signoff inferred.
+
+The frozen original preflight JSONs independently inspected in artifacts 15221357225 and 15220621215 each contain exactly two redistribution flags (Qt corresponding source/relink, Qt Image Formats notice/corresponding source), and three OpenSSL runtime review flags (two libcrypto binaries and build SSL version). These are separate from the notice-collector warnings; none has been silently cleared.
