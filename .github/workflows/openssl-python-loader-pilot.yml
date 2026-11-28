@@ -1,0 +1,92 @@
+name: Build Python loader-compatible OpenSSL fixes
+on:
+  push:
+    branches: [release/openssl-public-fixes-pilot]
+    paths: ['.github/workflows/openssl-python-loader-pilot.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 90
+    env:
+      SOURCE: ee8e3a49f3d9ef5bc8aeaa9eac19e8df236d9dbb
+    steps:
+      - name: Verify official public commit and all twelve advisory fix ancestors
+        shell: bash
+        run: |
+          set -euo pipefail
+          git clone --single-branch --branch openssl-3.5 https://github.com/openssl/openssl.git upstream
+          cd upstream
+          git checkout --detach "$SOURCE"
+          test "$(git rev-parse HEAD)" = "$SOURCE"
+          mkdir -p ../evidence
+          for sha in \
+            7a14b6e410c881365881596231ea6f88e7d27c6e \
+            734c6cd7444bdbf589bfec917e47598c1b21ddd3 \
+            468c287cf451a834b370b69ab321b8ffdfac23aa \
+            1ad851363d5b8588b0d40edcc045fd633e93f0c2 \
+            c8f6d04f8e6d40b1bf83334e4a2ec9daf5943a3d \
+            f3acb0a3328046741479482c51cec815839e1b05 \
+            9491b0d9cc7950af1f3dc89499bd5433b9cd4f43 \
+            159e1de0c448d7b9f09ad768c8e141def4aa1eb4 \
+            a0051cfe699bf5a047bc1c4faef65f80f7987366 \
+            1a73dc590cbad62d6f0329ea4779eadaa8d8fd75 \
+            f6244675833e097c2429a40d1b206d95385bd42f \
+            257a3427aa0ef8d9dd2ef5b3e2d1c021a221b116
+          do
+            git merge-base --is-ancestor "$sha" "$SOURCE"
+            echo "$sha ancestor verified" >> ../evidence/advisory-ancestors.txt
+          done
+          git log -1 --format=fuller > ../evidence/source.txt
+          cp VERSION.dat LICENSE.txt ../evidence/
+      - name: Build shared x64 DLLs with unsuffixed Python loader names and run upstream tests
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+          $vs = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          if (!$vs) { throw 'MSVC unavailable' }
+          $vcvars = Join-Path $vs 'VC/Auxiliary/Build/vcvars64.bat'
+          $perl = (Get-Command perl.exe -ErrorAction Stop).Source
+          $config = New-Item -ItemType Directory -Path (Join-Path $PWD 'local-config')
+          @'
+          my %targets = (
+              "VC-WIN64A-mano-python" => {
+                  inherit_from => [ "VC-WIN64A" ],
+                  multilib => "",
+              },
+          );
+          '@ | Set-Content -Encoding ascii (Join-Path $config.FullName '99-mano-python.conf')
+          $env:OPENSSL_LOCAL_CONFIG_DIR = $config.FullName
+          Copy-Item (Join-Path $config.FullName '99-mano-python.conf') evidence
+          $bat = Join-Path $PWD 'pilot-build.cmd'
+          $evidence = Join-Path $PWD 'evidence'
+          @(
+            '@echo off',
+            ('call "' + $vcvars + '" || exit /b 1'),
+            'cd /d upstream',
+            ('"' + $perl + '" Configure VC-WIN64A-mano-python shared no-asm || exit /b 1'),
+            ('"' + $perl + '" configdata.pm --dump > "' + $evidence + '\config.txt" || exit /b 1'),
+            'nmake || exit /b 1',
+            'nmake test || exit /b 1'
+          ) | Set-Content -Encoding ascii $bat
+          & cmd.exe /d /c $bat
+          if ($LASTEXITCODE -ne 0) { throw 'OpenSSL build or upstream test failure' }
+          foreach ($name in @('libcrypto-3.dll','libssl-3.dll')) {
+            $source = Join-Path $PWD "upstream/$name"
+            if (!(Test-Path $source)) { throw "Missing $name" }
+            Copy-Item -LiteralPath $source -Destination evidence
+          }
+          $rows = @(Get-ChildItem evidence -Filter '*.dll' | ForEach-Object {
+            @{name=$_.Name; bytes=$_.Length; sha256=(Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()}
+          })
+          @{kind='upstream-source-build-pilot'; source=$env:SOURCE; upstream_tests='PASS'; configuration='VC-WIN64A-mano-python shared no-asm'; dlls=$rows; official_release=$false; candidate_compatibility_verified=$false; public_release_approved=$false} | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 evidence/build-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: openssl-python-loader-source-fixes-REVIEW-ONLY
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 90
