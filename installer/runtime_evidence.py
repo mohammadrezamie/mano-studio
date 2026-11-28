@@ -8,12 +8,21 @@ import ssl
 import sys
 import zipfile
 
-MINIMUM = (3, 5, 10)  # OpenSSL 3.5 advisory baseline, 2026-11-24.
+MINIMUM = (3, 5, 10)  # Advisory-review threshold, not a dependency installation pin.
 VERSION = re.compile(rb'OpenSSL ([0-9]+)\.([0-9]+)\.([0-9]+)(?![0-9])')
+
+
+def normalized_runtime_version(runtime_version):
+    values = tuple(int(value) for value in runtime_version)
+    # OpenSSL 3.x reports (major, minor, fix, patch, status); patch is index 3.
+    if len(values) >= 4 and values[0] >= 3:
+        return (values[0], values[1], values[3])
+    return values[:3]
 
 
 def scan(archive, python_version, runtime_version):
     rows, flags = [], []
+    build_version = normalized_runtime_version(runtime_version)
     names = archive.namelist()
     if len(names) != len(set(names)):
         raise ValueError('Duplicate archive member')
@@ -32,10 +41,10 @@ def scan(archive, python_version, runtime_version):
             flags.append({'code': 'crypto-version-review', 'path': name})
     if not any(PurePosixPath(row['path']).name.lower().startswith('libcrypto') for row in rows):
         flags.append({'code': 'missing-crypto-evidence'})
-    if tuple(runtime_version[:2]) != MINIMUM[:2] or tuple(runtime_version[:3]) < MINIMUM:
+    if build_version[:2] != MINIMUM[:2] or build_version < MINIMUM:
         flags.append({'code': 'build-ssl-version-review'})
     return {'kind': 'runtime-evidence', 'python_version': python_version,
-            'build_ssl_version': list(runtime_version[:3]), 'minimum_review_baseline': list(MINIMUM),
+            'build_ssl_version': list(build_version), 'minimum_review_baseline': list(MINIMUM),
             'binaries': rows, 'flags': flags, 'public_release_approved': False,
             'manual_review_required': True}
 
