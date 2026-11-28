@@ -8,6 +8,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import struct
 import zipfile
 
 from stage_openssl_replacements import SOURCE
@@ -38,6 +39,39 @@ def sha(path):
 
 def write_json(path, value):
     path.write_text(json.dumps(value, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
+def icon_from_exe(exe, output):
+    import pefile
+    pe = pefile.PE(str(exe))
+    try:
+        types = {e.id:e for e in pe.DIRECTORY_ENTRY_RESOURCE.entries if e.id is not None}
+        groups = types[14].directory.entries
+        if len(groups) != 1:
+            raise ValueError("Expected one original executable icon group")
+        group = groups[0].directory.entries[0].data.struct
+        raw = pe.get_data(group.OffsetToData, group.Size)
+        reserved, kind, count = struct.unpack_from("<HHH",raw)
+        if (reserved,kind)!=(0,1) or not 1<=count<=32 or len(raw)!=6+14*count:
+            raise ValueError("Invalid group icon")
+        images = {e.id:e for e in types[3].directory.entries}
+        header, payload = bytearray(raw[:6]), bytearray()
+        offset = 6+16*count
+        for i in range(count):
+            entry = raw[6+i*14:6+(i+1)*14]
+            size, ident = struct.unpack_from("<IH",entry,8)
+            resource = images[ident].directory.entries[0].data.struct
+            data = pe.get_data(resource.OffsetToData,resource.Size)
+            if len(data)!=size:
+                raise ValueError("Icon resource size mismatch")
+            header.extend(entry[:12]+struct.pack("<I",offset))
+            payload.extend(data)
+            offset+=size
+        output.parent.mkdir(parents=True,exist_ok=True)
+        output.write_bytes(header+payload)
+    finally:
+        pe.close()
+
 
 
 def prepare(track, portable, staged, candidate, report):
@@ -101,6 +135,7 @@ def prepare(track, portable, staged, candidate, report):
                      for n in sorted(OLD)],
         "licenses": [{"file": Path(LICENSE).name, "sha256": sha(root / LICENSE),
                       "source": "https://github.com/openssl/openssl/blob/" + SOURCE + "/LICENSE.txt"}],
+        "warnings": ["Review-only locally built runtime; exact replacement acceptance pending."],
         "historical_notice": Path(HISTORY).name,
         "exact_distributor_provenance_verified": False, "security_approved": False,
         "redistribution_approved": False,
@@ -111,6 +146,7 @@ def prepare(track, portable, staged, candidate, report):
     if (changed != wanted or set(before) - set(after) or
             set(after) - set(before) != {LICENSE, HISTORY, PROVENANCE}):
         raise ValueError("Unexpected payload delta")
+    icon_from_exe(root / "ManoStudio.exe", candidate / "build/mano-studio.ico")
     write_json(report, {"kind": "internal-openssl-remediation",
                         "track": track, "baseline_sha256": expected,
                         "changed": {k: {"before": before[k], "after": after[k]} for k in sorted(changed)},
