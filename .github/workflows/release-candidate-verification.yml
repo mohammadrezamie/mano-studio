@@ -203,7 +203,7 @@ jobs:
             $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
             "$hash  $($_.Name)" | Set-Content -Encoding ascii "$($_.FullName).sha256"
           }
-          python -m installer.candidate_manifest --root . --sha "$env:MANO_SOURCE_SHA"
+          python -m installer.candidate_manifest --root . --sha "$env:MANO_SOURCE_SHA" --require-review
           if ($LASTEXITCODE -ne 0) { throw 'Candidate manifest rejected.' }
       - uses: actions/upload-artifact@v4
         with:
