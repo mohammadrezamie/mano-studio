@@ -1,0 +1,107 @@
+name: Exact frozen native import review
+on:
+  workflow_dispatch:
+  push:
+    branches: [quality/exact-native-import-review]
+    paths: ['.github/workflows/exact-native-import-review.yml']
+permissions:
+  actions: read
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - track: stable
+            source: '926272ff0ebfa4731cfb0b00c149c7e12b4d5a56'
+            version: '1.0.0'
+            artifact: '15221357225'
+            outer: '6761c9434227b62fdb5f4f6f499d039bbc4d4583ee501c16a5a6869f620cf2e0'
+            inner: 'bc93823dbea393f17464886abeef406defda22e4151dbaab82293928eae3271e'
+          - track: beta
+            source: '2dd55994d36f2596dd3d17ea54dd3c3e43829ae2'
+            version: '1.1.0-beta.1'
+            artifact: '15220621215'
+            outer: 'f7ec16b7620ad1ef02606f9e1c6f9d1202c8760ee89d659e092d3fc71a83fad5'
+            inner: 'b6a9e2c0fa4014ce505d68e639a328f6ec193b98655c2f123a93365d3b523109'
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install --only-binary=:all: pefile==2024.8.26
+      - name: Verify frozen archive and enumerate ordinary and delay-load imports
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TRACK: ${{ matrix.track }}
+          SOURCE: ${{ matrix.source }}
+          VERSION: ${{ matrix.version }}
+          ARTIFACT: ${{ matrix.artifact }}
+          OUTER: ${{ matrix.outer }}
+          INNER: ${{ matrix.inner }}
+        run: |
+          python - <<'PY'
+          import hashlib, io, json, os, pathlib, re, subprocess, zipfile
+          import pefile
+          e = os.environ
+          def require(ok, why):
+              if not ok:
+                  raise ValueError(why)
+          def sha(data):
+              return hashlib.sha256(data).hexdigest()
+          def api(path):
+              return subprocess.check_output(["gh", "api", path])
+          base = "repos/" + e["REPO"] + "/actions"
+          run = json.loads(api(base + "/runs/46041711466"))
+          require(run["conclusion"] == "success", "build not successful")
+          artifacts = json.loads(api(base + "/runs/46041711466/artifacts?per_page=100"))["artifacts"]
+          matches = [a for a in artifacts if str(a["id"]) == e["ARTIFACT"]]
+          require(len(matches) == 1 and matches[0]["expired"] is False and matches[0]["digest"] == "sha256:" + e["OUTER"], "artifact mismatch")
+          raw = api(base + "/artifacts/" + e["ARTIFACT"] + "/zip")
+          require(sha(raw) == e["OUTER"], "outer digest mismatch")
+          with zipfile.ZipFile(io.BytesIO(raw)) as outer:
+              require(outer.testzip() is None and len(set(outer.namelist())) == len(outer.namelist()), "outer invalid")
+              require(outer.read("commit.txt").decode("utf-8-sig").strip() == "SHA=" + e["SOURCE"], "source mismatch")
+              data = outer.read("ManoStudio-v" + e["VERSION"] + "-Windows-x64.zip")
+          require(sha(data) == e["INNER"], "inner digest mismatch")
+          reports = []
+          watched = re.compile(r"^(SSL|OSSL|EVP|CMS|PKCS7|PEM|X509|BIO|QUIC)_|QCbor|QNetwork|QHttp|QWebSocket|QXml|QDom|QSvg|QImage", re.I)
+          with zipfile.ZipFile(io.BytesIO(data)) as payload:
+              require(payload.testzip() is None and len(set(payload.namelist())) == len(payload.namelist()), "payload invalid")
+              for name in sorted(payload.namelist()):
+                  if not name.lower().endswith((".dll", ".exe", ".pyd")):
+                      continue
+                  blob = payload.read(name)
+                  pe = pefile.PE(data=blob, fast_load=True)
+                  try:
+                      pe.parse_data_directories(directories=[pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_IMPORT"], pefile.DIRECTORY_ENTRY["IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT"]])
+                      imports = []
+                      for kind, attr in (("ordinary", "DIRECTORY_ENTRY_IMPORT"), ("delay", "DIRECTORY_ENTRY_DELAY_IMPORT")):
+                          for item in getattr(pe, attr, []):
+                              names = [i.name.decode("ascii", errors="backslashreplace") if i.name else "#" + str(i.ordinal) for i in item.imports]
+                              imports.append({"kind":kind, "dll":item.dll.decode("ascii",errors="backslashreplace"), "symbols":names})
+                      reports.append({"path":name,"sha256":sha(blob),"size":len(blob),"imports":imports})
+                  finally:
+                      pe.close()
+          require(len(reports) > 0, "no PE files")
+          modules = sorted({pathlib.PurePosixPath(r["path"]).name.lower() for r in reports})
+          relevant = []
+          for r in reports:
+              for item in r["imports"]:
+                  hits = [s for s in item["symbols"] if watched.search(s)]
+                  if hits or re.search(r"ssl|crypto|qt6network|qt6core",item["dll"],re.I):
+                      relevant.append({"from":r["path"],"kind":item["kind"],"dll":item["dll"],"matching_symbols":hits})
+          out = {"track":e["TRACK"],"source":e["SOURCE"],"portable_sha256":e["INNER"],"artifact":int(e["ARTIFACT"]),"binary_count":len(reports),"module_basenames":modules,"relevant_imports":relevant,"all_binaries":reports,"limitations":["Static PE ordinary/delay imports only; dynamic resolution, bundled bytecode, internal library calls and actual runtime execution are not covered.","Symbol names or absent imports do not establish vulnerability applicability or non-reachability.","No security or redistribution approval."],"security_approved":False,"public_release_approved":False}
+          pathlib.Path("native-import-review.json").write_text(json.dumps(out,indent=2)+"\n",encoding="utf-8")
+          print("Verified", len(reports), "PE files;",len(relevant),"relevant import groups.")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frozen-native-import-review-${{ matrix.track }}
+          path: native-import-review.json
+          if-no-files-found: error
+          retention-days: 90
