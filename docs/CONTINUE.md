@@ -15,7 +15,7 @@ PR #70/#71 previously showed green notice-only checks while their generic Tests 
 
 Added full verification workflows for Stable 1.0.1 and Beta 1.1.0-beta.2. The Beta candidate manifest's previous regex rejected the actual 1.1.0-beta.2 version; this was fixed and tests now cover prerelease acceptance and stable-version rejection.
 
-OpenSSL 3.5.9 remains in the frozen payload. The official OpenSSL project scheduled 3.5.10 for 1 December 2026. The expanded advisory applicability review covers the November 10, 17 and 24 issues; source-level non-use is not a complete transitive Qt/Python audit. Do not claim the 3.5.10 fix is already available.
+OpenSSL 3.5.9 remains in the frozen payload. The official OpenSSL project scheduled 3.5.10 for 1 December 2026. The [expanded advisory applicability review](OPENSSL_ADVISORY_REVIEW.md) covers the November 10, 17 and 24 issues; source-level non-use is not a complete transitive Qt/Python audit. Do not claim the 3.5.10 fix is already available.
 
 Latest notice archive: run 46105057247, artifact 15247089189, 236 files, inner SHA-256 e0d723b4a78cadc46609c86a14093b3840109c554a18f55b430660033b7dcc65. Earlier no-Mesa pilot assets are superseded review-only artifacts and must not be promoted. Existing historical evidence (original build, prior acceptance, 7,760 reconciled executions, source review archives) remains supporting history, not a substitute for new exact candidate bytes.
 
