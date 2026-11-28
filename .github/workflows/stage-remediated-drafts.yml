@@ -1,0 +1,130 @@
+name: Stage verified remediated draft assets
+on:
+  push:
+    branches: [release/stage-remediated-drafts]
+    paths: ['.github/workflows/stage-remediated-drafts.yml']
+permissions: {}
+jobs:
+  stage:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/stage-remediated-drafts'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {track: stable, version: '1.0.0', rid: '460598745', placeholder: 'untagged-e438c6988649501c973e', source: '926272ff0ebfa4731cfb0b00c149c7e12b4d5a56', artifact: '15255712859', outer: 'fa6669f91880757067416e27a782c2b41e6d10a0098a8be1f93f8651c12df14e', setup: 'c80946e956e2d9384fab629c5f6bb4ac648d65d6cb987ab4e49cc9cc944e7ce9', portable: '5fa7c3f2e79290126c2cd7e401f60652f5dfb5ba82a48af3d69f551e533fa0c3'}
+          - {track: beta, version: '1.1.0-beta.1', rid: '460607136', placeholder: 'untagged-786f71ed7a05b8f89b03', source: '2dd55994d36f2596dd3d17ea54dd3c3e43829ae2', artifact: '15266171804', outer: '92981f329a206bba993b1759c38e00c0bef8a57b0ea86fb2c3c3644af22130f2', setup: '5a125ba3e41d49025954e4284c17c620d94663f7911f2ae3ca1165149d30ea29', portable: '244f9c6e72cc13ddac3e28047bf688ff652e8f0aec31e084b6304cab146e5f9b'}
+    concurrency:
+      group: release-draft-${{ matrix.track }}
+      cancel-in-progress: false
+    steps:
+      - name: Download and validate immutable review inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRACK: ${{ matrix.track }}
+          VERSION: ${{ matrix.version }}
+          RID: ${{ matrix.rid }}
+          PLACEHOLDER: ${{ matrix.placeholder }}
+          SOURCE: ${{ matrix.source }}
+          ARTIFACT: ${{ matrix.artifact }}
+          OUTER: ${{ matrix.outer }}
+          SETUP_SHA: ${{ matrix.setup }}
+          PORTABLE_SHA: ${{ matrix.portable }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir input stage
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT/zip" > input/candidate.zip
+          gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/15266261863/zip" > input/source.zip
+          printf '%s  %s\n' "$OUTER" input/candidate.zip '574c0e081102ec6a0aa688d71aebcf294aaff4ebb3750df4f947a3c59aec52a5' input/source.zip | sha256sum -c -
+          python - <<'PY'
+          import os, hashlib, json, zipfile, shutil
+          from pathlib import Path
+          e=os.environ
+          v=e["VERSION"]
+          def sha(b): return hashlib.sha256(b).hexdigest()
+          with zipfile.ZipFile("input/candidate.zip") as z:
+              if z.testzip() or len(z.namelist())!=len(set(z.namelist())):
+                  raise ValueError("Candidate archive invalid")
+              for name, digest in [
+                  (f"REVIEW-ONLY-ManoStudio-Setup-v{v}-x64.exe",e["SETUP_SHA"]),
+                  (f"REVIEW-ONLY-ManoStudio-v{v}-Windows-x64.zip",e["PORTABLE_SHA"])]:
+                  data=z.read(name)
+                  if sha(data)!=digest:
+                      raise ValueError("Exact asset digest mismatch")
+                  if z.read(name+".sha256").decode().split()[0]!=digest:
+                      raise ValueError("Candidate checksum mismatch")
+                  target=Path("stage")/name
+                  target.write_bytes(data)
+                  target.with_name(name+".sha256").write_text(digest+"  "+name+"\n",encoding="ascii")
+              for name in ("portable-offscreen.txt","portable-windows.txt","tls-context-smoke.txt","mano-smoke.txt"):
+                  if z.read(name).decode("utf-8-sig").strip()!="PASS":
+                      raise ValueError("Missing passing smoke evidence")
+              if json.loads(z.read("mano-installed-payload.json").decode("utf-8-sig"))["result"]!="PASS":
+                  raise ValueError("Installed payload verification failed")
+          with zipfile.ZipFile("input/source.zip") as z:
+              if z.testzip() or len(z.namelist())!=len(set(z.namelist())):
+                  raise ValueError("Source archive invalid")
+              rows=z.read("SHA256SUMS").decode().splitlines()
+              expected={}
+              for row in rows:
+                  digest,name=row.split("  ",1)
+                  name=name.removeprefix("./")
+                  if name in expected or sha(z.read(name))!=digest:
+                      raise ValueError("Source member mismatch")
+                  expected[name]=digest
+              if set(expected)|{"SHA256SUMS"}!={x for x in z.namelist() if not x.endswith("/")}:
+                  raise ValueError("Unexpected source archive members")
+          name="REVIEW-ONLY-ManoStudio-consolidated-source-evidence.zip"
+          shutil.copyfile("input/source.zip", "stage/"+name)
+          Path("stage",name+".sha256").write_text("574c0e081102ec6a0aa688d71aebcf294aaff4ebb3750df4f947a3c59aec52a5  "+name+"\n",encoding="ascii")
+          PY
+      - name: Upload review-only assets to the exact existing private draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TRACK: ${{ matrix.track }}
+          VERSION: ${{ matrix.version }}
+          RID: ${{ matrix.rid }}
+          PLACEHOLDER: ${{ matrix.placeholder }}
+          SOURCE: ${{ matrix.source }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,os,subprocess
+          from pathlib import Path
+          from urllib.parse import quote
+          e=os.environ
+          endpoint="repos/"+e["GITHUB_REPOSITORY"]+"/releases/"+e["RID"]
+          def api(*args):
+              return json.loads(subprocess.check_output(["gh","api",*args],text=True))
+          def check():
+              r=api(endpoint)
+              if not(r["draft"] is True and str(r["id"])==e["RID"] and r["tag_name"] in (e["PLACEHOLDER"],"v"+e["VERSION"]) and r["target_commitish"]==e["SOURCE"] and r["prerelease"]==(e["TRACK"]=="beta")):
+                  raise ValueError("Expected frozen private draft")
+              return {a["name"]:a for a in r["assets"]}
+          for p in sorted(Path("stage").iterdir()):
+              digest="sha256:"+hashlib.file_digest(p.open("rb"),"sha256").hexdigest()
+              assets=check()
+              if p.name in assets:
+                  a=assets[p.name]
+                  if a.get("digest")!=digest or a["size"]!=p.stat().st_size:
+                      raise ValueError("Existing asset mismatch: "+p.name)
+                  continue
+              url="https://uploads.github.com/"+endpoint+"/assets?name="+quote(p.name,safe="")
+              a=api("--method","POST",url,"-H","Content-Type: application/octet-stream","--input",str(p))
+              if a["name"]!=p.name or a["size"]!=p.stat().st_size or a.get("digest")!=digest:
+                  raise ValueError("Uploaded asset mismatch")
+              print("Staged review asset",p.name,digest,flush=True)
+          assets=check()
+          for p in Path("stage").iterdir():
+              with p.open("rb") as f:
+                  digest="sha256:"+hashlib.file_digest(f,"sha256").hexdigest()
+              if assets[p.name].get("digest")!=digest:
+                  raise ValueError("Final draft digest mismatch")
+          print("All six review assets staged; draft remains private. No deletion or publication.")
+          PY
