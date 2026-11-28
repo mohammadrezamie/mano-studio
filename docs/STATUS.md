@@ -1,19 +1,35 @@
-# Development status — 2026-11-26
+# Development status — 2026-11-28
 
-## Live status
+## Four concurrent delivery lanes
 
-- **Stable:** draft PR #26; exact-head full regression run 45863679074 still runs pytest on Windows and Ubuntu. Windows installer run 45863679206 passed installed and portable smoke; artifacts, 111 binary hashes/notices and translator blob independently verified. Previous stale updater fixture was corrected; fail-closed product policy unchanged. Candidate uses PySide6 6.12.0 and OpenSSL 3.5.9; aligned PySide6 6.12.1 is being prepared and OpenSSL 3.5.10 is scheduled for 1 Dec. Security, redistribution/source, native Windows and clean/pre-equipped install acceptance remain open.
-- **Beta:** PR #28 merged (647 tests). PR #30 merged into visual-polish; Windows run 45863384391 passed 47 checks and all 48 captures were independently verified/reviewed. PR #31 merged into next-beta; run 45864847285 passed 657 tests (582 core, 49 Qt, 26 workspace), zero failures/errors/skips. PR #25 integrated baseline 55a1175; Windows visual run 45869747238 passed, integrated run 45869755006 passed core/persistence and Qt regressions; workspace tests are running. PR #32 proposes five additional bilingual CPU samples (ten total); independent reference cases passed. Exact-head CI 45873284490 passed compile/preflight and focused model/persistence, with Qt tests running and workspace pending. PR #25 and #32 remain unmerged.
-- **Academic contract:** root `rtl_translator.py` remains a separate standard-library-only file; no unrelated UI/simulator dependencies.
-- **Release policy:** owner clarification 2026-11-26: no fixed Stable version or date. No public Stable or Beta release is confirmed. Never lower acceptance gates to meet a retired date.
+The owner requires Stable and Beta public-release preparation to continue alongside their next updates. Keep the four lanes separate; a newer development build must never silently replace an older candidate. No public Stable or Beta release is currently confirmed.
+
+| Lane | Current checkpoint | Verification |
+| --- | --- | --- |
+| Stable 1.0.0 public candidate | Private review draft 460598745; source 926272ff0ebfa4731cfb0b00c149c7e12b4d5a56 | Corrected notice candidate PR #70; full Windows/Ubuntu + Windows Setup verification run 46110089096 queued |
+| Beta 1.1.0-beta.1 public candidate | Private review draft 460607136; source 2dd55994d36f2596dd3d17ea54dd3c3e43829ae2 | Corrected notice candidate PR #71; full Windows/Ubuntu + Windows Setup verification run 46110092703 queued |
+| Stable 1.0.1 update | Branch maintenance/stable-next; source 489dfe61d1fb0ddd85b231629e93e1d8982dee0c | New full regression + Windows Portable/Setup verification run 46110206204 queued |
+| Beta 1.1.0-beta.2 update | Branch develop/next-beta; source 68425aa542fab4792f40d139d79ab77c7bac553d | New full regression + Windows Portable/Setup verification run 46110374115 queued; integration run 46110374019 queued |
+
+## Release gates
+
+- Stable and Beta release branches now contain an exact-head workflow that was missing from the earlier branch-filtered CI. Earlier Tests and Windows candidate installer jobs were skipped; the small notice-only jobs were not a substitute for full regression or packaging. Do not count skipped jobs as passes.
+- The new Stable/Beta release workflow runs full Windows and Ubuntu regression, then builds a Windows Portable candidate, runs its smoke test, creates Setup from that same frozen payload, installs it, runs the offline smoke test, uninstalls it, records exact hashes and validates the candidate manifest.
+- The Stable update and Beta update branches now have their own independent full verification workflows. Beta 1.1.0-beta.2 exposed a candidate-manifest bug: its regex only accepted 0.x.y prereleases and rejected the actual 1.1.0-beta.2 version. The regex now accepts semantic-version prereleases while still rejecting stable versions; regression tests cover both.
+- The current frozen runtime is OpenSSL 3.5.9. The official project has scheduled 3.5.10 for 1 December 2026. The advisory applicability inventory has been expanded to include the November 10, 17 and 24 CVEs; source-level non-use is not a transitive dependency audit. Rebuild and retest with a verified published 3.5.10 before release promotion.
+- Qt/PySide corresponding-source and relink obligations, package notices, security review, clean/pre-equipped Windows acceptance and owner review remain separate gates. No public approval is encoded in a candidate manifest.
 
 ## Immediate next actions
 
-1. Inspect queued exact-head runs and fix any real product/test failures without weakening policy.
-2. Wait for official aligned PySide6 6.12.1 and OpenSSL 3.5.10; rebuild and verify exact pins and hashes.
-3. Complete source/redistribution review and native Windows UX on clean and pre-equipped systems.
-4. Merge only accepted Beta PRs and preserve JUnit, screenshot, artifact and hash evidence.
+1. Inspect runs 46110089096 and 46110092703. Resolve any full-suite, glyph, Portable, Setup, installed-payload, checksum or manifest failures on the exact branch head.
+2. Inspect Stable update run 46110206204 and Beta update run 46110374115; confirm the Beta manifest-version regression test passes.
+3. Preserve the four lanes. Only promote an asset after its own source SHA, full test evidence, installed-payload report and SHA-256 have been checked against the exact same bytes.
+4. On or after 1 December, verify the official OpenSSL 3.5.10 release and artifact provenance; update exact pins, rebuild all four candidates as applicable, then repeat the required gates.
+5. Complete independent Qt source/relink and native Windows acceptance. A hosted CI installer smoke is not a physical clean-machine acceptance test.
 
+## Academic contract
+
+Keep root rtl_translator.py as one separate, downloadable, standard-library-only file. No UI, simulator, or unrelated dependencies in that file. Preserve its exact source and packaged-byte verification.
 ## Historical checkpoints
 
 All older checkpoints below are retained for traceability; the live status above supersedes outdated priorities, branch names, deadlines and release claims.
