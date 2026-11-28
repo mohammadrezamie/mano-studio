@@ -131,9 +131,9 @@ jobs:
               ssl.SSL_CTX_free(ctx)
               print("PASS")
           '@ | Set-Content -Encoding ascii tls-smoke.py
-          python tls-smoke.py qt
+          python tls-smoke.py qt | Tee-Object -FilePath evidence/tls-qt.txt
           if($LASTEXITCODE -ne 0){throw 'Qt OpenSSL DLL smoke failed'}
-          python tls-smoke.py python
+          python tls-smoke.py python | Tee-Object -FilePath evidence/tls-python.txt
           if($LASTEXITCODE -ne 0){throw 'Python OpenSSL DLL smoke failed'}
           'PASS' | Set-Content -Encoding ascii evidence/tls-context-smoke.txt
       - name: Run both portable platform smoke checks
@@ -162,6 +162,13 @@ jobs:
             ./installer/smoke.ps1
             if($LASTEXITCODE -ne 0){throw 'Installed smoke failed'}
           } finally {Pop-Location}
+          foreach($file in @('mano-installed-payload.json','mano-standalone-runtime.json','mano-smoke.txt')){
+            $source=Join-Path $env:RUNNER_TEMP $file
+            if(!(Test-Path -LiteralPath $source)){throw "Missing installed evidence: $file"}
+            Copy-Item -LiteralPath $source -Destination evidence
+          }
+          $payload=Get-Content evidence/mano-installed-payload.json -Raw | ConvertFrom-Json
+          if($payload.result -ne 'PASS' -or !$payload.payload_sha256){throw 'Invalid installed payload comparison'}
       - name: Archive isolated review packages and checksum files
         shell: pwsh
         run: |
