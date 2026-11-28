@@ -50,6 +50,13 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Regression wheel evidence rejected.' }
       - name: Verify dependency consistency
         run: python -m pip check
+      - name: Configure Windows fonts for Qt regression
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $fonts = Join-Path $env:WINDIR 'Fonts'
+          if (!(Test-Path $fonts)) { throw 'Windows font directory missing' }
+          "QT_QPA_FONTDIR=$fonts" >> $env:GITHUB_ENV
       - name: Verify Qt import and actual glyph coverage
         run: |
           python -c "import PySide6"
