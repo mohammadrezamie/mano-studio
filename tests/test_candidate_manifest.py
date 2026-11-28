@@ -220,11 +220,11 @@ def test_reject_stale_installed_payload_report(candidate, damage):
 
 
 def test_accepts_current_semver_beta_candidate(tmp_path):
-    (tmp_path / "update_service.py").write_text('VERSION = "1.1.0-beta.2"\\n')
+    (tmp_path / "update_service.py").write_text('VERSION = "1.1.0-beta.2"\n')
     assert source_version(tmp_path) == "1.1.0-beta.2"
 
 
 def test_rejects_unmarked_stable_version(tmp_path):
-    (tmp_path / "update_service.py").write_text('VERSION = "1.0.0"\\n')
+    (tmp_path / "update_service.py").write_text('VERSION = "1.0.0"\n')
     with pytest.raises(ValueError, match="development/prerelease"):
         source_version(tmp_path)
