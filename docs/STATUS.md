@@ -1,7 +1,40 @@
-# Development status — 2026-11-25
+# Development status — 2026-11-28
 
-PR #9 is merged; verified main baseline 9eb19971. Continue quality/beta-visual-review on a separate PR; inspect current open PRs and Actions before editing. No stable release or v1.0.0 tag; owner approval after classroom review is mandatory. See RELEASE_POLICY.md.
+## Four concurrent delivery lanes
 
+The owner has explicitly authorized all four lanes to remain active: public Stable, public Beta, Stable maintenance updates, and forward Beta development. No public Stable or Beta release has been published; both release objects remain private review drafts.
+
+| Lane | Current source / state | Exact verification checkpoint |
+| --- | --- | --- |
+| Stable 1.0.0 | Private draft 460598745; frozen source 926272ff0ebfa4731cfb0b00c149c7e12b4d5a56; notice PR #70 head 7fbd0c94 | Run 46110089096: Ubuntu full regression passed, 1,578 tests in 80.26s; Windows job queued; installer build follows both platforms |
+| Beta 1.1.0-beta.1 | Private draft 460607136; frozen source 2dd55994d36f2596dd3d17ea54dd3c3e43829ae2; notice PR #71 head d95b3f49 | Run 46110092703: Ubuntu full regression running; Windows job queued; installer build follows both platforms |
+| Stable 1.0.1 update | Branch maintenance/stable-next; product source 489dfe61d1fb0ddd85b231629e93e1d8982dee0c | Run 46110206204 queued: full Windows/Ubuntu regression, then Windows Portable/Setup install/uninstall |
+| Beta 1.1.0-beta.2 update | Branch develop/next-beta; product source 68425aa542fab4792f40d139d79ab77c7bac553d | Run 46110374115 queued: full regression and Windows candidate; integration run 46110374019 queued |
+
+## Verified corrections
+
+- Earlier PR #70/#71 general Tests and Windows installer jobs were skipped by branch filters. Notice-only green jobs did not constitute full application acceptance. Exact-head workflows were added to both release branches; do not count skipped checks as passes.
+- Added separate full-verification workflows for Stable 1.0.1 and Beta 1.1.0-beta.2. The Beta candidate manifest had a real version-regex defect that rejected 1.1.0-beta.2; it now accepts semantic-version prereleases and tests reject an unmarked stable version.
+- Stable Ubuntu exact-head regression has now passed 1,578 tests in 80.26 seconds. No Windows pass is claimed yet.
+- The OpenSSL review document now covers the 10, 17 and 24 November 2026 advisories. The bundled runtime is 3.5.9; upstream has scheduled 3.5.10 for 1 December 2026. Do not claim 3.5.10 is already published or present in current candidates.
+
+## Remaining release gates
+
+- Complete the matching Windows full regression and exact Portable/Setup build, offline smoke, installation, installed-payload comparison, uninstall, hashes and manifest for each lane.
+- Verify official OpenSSL 3.5.10 release and artifact provenance after publication; rebuild and retest with the exact new runtime before public promotion.
+- Complete Qt/PySide corresponding-source and relink obligations, module notices, independent security review, and the native Windows acceptance handoff. Hosted CI is not independent physical-machine acceptance.
+- Do not promote OLD-REVIEW-ONLY or superseded pilot assets. Do not enable automatic in-app installation without trusted publisher identity and end-to-end upgrade acceptance.
+
+## Academic contract
+
+Keep root rtl_translator.py as one separate, downloadable, standard-library-only file. Preserve byte-identical source packaging; no UI, simulator or unrelated dependencies in the academic converter.
+
+## Immediate next actions
+
+1. Poll 46110089096 and 46110092703; inspect the Windows regression results and the subsequent candidate build jobs.
+2. Inspect 46110206204 and 46110374115 for the two update lanes; verify the Beta version-regex tests pass.
+3. Reconcile exact source SHA, build dependencies, Portable/Setup hashes, installed-payload report and candidate manifest before refreshing either private draft.
+4. On/after 1 December, verify the official OpenSSL 3.5.10 publication and repeat the release gates on rebuilt bytes.
 ## Completed and verified history
 - Standalone Python RTL translator and catalog cover 25 named instructions / 32 documented forms; prior Linux tests: 64 passed.
 - Desktop preview: three input modes, Persian/English, Light/Dark/Night, persistent settings, file operations, diagnostics, source viewer, numbered editor and error highlights. Initial CI failed on missing libEGL (run 45388211041); fixed runtime dependencies, both platforms passed run 45388377303. Screenshot/test workflow 45388500498 succeeded before later changes.
