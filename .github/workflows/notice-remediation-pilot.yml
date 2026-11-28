@@ -1,0 +1,95 @@
+name: Build separate notice remediation review packages
+on:
+  push:
+    branches: [release/source-evidence]
+    paths: ['.github/workflows/notice-remediation-pilot.yml','scripts/prepare_notice_remediation.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  package:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    runs-on: windows-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {track: stable, version: '1.0.0', source: '926272ff0ebfa4731cfb0b00c149c7e12b4d5a56', portable: '15221357225', sha: 'bc93823dbea393f17464886abeef406defda22e4151dbaab82293928eae3271e'}
+          - {track: beta, version: '1.1.0-beta.1', source: '2dd55994d36f2596dd3d17ea54dd3c3e43829ae2', portable: '15220621215', sha: 'b6a9e2c0fa4014ce505d68e639a328f6ec193b98655c2f123a93365d3b523109'}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.source }}
+          path: candidate
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pefile==2024.8.26
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '46041711466'
+          artifact-ids: ${{ matrix.portable }}
+          github-token: ${{ github.token }}
+          path: original
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '46104826735'
+          artifact-ids: '15247465980'
+          github-token: ${{ github.token }}
+          path: notices
+      - name: Prepare exact delta and recover original application icon
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory evidence | Out-Null
+          python scripts/prepare_notice_remediation.py candidate original/ManoStudio-v${{ matrix.version }}-Windows-x64.zip ${{ matrix.sha }} notices/qt-notice-REVIEW-ONLY.zip evidence/delta.json
+          if($LASTEXITCODE -ne 0){throw 'Payload preparation failed'}
+      - name: Run both portable platform smoke checks
+        shell: pwsh
+        run: |
+          $env:QT_QPA_FONTDIR=Join-Path $env:WINDIR 'Fonts'
+          foreach($mode in @('offscreen','windows')){
+            $env:QT_QPA_PLATFORM=$mode
+            $report=Join-Path $PWD "evidence/portable-$mode.txt"
+            $p=Start-Process (Join-Path $PWD 'candidate/dist/ManoStudio/ManoStudio.exe') -ArgumentList ('--smoke-test "'+$report+'"') -PassThru
+            if(!$p.WaitForExit(120000)){$p.Kill();throw 'Smoke timeout'}
+            if($p.ExitCode -ne 0 -or !(Test-Path $report) -or (Get-Content $report -Raw).Trim() -ne 'PASS'){throw "Smoke failed: $mode"}
+          }
+      - name: Compile exact original installer recipe for modified payload
+        shell: pwsh
+        run: |
+          $compiler=Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6/ISCC.exe'
+          if(!(Test-Path $compiler)){
+            choco install innosetup -y --no-progress
+            if($LASTEXITCODE -ne 0){throw 'Compiler setup failed'}
+          }
+          Push-Location candidate
+          try {
+            & $compiler '/DBuildVersion=${{ matrix.version }}' installer/mano-studio.iss
+            if($LASTEXITCODE -ne 0){throw 'Installer compilation failed'}
+            ./installer/smoke.ps1
+            if($LASTEXITCODE -ne 0){throw 'Installed smoke failed'}
+          } finally {Pop-Location}
+      - name: Archive isolated review packages and checksum files
+        shell: pwsh
+        run: |
+          $zip=Join-Path $PWD 'evidence/REVIEW-ONLY-ManoStudio-v${{ matrix.version }}-Windows-x64'
+          python -c "import shutil,sys;shutil.make_archive(sys.argv[1],'zip',root_dir='candidate/dist',base_dir='ManoStudio')" $zip
+          if($LASTEXITCODE -ne 0){throw 'Portable archiving failed'}
+          Copy-Item candidate/installer/output/ManoStudio-Setup-v${{ matrix.version }}-x64.exe evidence/REVIEW-ONLY-ManoStudio-Setup-v${{ matrix.version }}-x64.exe
+          Get-ChildItem evidence -File | Where-Object {$_.Extension -in @('.zip','.exe')} | ForEach-Object {
+            $hash=(Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)" | Set-Content -Encoding ascii ($_.FullName+'.sha256')
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: notice-remediation-REVIEW-ONLY-${{ matrix.track }}
+          path: evidence/
+          if-no-files-found: warn
+          retention-days: 90
