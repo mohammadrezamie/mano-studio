@@ -37,6 +37,7 @@ jobs:
           artifact-ids: '15255533917'
           github-token: ${{ github.token }}
           path: staged
+          merge-multiple: true
       - uses: actions/download-artifact@v4
         with:
           run-id: '46114555414'
@@ -49,7 +50,10 @@ jobs:
           New-Item -ItemType Directory evidence | Out-Null
           $portable=@(Get-ChildItem -LiteralPath original -Recurse -File -Filter 'REVIEW-ONLY-ManoStudio-v${{ matrix.version }}-Windows-x64.zip')
           if($portable.Count -ne 1){throw 'Expected exactly one portable archive'}
-          python scripts/prepare_openssl_remediation.py ${{ matrix.track }} $portable[0].FullName staged candidate evidence/delta.json
+          $reports=@(Get-ChildItem -LiteralPath staged -Recurse -File -Filter 'staging-report.json')
+          if($reports.Count -ne 1){throw 'Expected exactly one staged report'}
+          $stageRoot=$reports[0].Directory.FullName
+          python scripts/prepare_openssl_remediation.py ${{ matrix.track }} $portable[0].FullName $stageRoot candidate evidence/delta.json
           if($LASTEXITCODE -ne 0){throw 'Payload preparation failed'}
       - name: Load each exact DLL family and exercise native TLS context
         shell: pwsh
