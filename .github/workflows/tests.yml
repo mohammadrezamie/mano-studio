@@ -3,8 +3,15 @@ on:
   push:
     paths-ignore:
       - 'README.md'
+      - 'docs/**'
+      - '**/*.md'
       - 'docs/assets/screenshots/**'
   pull_request:
+    paths-ignore:
+      - 'README.md'
+      - 'docs/**'
+      - '**/*.md'
+      - 'docs/assets/screenshots/**'
 concurrency:
   group: tests-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
