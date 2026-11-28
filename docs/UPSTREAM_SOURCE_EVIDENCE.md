@@ -53,3 +53,10 @@ The app uses dynamically loaded Qt libraries, but this alone is not proof of LGP
 No product code, candidate hash, tag or release state changes in this branch.
 
 See [OpenSSL notice evidence](OPENSSL_NOTICE_EVIDENCE.md) for the exact frozen binary review and retained upstream license. Corrected source-acquisition workflow uses official alternate archive locations and supports hash-only checksum records.
+
+
+## Carry forward wheel-origin evidence to notice-corrected candidates
+
+2026-11-28: independent local byte comparison of source-review artifact 15220635288 (outer SHA-256 e8ad1e1e7c1ca7b7e5e793e54007fe85ad1e3ed95b215c4dba507c8feb9ef129) with exact notice-remediated Portables in artifacts 15252792001 and 15253894494. The historical wheel reports name older whole-archive digests, so they must not be treated as directly identifying the current ZIPs. Each reported binary was checked by full member path, length and SHA-256 against the new ZIP. In each channel 42/43 rows match exactly; the only missing row is the deliberately removed PySide6/opengl32sw.dll. Zero changed rows and zero unlisted .dll/.pyd/.exe members in the PySide6/shiboken6 directories. The wheel-origin evidence can therefore be carried forward for these 42 retained files per channel without another wheel acquisition workflow. This does not establish exact build-source correspondence or cover other runtime libraries outside those directories.
+
+Also independently rehashed all seven available source tar.xz files: all six in artifact 15220635288 match its manifest; Qt translations in artifact 15254421633 matches the recorded vendor SHA-256. The acquisition evidence is complete for these seven named archives, not a complete corresponding-source determination.
