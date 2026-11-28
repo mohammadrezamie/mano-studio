@@ -54,7 +54,8 @@ jobs:
                       require(ctx == {"track":track,"source":source,"os":osname,"shard":str(shard)}, "Wrong shard context")
                       require((folder/"regression-python.txt").read_text(encoding="utf-8-sig").strip() == "Python 3.14.10", "Wrong Python version")
                       job = by_name[f"{track} / {osname} / shard {shard}"]
-                      log = api(f"{base}/actions/jobs/{job['id']}/logs").decode("utf-8", errors="replace")
+                      raw = subprocess.check_output(["gh","api","--allow-escape-sequences",f"{base}/actions/jobs/{job['id']}/logs"])
+                      log = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", raw.decode("utf-8", errors="replace"))
                       matches = re.findall(r"Mano deterministic shard (\d+)/(\d+): (\d+) selected from (\d+) collected", log)
                       require(len(matches) == 1, f"Missing or ambiguous terminal collection count: {job['name']}")
                       index, total, selected, count = map(int,matches[0])
