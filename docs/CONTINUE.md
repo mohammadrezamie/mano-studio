@@ -1,26 +1,36 @@
-# Start here — live continuation checkpoint (2026-11-26)
+# Start here — live continuation checkpoint (2026-11-28)
 
-## Two permanent tracks
+Read STATUS.md and RELEASE_POLICY.md first. The owner requires four parallel lanes: public Stable, public Beta, Stable maintenance updates, and forward Beta development. No public release is confirmed. Keep private drafts private until exact-byte gates pass.
 
-**Stable / release:** PR #26 remains a draft. The corrected exact-head Windows and Ubuntu regression run 45863679074 is still executing its full pytest step on both platforms; the preceding stale fixture omission was fixed without weakening the fail-closed updater. Windows candidate build 45863679206 passed installed and portable smoke; downloaded Setup/portable artifacts, 111 binary hashes, notices and standalone translator blob were independently checked. Candidate dependencies remain PySide6/Qt 6.12.0 and OpenSSL 3.5.9; aligned PySide6 6.12.1 is still being prepared and OpenSSL 3.5.10 is scheduled for 1 December. No fixed Stable date or version. Security, redistribution/source, clean/pre-equipped Windows and native UX gates remain mandatory.
+## Current lanes
 
-**Beta / next generation:** PR #28 merged into `develop/next-beta` as 6947b00; exact-head integration passed 647 tests (582 core, 26 workspace, 39 Qt). PR #30 merged into `develop/visual-polish`; Windows run 45863384391 passed 47 checks and its 48 screenshots were independently hash/dimension/decode checked and visually reviewed. PR #31 merged into `develop/next-beta`; exact-head integration passed 657 tests (582 core, 49 Qt, 26 workspace), including bilingual CPU saved-sample replacement. PR #25 contains bilingual typography, instructor demo and safer memory selection on integrated head 55a1175; Windows visual run 45869747238 passed, while integrated run 45869755006 passed core/persistence and Qt regressions; integrated workspace tests are running. PR #32 proposes five more native CPU exercises, bringing the menu to ten; exact head 70c53eb and independent reference outcomes are checked. Next-beta run 45873284490 passed compile/preflight and focused model/persistence tests; bilingual Qt regressions are running, workspace pending. PR #25/#32 are not merged. PRs #27/#29 were closed as stale-base replacements.
+| Lane | Exact source / branch | Next verification |
+| --- | --- | --- |
+| Stable 1.0.0 | Frozen source 926272ff0ebfa4731cfb0b00c149c7e12b4d5a56; private draft 460598745; PR #70 head 7fbd0c94 | Run 46110089096 — full Windows/Ubuntu regression, then Windows Portable + Setup install/uninstall |
+| Beta 1.1.0-beta.1 | Frozen source 2dd55994d36f2596dd3d17ea54dd3c3e43829ae2; private draft 460607136; PR #71 head d95b3f49 | Run 46110092703 — full Windows/Ubuntu regression, then Windows Portable + Setup install/uninstall |
+| Stable 1.0.1 | maintenance/stable-next head 489dfe61d1fb0ddd85b231629e93e1d8982dee0c | Run 46110206204 — full regression and Windows candidate package |
+| Beta 1.1.0-beta.2 | develop/next-beta head 68425aa542fab4792f40d139d79ab77c7bac553d | Run 46110374115 — full regression and Windows candidate package; integration run 46110374019 |
 
-**Academic contract:** keep root `rtl_translator.py` as one separate, downloadable, standard-library-only file. No UI, simulation or unrelated dependencies in that file. Its source remains unchanged.
+## Important recent corrections
 
-## Immediate continuation
+- The first PR #70/#71 branch checks were skipped by the existing workflow filters. Earlier green OpenSSL notice-only checks were not full application acceptance. The new release-candidate-verification.yml on each release branch now provides the missing exact-head gates.
+- The new Stable update workflow lives at stable-maintenance-verification.yml; the new Beta update workflow lives at next-beta-verification.yml.
+- Beta candidate manifest previously rejected 1.1.0-beta.2 because it accepted only 0.x.y prereleases. Fixed the version regex and added tests that accept the actual semantic-version Beta tag while rejecting an unmarked stable version.
+- OpenSSL 3.5.9 is the current bundled version. OpenSSL 3.5.10 is scheduled for 1 December 2026, not yet published as of 28 November. The full November 10/17/24 advisory inventory is documented in OPENSSL_ADVISORY_REVIEW.md on both public-release branches. Do not claim that source-level feature non-use is a complete audit of Qt/Python internals.
+- Do not promote any OLD-REVIEW-ONLY assets or older pilot artifacts. New exact candidate bytes must have matching source SHA, Windows Portable/Setup smoke, installed-payload evidence, manifest and checksums.
 
-1. Inspect the exact-head results of Stable regression/build and Beta visual/CPU UI workflows; investigate failures instead of relaxing tests.
-2. Complete PySide6 6.12.1 / OpenSSL 3.5.10 security review when official packages are available; rebuild from exact pins and rerun all applicable checks.
-3. Complete redistribution/source obligations and clean/pre-equipped Windows acceptance before any Stable publication.
-4. Merge only verified Beta PRs; retain screenshots, JUnit reports, hashes and documented limitations.
-5. Keep textbook coverage and advanced labs progressing independently; do not block the core application on optional future curriculum.
+## Next actions
 
-No public Stable or Beta release is confirmed. Historical checkpoints below are retained for traceability and must not override this live summary.
+1. Poll the four run IDs above; inspect failed steps/logs, fix concrete defects, and rerun only affected gates.
+2. Keep the two release candidates separate from the next-update branches. Do not merge a newer version into an older frozen release.
+3. Verify the actual published OpenSSL 3.5.10 package after its release date; update the exact wheel/runtime pin and rebuild before public promotion.
+4. Complete Qt/PySide corresponding-source and relink review plus independent native Windows acceptance. Hosted smoke and CI screenshots are not a substitute.
+5. Preserve the academic contract: root rtl_translator.py remains a single separate standard-library-only file, with byte-identical packaging.
 
 ---
 
 ## Historical checkpoints (retained below)
+(retained below)
 
 ## Real Windows artifact review — blocking typography defect
 Downloaded Windows artifact 14978228331 from verified main run 45511520586 (143 entries). Inspected actual en-dark-editor.png and fa-dark-route-logic-cache.png at native dimensions: all text is rendered as missing-glyph boxes, including English, Persian, digits and code. Therefore prior successful CI and screenshot upload do NOT establish visual readability. This is an offscreen capture defect observed on Windows; installed native UI has not been checked, so do not claim it is affected or fixed. Qt source shows Windows offscreen uses QFreeTypeFontDatabase and scans fontDir; QT_QPA_FONTDIR overrides it. References: https://codebrowser.dev/qt6/qtbase/src/plugins/platforms/offscreen/qoffscreenintegration.cpp.html ; https://codebrowser.dev/qt6/qtbase/src/gui/text/freetype/qfreetypefontdatabase.cpp.html ; https://codebrowser.dev/qt6/qtbase/src/gui/text/qplatformfontdatabase.cpp.html . Set Windows offscreen CI font directory to installed %WINDIR%/Fonts before QApplication; Linux CI explicitly installs Noto/DejaVu system fonts. Developer-only preflight validates actual shaped glyph runs for Latin, Persian and RTL/ASM operators with UI/monospace fonts, rejects glyph zero and empty runs, records font-preflight.json before capture. Added regression. No font redistribution, new runtime dependency, translator or native startup change. New exact-head verification and inspection of regenerated PNGs required before any visual gate is closed. Main remains untouched; PR #14 only.
