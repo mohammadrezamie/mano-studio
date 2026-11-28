@@ -39,7 +39,7 @@ jobs:
           COUNT: ${{ matrix.count }}
         run: |
           python - <<'PY'
-          import hashlib, io, json, os, pathlib, subprocess, zipfile
+          import base64, hashlib, io, json, os, pathlib, subprocess, zipfile
           from urllib.parse import urlencode
           e = os.environ
           base = "repos/" + e["REPO"]
@@ -72,9 +72,20 @@ jobs:
               return raw
           signed = artifact(46050465305, int(e["ATTESTATION"]), e["ATTESTATION_SHA"])
           with zipfile.ZipFile(io.BytesIO(signed)) as z:
-              predicate = json.loads(z.read("review-predicate.json"))
+              names = z.namelist()
+              predicates = [n for n in names if pathlib.PurePosixPath(n).name == "review-predicate.json"]
+              require(len(predicates) == 1, "Missing or ambiguous predicate: " + repr(names))
+              predicate = json.loads(z.read(predicates[0]))
               require(predicate["source_sha"] == e["SOURCE"] and predicate["track"] == e["TRACK"] and predicate["asset_sha256"] == expected and predicate["public_release_approved"] is False, "Wrong signed predicate")
-              require(len(z.namelist()) >= 2, "Missing signed bundle")
+              bundles = [n for n in names if n != predicates[0] and n.endswith(".json") and not n.endswith("/")]
+              require(bool(bundles), "Missing signed bundle: " + repr(names))
+              statements = []
+              for name in bundles:
+                  bundle = json.loads(z.read(name))
+                  envelope = bundle.get("dsseEnvelope", {})
+                  if envelope.get("payload"):
+                      statements.append(json.loads(base64.b64decode(envelope["payload"])))
+              require(any(st.get("predicate") == predicate and {x["name"]:x["digest"]["sha256"] for x in st["subject"]} == expected for st in statements), "Signed statement mismatch")
           report = artifact(46102530937, 15246006755, "425c0b448ee7777c025c0f7977e067d684005067a7f66ad2cbe97d2cd34af3ca")
           with zipfile.ZipFile(io.BytesIO(report)) as z:
               data = json.loads(z.read("reconciliation.json"))
