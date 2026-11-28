@@ -1,0 +1,103 @@
+name: Match frozen Qt binaries to exact published wheels
+on:
+  push:
+    branches: [release/source-evidence]
+    paths: ['.github/workflows/qt-wheel-origin.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  match:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 46036183906
+          artifact-ids: '15217711037,15217265895'
+          github-token: ${{ github.token }}
+          path: candidates
+      - name: Verify wheels and map actual bundled DLL and PYD bytes
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib, urllib.parse, urllib.request, zipfile
+          root = pathlib.Path("candidates")
+          reports = sorted(root.rglob("build-wheel-report.json"))
+          if len(reports) != 2:
+              raise ValueError("Expected both exact candidate wheel reports")
+          expected = {"pyside6-essentials", "pyside6-addons", "shiboken6"}
+          def wheel_entries(report):
+              rows = {}
+              for item in json.loads(report.read_text(encoding="utf-8-sig"))["install"]:
+                  name = item["metadata"]["name"].lower().replace("_","-")
+                  if name in expected:
+                      info = item["download_info"]
+                      rows[name] = (item["metadata"]["version"], info["url"], info["archive_info"]["hashes"]["sha256"])
+              if set(rows) != expected:
+                  raise ValueError("Missing wheel evidence")
+              return rows
+          pins = wheel_entries(reports[0])
+          if pins != wheel_entries(reports[1]):
+              raise ValueError("Candidate Qt wheel identities differ")
+          index = {}
+          for package,(version,url,digest) in pins.items():
+              parsed = urllib.parse.urlsplit(url)
+              if parsed.scheme != "https" or parsed.hostname != "files.pythonhosted.org" or not parsed.path.endswith(".whl") or version != "6.12.0":
+                  raise ValueError("Unexpected wheel provenance")
+              file = pathlib.Path(package+".whl")
+              h = hashlib.sha256()
+              size = 0
+              with urllib.request.urlopen(url,timeout=60) as response, file.open("wb") as target:
+                  if urllib.parse.urlsplit(response.geturl()).hostname != "files.pythonhosted.org":
+                      raise ValueError("Unexpected wheel redirect")
+                  while chunk := response.read(1024*1024):
+                      size += len(chunk)
+                      if size > 500_000_000:
+                          raise ValueError("Wheel exceeds review limit")
+                      h.update(chunk)
+                      target.write(chunk)
+              if h.hexdigest() != digest:
+                  raise ValueError("Wheel digest mismatch")
+              with zipfile.ZipFile(file) as archive:
+                  for member in archive.infolist():
+                      if not member.filename.lower().endswith((".dll",".pyd")):
+                          continue
+                      with archive.open(member) as source:
+                          key = (pathlib.PurePosixPath(member.filename).name.lower(),member.file_size,hashlib.file_digest(source,"sha256").hexdigest())
+                      index.setdefault(key,[]).append({"package":package,"version":version,"wheel_sha256":digest,"member":member.filename})
+          out = pathlib.Path("wheel-origin")
+          out.mkdir()
+          hashes = {"ManoStudio-v1.0.0-Windows-x64.zip":"fa29d4b0021b4df30d0a527d636aed2b22b8c3338b8a6ec0aa252cbd2b683341","ManoStudio-v1.1.0-beta.1-Windows-x64.zip":"8fcfd1a1589bb6c041903d4cce8be0b8c8e4c8d547daa9a9d084a503a38f2068"}
+          seen = set()
+          for path in root.rglob("ManoStudio-*-Windows-x64.zip"):
+              with path.open("rb") as source:
+                  actual = hashlib.file_digest(source,"sha256").hexdigest()
+              if path.name in seen or hashes.get(path.name) != actual:
+                  raise ValueError("Candidate mismatch")
+              seen.add(path.name)
+              rows = []
+              with zipfile.ZipFile(path) as archive:
+                  for member in archive.infolist():
+                      p = member.filename
+                      if not p.lower().endswith((".dll",".pyd")) or not p.startswith(("ManoStudio/_internal/PySide6/","ManoStudio/_internal/shiboken6/")):
+                          continue
+                      with archive.open(member) as source:
+                          digest = hashlib.file_digest(source,"sha256").hexdigest()
+                      key = (pathlib.PurePosixPath(p).name.lower(),member.file_size,digest)
+                      rows.append({"path":p,"sha256":digest,"bytes":member.file_size,"wheel_matches":index.get(key,[])})
+              unmatched = [row["path"] for row in rows if not row["wheel_matches"]]
+              result = {"candidate_sha256":actual,"binaries":rows,"matched":len(rows)-len(unmatched),"unmatched":unmatched,"wheel_bytes_verified":True,"source_correspondence_verified":False,"redistribution_approved":False}
+              (out/(path.stem+".json")).write_text(json.dumps(result,indent=2)+"\n",encoding="utf-8")
+              print(path.name, "matched",result["matched"],"unmatched",unmatched)
+          if seen != set(hashes):
+              raise ValueError("Missing candidate")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exact-lean-qt-wheel-origin
+          path: wheel-origin/
+          retention-days: 90
+          if-no-files-found: error

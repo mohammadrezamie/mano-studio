@@ -1,0 +1,157 @@
+name: Retain verified Qt source review bundle
+on:
+  push:
+    branches: [release/source-evidence]
+    paths: ['.github/workflows/source-review-bundle.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  bundle:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 46009462611
+          artifact-ids: '15209235117,15212256488,15211033341,15210328390,15211957580'
+          github-token: ${{ github.token }}
+          path: acquired
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 46038291271
+          artifact-ids: '15218461789'
+          github-token: ${{ github.token }}
+          path: imageformats-source
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 46038337637
+          artifact-ids: '15219771487'
+          github-token: ${{ github.token }}
+          path: wheel-origin
+      - name: Recheck exact vendor archive bytes and preserve review evidence
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, shutil
+          from pathlib import Path
+          records = {
+              "qtbase": ("a951bd163c7b80fc6b8c88d7668fb56abf91c152373e13c10666763238131307", 51220268),
+              "qtsvg": ("e4ab39534ec97987b1b9b60ef7f4d3253d5912a69f8c713a01753174a4029331", 2341876),
+              "pyside": ("099c1a597cf33c1b000e11cf68a0b82d216fb802bf81726efc720394f10c7751", 18211772),
+              "qtshadertools": ("c7d84f436e1aaef39fdcadebf2bd71bdf24dc69497e13f2e0198873cbbfea2ab", 1244684),
+              "qtdeclarative": ("311f3a2603e1973bb59baef9dfa740a376de713157d4782ee043681e889c9260", 39221652),
+          }
+          root = Path("acquired")
+          out = Path("source-review")
+          out.mkdir()
+          reports = list(root.rglob("report.json"))
+          if len(reports) != len(records):
+              raise ValueError("Unexpected source evidence count")
+          seen = set()
+          manifest = []
+          for report in reports:
+              row = json.loads(report.read_text(encoding="utf-8"))
+              module = row["module"]
+              if module in seen or module not in records:
+                  raise ValueError("Unexpected source module")
+              seen.add(module)
+              expected, size = records[module]
+              archives = list(report.parent.glob("*.tar.xz"))
+              if len(archives) != 1:
+                  raise ValueError("Expected one vendor archive")
+              archive = archives[0]
+              with archive.open("rb") as stream:
+                  actual = hashlib.file_digest(stream, "sha256").hexdigest()
+              if actual != expected or archive.stat().st_size != size or row["sha256"] != expected or row.get("vendor_checksum_verified") is not True:
+                  raise ValueError("Source evidence differs from recorded vendor bytes")
+              target = out / module
+              target.mkdir()
+              shutil.copyfile(archive, target / archive.name)
+              for name in ("report.json","vendor.sha256","archive-url.txt","checksum-url.txt"):
+                  shutil.copyfile(report.parent / name, target / name)
+              manifest.append({"module": module, "file": str((target / archive.name).relative_to(out)), "sha256": actual, "bytes": size})
+          if seen != set(records):
+              raise ValueError("Missing source")
+          manifest.sort(key=lambda row: row["module"])
+          (out / "manifest.json").write_text(json.dumps({"kind":"source-review-only","acquisition_run":46009462611,"archives":manifest,"wheel_binary_byte_match_verified":True,"exact_source_correspondence_verified":False,"redistribution_approved":False},indent=2)+"\n",encoding="utf-8")
+          image_report = next(Path("imageformats-source").rglob("report.json"))
+          image = json.loads(image_report.read_text(encoding="utf-8"))
+          expected_image = "0943132b5db8de6b6a7f1d162682173e8763c7ed94e80fd39113292845f67762"
+          image_archives = list(image_report.parent.glob("*.tar.xz"))
+          if image.get("module") != "qtimageformats" or image.get("sha256") != expected_image or image.get("vendor_checksum_verified") is not True or len(image_archives) != 1:
+              raise ValueError("Qt Image Formats source evidence mismatch")
+          image_archive = image_archives[0]
+          with image_archive.open("rb") as stream:
+              if hashlib.file_digest(stream, "sha256").hexdigest() != expected_image:
+                  raise ValueError("Qt Image Formats archive hash mismatch")
+          import tarfile
+          selected = [
+              "qtimageformats-everywhere-src-6.12.0/LICENSES/BSD-3-Clause.txt",
+              "qtimageformats-everywhere-src-6.12.0/LICENSES/LGPL-3.0-only.txt",
+              "qtimageformats-everywhere-src-6.12.0/LICENSES/GPL-3.0-only.txt",
+              "qtimageformats-everywhere-src-6.12.0/LICENSES/libtiff.txt",
+              "qtimageformats-everywhere-src-6.12.0/src/3rdparty/libtiff/COPYRIGHT",
+              "qtimageformats-everywhere-src-6.12.0/src/3rdparty/libtiff/qt_attribution.json",
+              "qtimageformats-everywhere-src-6.12.0/src/3rdparty/libwebp/COPYING",
+              "qtimageformats-everywhere-src-6.12.0/src/3rdparty/libwebp/qt_attribution.json",
+          ]
+          plugins = {
+              "qicns": "src/plugins/imageformats/icns/qicnshandler.cpp",
+              "qtga": "src/plugins/imageformats/tga/qtgafile.cpp",
+              "qtiff": "src/plugins/imageformats/tiff/qtiffhandler.cpp",
+              "qwbmp": "src/plugins/imageformats/wbmp/qwbmphandler.cpp",
+              "qwebp": "src/plugins/imageformats/webp/qwebphandler.cpp",
+          }
+          source_root = "qtimageformats-everywhere-src-6.12.0/"
+          with tarfile.open(image_archive, "r:xz") as tar:
+              names = set(tar.getnames())
+              if not set(selected).issubset(names):
+                  raise ValueError("Qt Image Formats license or attribution file missing")
+              plugin_map = {}
+              for plugin, source in plugins.items():
+                  cmake = source.rsplit("/",1)[0] + "/CMakeLists.txt"
+                  src = tar.extractfile(source_root + source).read().decode("utf-8")
+                  cm = tar.extractfile(source_root + cmake).read().decode("utf-8")
+                  if "SPDX-License-Identifier: LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only" not in src:
+                      raise ValueError("Unexpected Qt plugin source license: " + plugin)
+                  if "SPDX-License-Identifier: BSD-3-Clause" not in cm:
+                      raise ValueError("Unexpected Qt plugin CMake license: " + plugin)
+                  plugin_map[plugin] = {"source":source,"source_spdx":"LicenseRef-Qt-Commercial OR LGPL-3.0-only OR GPL-2.0-only OR GPL-3.0-only","cmake":cmake,"cmake_spdx":"BSD-3-Clause"}
+              for item in selected:
+                  target = out / "qtimageformats-notices" / Path(item).name
+                  target.parent.mkdir(parents=True, exist_ok=True)
+                  target.write_bytes(tar.extractfile(item).read())
+              webp = json.loads(tar.extractfile(source_root+"src/3rdparty/libwebp/qt_attribution.json").read())
+              tiff = json.loads(tar.extractfile(source_root+"src/3rdparty/libtiff/qt_attribution.json").read())
+              if (webp.get("Version"),webp.get("LicenseId")) != ("1.6.0","BSD-3-Clause") or (tiff.get("Version"),tiff.get("LicenseId")) != ("4.7.2","libtiff"):
+                  raise ValueError("Unexpected embedded third-party attribution")
+              (out / "qtimageformats-notices" / "plugin-map.json").write_text(json.dumps({"source":"Qt Image Formats 6.12.0","plugins":plugin_map,"embedded_third_party":{"libwebp":webp,"libtiff":tiff},"source_correspondence_verified":False,"redistribution_approved":False},indent=2)+"\n",encoding="utf-8")
+          shutil.copyfile(image_archive, out / image_archive.name)
+          shutil.copyfile(image_report, out / "qtimageformats-report.json")
+          wheel_files = sorted(Path("wheel-origin").rglob("*.json"))
+          if len(wheel_files) != 2:
+              raise ValueError("Expected two exact wheel-origin reports")
+          wheel_rows = []
+          for wheel in wheel_files:
+              row = json.loads(wheel.read_text(encoding="utf-8"))
+              if row.get("candidate_sha256") not in ("fa29d4b0021b4df30d0a527d636aed2b22b8c3338b8a6ec0aa252cbd2b683341","8fcfd1a1589bb6c041903d4cce8be0b8c8e4c8d547daa9a9d084a503a38f2068") or row.get("matched") != 43 or row.get("unmatched") != [] or row.get("wheel_bytes_verified") is not True or row.get("source_correspondence_verified") is not False:
+                  raise ValueError("Qt wheel-to-binary evidence is incomplete")
+              wheel_rows.append({"report":wheel.name,"candidate_sha256":row["candidate_sha256"],"matched":row["matched"],"unmatched":row["unmatched"]})
+              target = out / "wheel-origin"
+              target.mkdir(exist_ok=True)
+              shutil.copyfile(wheel, target / wheel.name)
+          manifest.append({"module":"qtimageformats","file":image_archive.name,"sha256":expected_image,"bytes":image_archive.stat().st_size})
+          manifest.sort(key=lambda row: row["module"])
+          (out / "manifest.json").write_text(json.dumps({"kind":"source-review-only","acquisition_runs":[46009462611,46038291271],"archives":manifest,"wheel_origin":wheel_rows,"exact_wheel_correspondence_verified":False,"redistribution_approved":False},indent=2)+"\n",encoding="utf-8")
+          (out / "README.txt").write_text("Review-only Qt/PySide source archives and binary-to-wheel evidence. All 43 bundled Qt/Shiboken DLL/PYD files match byte-for-byte against hash-verified PySide6 Essentials/Shiboken6 6.12.0 wheels; this is not proof of exact corresponding source revision or build configuration. Qt Image Formats source headers and bundled libtiff/libwebp attribution are mapped in qtimageformats-notices/plugin-map.json. This bundle is not yet a complete corresponding-source offer or redistribution approval. Exact wheel build revisions, patches, build configuration, relinking instructions and independent legal review remain required.\n",encoding="utf-8")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qt-6.12.0-source-review-bundle
+          path: source-review/
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error

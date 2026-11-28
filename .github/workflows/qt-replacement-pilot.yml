@@ -1,0 +1,42 @@
+name: Verify replaceable Qt runtime layout
+on:
+  push:
+    branches: [release/source-evidence]
+    paths: ['.github/workflows/qt-replacement-pilot.yml','installer/qt_replacement_pilot.ps1']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  replacement:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    runs-on: windows-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        candidate:
+          - {track: stable, artifact: 15221357225, version: '1.0.0', sha256: 'bc93823dbea393f17464886abeef406defda22e4151dbaab82293928eae3271e'}
+          - {track: beta, artifact: 15220621215, version: '1.1.0-beta.1', sha256: 'b6a9e2c0fa4014ce505d68e639a328f6ec193b98655c2f123a93365d3b523109'}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: 46041711466
+          artifact-ids: ${{ matrix.candidate.artifact }}
+          github-token: ${{ github.token }}
+          path: candidate
+      - shell: pwsh
+        run: |
+          $zip=@(Get-ChildItem candidate -Recurse -File -Filter 'ManoStudio-v${{ matrix.candidate.version }}-Windows-x64.zip')
+          if($zip.Count -ne 1){throw 'Expected one exact archive'}
+          ./installer/qt_replacement_pilot.ps1 -Archive $zip[0].FullName -ExpectedHash '${{ matrix.candidate.sha256 }}'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: qt-replacement-${{ matrix.candidate.track }}
+          path: replacement-evidence/
+          retention-days: 90
+          if-no-files-found: warn

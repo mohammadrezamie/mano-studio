@@ -1,0 +1,116 @@
+name: Acquire upstream source review evidence
+on:
+  push:
+    branches: [release/source-evidence]
+    paths:
+      - '.github/workflows/upstream-source-evidence.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: upstream-source-evidence-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  archive:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - module: pyside
+            url: https://download.qt.io/official_releases/QtForPython/pyside6/PySide6-6.12.0-src/pyside-setup-everywhere-src-6.12.0.tar.xz
+            pinned: 099c1a597cf33c1b000e11cf68a0b82d216fb802bf81726efc720394f10c7751
+            scope: stable-and-beta
+          - module: qtbase
+            url: https://download.qt.io/archive/qt/6.12/6.12.0/submodules/qtbase-everywhere-src-6.12.0.tar.xz
+            pinned: a951bd163c7b80fc6b8c88d7668fb56abf91c152373e13c10666763238131307
+            scope: stable-and-beta
+          - module: qtdeclarative
+            url: https://download.qt.io/archive/qt/6.12/6.12.0/submodules/qtdeclarative-everywhere-src-6.12.0.tar.xz
+            pinned: ''
+            scope: stable-and-beta
+          - module: qtsvg
+            url: https://download.qt.io/archive/qt/6.12/6.12.0/submodules/qtsvg-everywhere-src-6.12.0.tar.xz
+            pinned: ''
+            scope: stable-and-beta
+          - module: qtshadertools
+            url: https://download.qt.io/archive/qt/6.12/6.12.0/submodules/qtshadertools-everywhere-src-6.12.0.tar.xz
+            pinned: ''
+            scope: build-dependency-review
+          - module: qtwebengine
+            url: https://download.qt.io/archive/qt/6.12/6.12.0/submodules/qtwebengine-everywhere-src-6.12.0.tar.xz
+            pinned: ''
+            scope: beta-pdf-review-only
+    steps:
+      - name: Fetch official archive and verify vendor checksum
+        env:
+          URL: ${{ matrix.url }}
+          PINNED: ${{ matrix.pinned }}
+          MODULE: ${{ matrix.module }}
+          SCOPE: ${{ matrix.scope }}
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          name="${URL##*/}"
+          alternate="${URL/\/archive\/qt\//\/official_releases\/qt\/}"
+          for candidate in "$URL" "$alternate"; do
+            if curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 60 --retry 1 --max-filesize 4096 "$candidate.sha256" -o evidence/vendor.sha256; then
+              printf '%s\n' "$candidate.sha256" > evidence/checksum-url.txt
+              break
+            fi
+          done
+          test -s evidence/checksum-url.txt
+          for candidate in "$URL" "$alternate"; do
+            if curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --max-time 600 --retry 1 --max-filesize 1800000000 "$candidate" -o "evidence/$name"; then
+              printf '%s\n' "$candidate" > evidence/archive-url.txt
+              break
+            fi
+            rm -f "evidence/$name"
+          done
+          test -s evidence/archive-url.txt
+          python - <<'PY'
+          import hashlib, json, os, re, tarfile
+          from pathlib import Path
+          url = os.environ["URL"]
+          name = url.rsplit("/", 1)[-1]
+          p = Path("evidence") / name
+          tokens = Path("evidence/vendor.sha256").read_text(encoding="ascii").split()
+          if (len(tokens) not in (1, 2) or not re.fullmatch(r"[0-9a-fA-F]{64}", tokens[0])
+                  or (len(tokens) == 2 and tokens[1].lstrip("*").rsplit("/", 1)[-1] != name)):
+              raise ValueError("Unexpected vendor checksum record")
+          expected = tokens[0].lower()
+          if os.environ["PINNED"] and expected != os.environ["PINNED"]:
+              raise ValueError("Vendor checksum differs from recorded vendor mirrorlist pin")
+          with p.open("rb") as stream:
+              actual = hashlib.file_digest(stream, "sha256").hexdigest()
+          if actual != expected:
+              raise ValueError("Archive checksum mismatch")
+          count = 0
+          notices = []
+          with tarfile.open(p, "r|xz") as archive:
+              for member in archive:
+                  count += 1
+                  if member.isfile() and ("/LICENSES/" in member.name or member.name.endswith("/LICENSE") or member.name.endswith("/LICENSE.LGPL3")):
+                      notices.append(member.name)
+          if not count or not notices:
+              raise ValueError("Missing archive files or license inventory")
+          result = dict(kind="upstream-source-review-evidence", module=os.environ["MODULE"],
+                        scope=os.environ["SCOPE"], url=Path("evidence/archive-url.txt").read_text().strip(),
+                        checksum_url=Path("evidence/checksum-url.txt").read_text().strip(),
+                        sha256=actual, bytes=p.stat().st_size,
+                        vendor_checksum_verified=True, recorded_vendor_pin=bool(os.environ["PINNED"]),
+                        independently_pinned=False,
+                        tar_members=count, license_members=notices[:200],
+                        exact_wheel_correspondence_verified=False, redistribution_approved=False)
+          Path("evidence/report.json").write_text(json.dumps(result, indent=2)+"\n")
+          print(json.dumps({k:v for k,v in result.items() if k != "license_members"}, indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: upstream-source-${{ matrix.module }}-6.12.0
+          path: evidence/
+          compression-level: 0
+          retention-days: 90
+          if-no-files-found: error

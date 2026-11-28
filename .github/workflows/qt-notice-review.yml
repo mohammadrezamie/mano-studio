@@ -1,0 +1,35 @@
+name: Retain original upstream Qt attribution and notice texts
+on:
+  push:
+    branches: [release/source-evidence]
+    paths: ['.github/workflows/qt-notice-review.yml','scripts/qt_notice_review.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  collect:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Acquire pinned source review archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api repos/${{ github.repository }}/actions/artifacts/15220635288/zip > source-review.zip
+      - name: Collect original notices and reference exceptions
+        run: |
+          python scripts/qt_notice_review.py source-review.zip qt-notice-REVIEW-ONLY.zip
+          python -m zipfile -t qt-notice-REVIEW-ONLY.zip
+          sha256sum qt-notice-REVIEW-ONLY.zip > qt-notice-REVIEW-ONLY.zip.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qt-notice-review-only
+          path: |
+            qt-notice-REVIEW-ONLY.zip
+            qt-notice-REVIEW-ONLY.zip.sha256
+          if-no-files-found: error
+          retention-days: 90

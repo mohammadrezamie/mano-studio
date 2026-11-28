@@ -20,6 +20,11 @@ concurrency:
   cancel-in-progress: true
 permissions:
   contents: read
+# Cancel superseded generic regression runs on the same ref/event lane.
+# Dedicated exact-candidate and source/packaging workflows remain independent.
+concurrency:
+  group: generic-tests-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   test:
     strategy:
