@@ -8,8 +8,8 @@ The owner has explicitly authorized all four lanes to remain active: public Stab
 | --- | --- | --- |
 | Stable 1.0.0 | Private draft 460598745; frozen source 926272ff0ebfa4731cfb0b00c149c7e12b4d5a56; notice PR #70 head 7fbd0c94 | Run 46110089096: Ubuntu full regression passed, 1,578 tests in 80.26s; Windows job queued; installer build follows both platforms |
 | Beta 1.1.0-beta.1 | Private draft 460607136; frozen source 2dd55994d36f2596dd3d17ea54dd3c3e43829ae2; notice PR #71 head d95b3f49 | Run 46110092703: Ubuntu full regression running; Windows job queued; installer build follows both platforms |
-| Stable 1.0.1 update | Branch maintenance/stable-next; product source 489dfe61d1fb0ddd85b231629e93e1d8982dee0c | Run 46111029889 queued: full Windows/Ubuntu regression, then Windows Portable/Setup install/uninstall |
-| Beta 1.1.0-beta.2 update | Branch develop/next-beta; product source 68425aa542fab4792f40d139d79ab77c7bac553d | Run 46110374115 queued: full regression and Windows candidate; integration run 46110374019 queued |
+| Stable 1.0.1 update | Branch maintenance/stable-next; latest head f7fcf04bd13bcc2dda712a554ef5d0718ec8f766 includes corrected version-specific tests | Run 46111029889 queued: full Windows/Ubuntu regression, then Windows Portable/Setup install/uninstall |
+| Beta 1.1.0-beta.2 update | Branch develop/next-beta; product source 68425aa542fab4792f40d139d79ab77c7bac553d | Run 46110374115: Ubuntu in progress, Windows queued; integration run 46110374019 has Windows core passed, 7 jobs queued |
 
 ## Verified corrections
 
