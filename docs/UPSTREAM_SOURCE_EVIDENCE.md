@@ -1,3 +1,17 @@
+# Current frozen-candidate source scope — 2026-11-28
+
+This checkpoint supersedes the older candidate inventory below. Current Stable source 926272ff0ebfa4731cfb0b00c149c7e12b4d5a56 and Beta source 2dd55994d36f2596dd3d17ea54dd3c3e43829ae2 have 43 identical Qt/PySide/Shiboken binaries per channel, verified against the published Essentials/Shiboken wheels. Current portable artifacts 15221357225 and 15220621215 do not contain the previously shipped Qt PDF, QML/Quick, or WebEngine runtime libraries. Do not block on WebEngine/PDF source correspondence for binaries no longer shipped. The prior WebEngine/PDF wheel-source discussion is relevant only to those excluded components (https://forum.qt.io/topic/165231/corresponding-source-code-and-third-party-notices-for-pyside6-webengine-pdf-6-12-0.140-windows-wheels/4).
+
+- Six source archives and wheel-origin evidence retained in artifact 15220635288, outer SHA-256 e8ad1e1e7c1ca7b7e5e793e54007fe85ad1e3ed95b215c4dba507c8feb9ef129; independently checked all archive hashes.
+- QtBase, QtSvg, QtImageFormats and PySide/Shiboken remain in the native source review. Retain QtDeclarative and QtShaderTools evidence conservatively until build-dependency assessment is finished. Do not assert all six are shipped.
+- QtSvg modified-library replacement succeeded on both exact frozen candidates; this does not establish all-library native compatibility or exact vendor configuration.
+- Accessible-notice Stable pilot 15252792001 adds 236 readable notices and removes the optional Mesa fallback, with hosted installation/smoke success. It remains review-only pending independent graphics/native acceptance and final security/source review. Original frozen assets are unchanged.
+- Remaining source review concerns the actual retained modules, corresponding build inputs, notices, durable source access and replacement instructions. PYSIDE-3485 is a relevant upstream lead, not verified legal clearance (https://qt-project.atlassian.net/browse/PYSIDE-3485). A forum follow-up acknowledges a binding-tag clarification but does not independently establish the exact configuration of the retained native Qt libraries.
+
+No release approval is inferred. Do not rebuild or retest merely because this historical scope has been corrected.
+
+---
+
 # Exact-candidate source acquisition (review only)
 
 ## Scope
