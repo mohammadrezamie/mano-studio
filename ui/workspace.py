@@ -25,6 +25,7 @@ from ui.localization import error_text
 from ui.code_editor import CodeEditor
 from ui.glass import GlassRoot
 from ui.code_keypad import CodeKeypad
+from ui.typography import apply_ui_font
 
 LTR = Qt.LayoutDirection.LeftToRight
 
@@ -67,11 +68,13 @@ class Workspace(QMainWindow):
         self.language = settings.value("language", "en")
         if self.language not in ("en", "fa"):
             self.language = "en"
+        apply_ui_font(QApplication.instance(), self.language)
         self.theme = settings.value("theme", "dark")
         if self.theme not in PALETTES:
             self.theme = "dark"
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.direction = "forward"
+        self.product_tour = None
         self.path = None
         self.active_example = None
         self.result = None
@@ -108,27 +111,32 @@ class Workspace(QMainWindow):
         self.academic_button = self.button("Translator source", self.open_academic_source)
         self.academic_button.setObjectName("academicAction")
         header.addWidget(self.academic_button)
-        self.languages = QComboBox()
+        # Internal compatibility adapter for existing tests and capture scripts.
+        # The only visible language selector is in Preferences.
+        self.languages = QComboBox(self)
+        self.languages.hide()
         self.languages.addItem("English", "en")
         self.languages.addItem("فارسی", "fa")
         self.languages.setCurrentIndex(1 if self.language == "fa" else 0)
         self.languages.currentIndexChanged.connect(self.change_language)
-        header.addWidget(self.languages)
         self.themes = QComboBox()
         for name in ("Light", "Dark", "Night"):
             self.themes.addItem(self.t(name), name.lower())
         self.themes.setCurrentIndex(max(0, self.themes.findData(self.theme)))
         self.themes.currentIndexChanged.connect(self.change_theme)
         header.addWidget(self.themes)
-        header.addWidget(self.button("Settings", self.open_preferences))
+        self.settings_button = self.button("Settings", self.open_preferences)
+        header.addWidget(self.settings_button)
         layout.addWidget(header_frame)
         toolbar_frame = QFrame()
         toolbar_frame.setObjectName("glassBar")
         toolbar = QHBoxLayout(toolbar_frame)
         self.menu_actions = []
         for name, entries in [("File", [("New", self.new_file), ("Choose file", self.open_file), ("Save input", self.save_file), ("Save input as", self.save_as)]),
-                              ("Help", [("Instruction reference", self.open_instruction_reference), ("About", self.about)])]:
+                              ("Help", [("Take a tour", self.start_product_tour), ("Instruction reference", self.open_instruction_reference), ("About", self.about)])]:
             button = MotionButton(self.t(name))
+            if name == "Help":
+                self.help_button = button
             self.labels.append((button, name))
             menu = QMenu(button)
             for key, slot in entries:
@@ -142,7 +150,8 @@ class Workspace(QMainWindow):
         self.direction_box.addItem(self.t("ASM → RTL"),"reverse")
         self.direction_box.currentIndexChanged.connect(self.change_direction)
         toolbar.addWidget(self.direction_box)
-        toolbar.addWidget(self.button("Choose file", self.open_file))
+        self.open_button = self.button("Choose file", self.open_file)
+        toolbar.addWidget(self.open_button)
         examples_button = MotionButton(self.t("Examples"))
         self.labels.append((examples_button, "Examples"))
         examples_menu = QMenu(examples_button)
@@ -166,7 +175,8 @@ class Workspace(QMainWindow):
         toolbar.addWidget(labs)
         self.icon_buttons.append((labs, "labs"))
         toolbar.addStretch()
-        toolbar.addWidget(self.button("Translate", self.run_translation, True))
+        self.translate_button = self.button("Translate", self.run_translation, True)
+        toolbar.addWidget(self.translate_button)
         self.export_button = self.button("Export ASM", self.export_file)
         self.export_button.setEnabled(False)
         toolbar.addWidget(self.export_button)
@@ -618,7 +628,11 @@ class Workspace(QMainWindow):
 
     def change_language(self):
         self.language = self.languages.currentData()
-        self.settings.setValue("language", self.language)
+        from onboarding_state import update_language
+        update_language(self.settings, self.language)
+        app = QApplication.instance()
+        apply_ui_font(app, self.language)
+        app.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.setLayoutDirection(Qt.LayoutDirection.RightToLeft if self.language == "fa" else LTR)
         self.relabel()
         self.update_notice.relabel()
@@ -665,9 +679,22 @@ class Workspace(QMainWindow):
         finally:
             dialog.deleteLater()
 
+    def start_product_tour(self):
+        from ui.product_tour import ProductTour
+        if self.product_tour is None:
+            tour = ProductTour(self)
+            if not tour.finished:
+                self.product_tour = tour
+
     def open_preferences(self):
         from ui.preferences import Preferences
-        Preferences(self).exec()
+        while True:
+            dialog = Preferences(self)
+            dialog.exec()
+            reopen = dialog.reopen_for_language
+            dialog.deleteLater()
+            if not reopen:
+                break
 
     def confirm_discard(self):
         if not self.editor.document().isModified():
@@ -955,6 +982,8 @@ class Workspace(QMainWindow):
         return dialog
 
     def closeEvent(self, event):
+        if self.product_tour is not None:
+            self.product_tour.finish("skipped")
         if not self.confirm_discard():
             event.ignore()
             return
