@@ -3,7 +3,7 @@ import json
 import struct
 import zipfile
 import pytest
-from installer.candidate_manifest import validate
+from installer.candidate_manifest import validate, source_version
 
 
 SHA = "a" * 40
@@ -217,3 +217,14 @@ def test_reject_stale_installed_payload_report(candidate, damage):
         path.write_text(json.dumps(report))
     with pytest.raises(ValueError, match="[Ii]nstalled payload report"):
         validate(root, SHA)
+
+
+def test_accepts_current_semver_beta_candidate(tmp_path):
+    (tmp_path / "update_service.py").write_text('VERSION = "1.1.0-beta.2"\\n')
+    assert source_version(tmp_path) == "1.1.0-beta.2"
+
+
+def test_rejects_unmarked_stable_version(tmp_path):
+    (tmp_path / "update_service.py").write_text('VERSION = "1.0.0"\\n')
+    with pytest.raises(ValueError, match="development/prerelease"):
+        source_version(tmp_path)
