@@ -1,0 +1,67 @@
+name: Evaluate optional legacy software OpenGL fallback
+on:
+  push:
+    branches: [release/source-evidence]
+    paths: ['.github/workflows/mesa-fallback-review.yml']
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  probe:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {track: stable, version: '1.0.0', artifact: '15221357225', sha: 'bc93823dbea393f17464886abeef406defda22e4151dbaab82293928eae3271e'}
+          - {track: beta, version: '1.1.0-beta.1', artifact: '15220621215', sha: 'b6a9e2c0fa4014ce505d68e639a328f6ec193b98655c2f123a93365d3b523109'}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '46041711466'
+          artifact-ids: ${{ matrix.artifact }}
+          github-token: ${{ github.token }}
+          path: frozen
+      - name: Compare original and disposable no-Mesa copies
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $zip=@(Get-ChildItem frozen -Recurse -File -Filter 'ManoStudio-v${{ matrix.version }}-Windows-x64.zip')
+          if($zip.Count -ne 1 -or (Get-FileHash $zip[0].FullName -Algorithm SHA256).Hash.ToLower() -ne '${{ matrix.sha }}'){throw 'Wrong candidate'}
+          $root=Join-Path $env:RUNNER_TEMP 'mano-mesa-probe'
+          Expand-Archive -LiteralPath $zip[0].FullName -DestinationPath $root
+          $app=Join-Path $root 'ManoStudio/ManoStudio.exe'
+          $dll=Join-Path $root 'ManoStudio/_internal/PySide6/opengl32sw.dll'
+          $hash=(Get-FileHash $dll -Algorithm SHA256).Hash.ToLower()
+          if($hash -ne '18aedc7a4b610f53bcc7b7a5c5ed9293c7e86f030e3273ad54ed3bb1ebd36702'){throw 'Wrong Mesa fallback'}
+          New-Item -ItemType Directory -Force evidence | Out-Null
+          $env:QT_QPA_FONTDIR=Join-Path $env:WINDIR 'Fonts'
+          function Smoke($phase,$platform){
+            $env:QT_QPA_PLATFORM=$platform
+            $report=Join-Path $PWD "evidence/$phase-$platform.txt"
+            $p=Start-Process -FilePath $app -ArgumentList ('--smoke-test "'+$report+'"') -PassThru
+            if(!$p.WaitForExit(90000)){$p.Kill();throw "$phase $platform timeout"}
+            if($p.ExitCode -ne 0 -or !(Test-Path $report) -or (Get-Content $report -Raw).Trim() -ne 'PASS'){throw "$phase $platform failed"}
+          }
+          Smoke 'original' 'offscreen'
+          Smoke 'original' 'windows'
+          $backup=Join-Path $env:RUNNER_TEMP 'mano-original-opengl32sw.dll'
+          Move-Item -LiteralPath $dll -Destination $backup
+          try{
+            Smoke 'without-mesa' 'offscreen'
+            Smoke 'without-mesa' 'windows'
+          } finally {
+            Move-Item -LiteralPath $backup -Destination $dll
+          }
+          if((Get-FileHash $dll -Algorithm SHA256).Hash.ToLower() -ne $hash){throw 'Restore mismatch'}
+          @{track='${{ matrix.track }}';source_portable_sha256='${{ matrix.sha }}';mesa_sha256=$hash;original_and_no_mesa_smoke='PASS';platforms=@('offscreen','windows');independent_desktop_verified=$false;software_rendering_compatibility_verified=$false;redistribution_approved=$false;frozen_asset_modified=$false} | ConvertTo-Json | Set-Content -Encoding utf8 evidence/summary.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mesa-fallback-review-${{ matrix.track }}
+          path: evidence/
+          if-no-files-found: warn
+          retention-days: 90
