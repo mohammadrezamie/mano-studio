@@ -14,6 +14,10 @@ No release approval is inferred. Do not rebuild or retest merely because this hi
 
 The inner Portable archive in artifact 15221357225 contains 99 .qm files under PySide6/translations. Independently enumerated the ZIP members and compared catalog stems with official qttranslations v6.12.0 commit 2811457ceff8f0c24a1c4d14f947a283a17239d0: 96 have matching .ts files under translations/. The three remaining English catalogs (qt_en, qtbase_en, qt_help_en) correspond to the upstream build's generated empty English TS mechanism (generate_empty_ts_file in translations/CMakeLists.txt). This establishes source-name coverage, not proof of identical compiled catalog content or redistribution approval. Retain the official archive, license evidence and relevant build scripts; verify the source archive checksum in run 46121607338. No further catalog discovery workflow is necessary.
 
+## Verified translation archive — 2026-11-28
+
+Run 46121607338 completed successfully. Artifact 15254421633 was downloaded and independently inspected locally: outer SHA-256 bdbc7de8af96940c472c7f0ed24a9ae5602ecad730adc419ad53646cc4b0c78d, ZIP CRC passed; inner official tar.xz 1,745,884 bytes SHA-256 85929c0c30d6f273f23bd879bb69803ea17b010ab73cab2f8abf95357f6f6bbb matches the vendor checksum, 325 members including 301 TS files and four license texts. Both exact original Stable and Beta inner Portable SHA-256 values independently verified, and both have identical 99 catalog stems: 96 directly matching archive TS files, three English stems covered by the actual archive CMake generate_empty_ts_file rules. Source-name coverage complete; compiled-content correspondence, applicable license terms and retained build inputs still require review. Do not rerun acquisition or catalog enumeration. Retain this archive for the final source delivery bundle.
+
 ---
 
 # Exact-candidate source acquisition (review only)
