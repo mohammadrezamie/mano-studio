@@ -1,0 +1,104 @@
+name: Attach verified release evidence to private drafts
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/attach-release-evidence.yml']
+permissions: {}
+jobs:
+  attach:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: write
+    concurrency:
+      group: release-draft-${{ matrix.track }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {track: stable, version: '1.0.0', id: '460598745', placeholder: 'untagged-e438c6988649501c973e', source: '926272ff0ebfa4731cfb0b00c149c7e12b4d5a56', attestation: '15224204595', attestation_sha: '25d7f01fa4387af72d541b139954b869c567c98dc1e4f0bdf61ec626c69b0ea6', setup_sha: '3525135132eaabe6039e3c543911ac6429e71e453b53792968e91fb1a142ef9c', portable_sha: 'bc93823dbea393f17464886abeef406defda22e4151dbaab82293928eae3271e', count: '1578'}
+          - {track: beta, version: '1.1.0-beta.1', id: '460607136', placeholder: 'untagged-786f71ed7a05b8f89b03', source: '2dd55994d36f2596dd3d17ea54dd3c3e43829ae2', attestation: '15224708085', attestation_sha: 'b7c8a337ccd35f1864cc7cc2e4e03be2b5a21c53cb157a99733e7837e8c03118', setup_sha: '8fcd72cc280892de6c76c76d555ab4c6601b9e9753cb13157ca0c01ee127a0bc', portable_sha: 'b6a9e2c0fa4014ce505d68e639a328f6ec193b98655c2f123a93365d3b523109', count: '2302'}
+    steps:
+      - name: Validate and retain original signed evidence and regression report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          TRACK: ${{ matrix.track }}
+          VERSION: ${{ matrix.version }}
+          RELEASE_ID: ${{ matrix.id }}
+          PLACEHOLDER: ${{ matrix.placeholder }}
+          SOURCE: ${{ matrix.source }}
+          ATTESTATION: ${{ matrix.attestation }}
+          ATTESTATION_SHA: ${{ matrix.attestation_sha }}
+          SETUP_SHA: ${{ matrix.setup_sha }}
+          PORTABLE_SHA: ${{ matrix.portable_sha }}
+          COUNT: ${{ matrix.count }}
+        run: |
+          python - <<'PY'
+          import hashlib, io, json, os, pathlib, subprocess, zipfile
+          from urllib.parse import urlencode
+          e = os.environ
+          base = "repos/" + e["REPO"]
+          endpoint = base + "/releases/" + e["RELEASE_ID"]
+          tag = "v" + e["VERSION"]
+          def require(ok, message):
+              if not ok: raise ValueError(message)
+          def gh(*args): return subprocess.check_output(["gh", *args])
+          def api(path): return json.loads(gh("api", path))
+          def sha(raw): return hashlib.sha256(raw).hexdigest()
+          def draft():
+              r = api(endpoint)
+              require(r["id"] == int(e["RELEASE_ID"]) and r["draft"] is True and r["prerelease"] == (e["TRACK"] == "beta") and r["tag_name"] in (tag, e["PLACEHOLDER"]), "Wrong draft")
+              assets = {a["name"]: a for a in r["assets"]}
+              require(len(assets) == len(r["assets"]), "Duplicate asset names")
+              for name, digest in expected.items():
+                  require(assets.get(name, {}).get("digest") == "sha256:" + digest, "Frozen payload mismatch: " + name)
+              return r, assets
+          expected = {f"ManoStudio-Setup-{tag}-x64.exe":e["SETUP_SHA"], f"ManoStudio-{tag}-Windows-x64.zip":e["PORTABLE_SHA"]}
+          for run in (46050465305, 46067092359, 46102530937):
+              require(api(f"{base}/actions/runs/{run}")["conclusion"] == "success", "Evidence run not successful")
+          draft()
+          def artifact(run, aid, digest):
+              matches = [a for a in api(f"{base}/actions/runs/{run}/artifacts?per_page=100")["artifacts"] if a["id"] == aid]
+              require(len(matches) == 1 and matches[0]["digest"] == "sha256:" + digest and matches[0]["expired"] is False, "Artifact identity mismatch")
+              raw = gh("api", f"{base}/actions/artifacts/{aid}/zip")
+              require(sha(raw) == digest, "Artifact digest mismatch")
+              with zipfile.ZipFile(io.BytesIO(raw)) as z:
+                  require(z.testzip() is None and len(z.namelist()) == len(set(z.namelist())), "Invalid evidence archive")
+              return raw
+          signed = artifact(46050465305, int(e["ATTESTATION"]), e["ATTESTATION_SHA"])
+          with zipfile.ZipFile(io.BytesIO(signed)) as z:
+              predicate = json.loads(z.read("review-predicate.json"))
+              require(predicate["source_sha"] == e["SOURCE"] and predicate["track"] == e["TRACK"] and predicate["asset_sha256"] == expected and predicate["public_release_approved"] is False, "Wrong signed predicate")
+              require(len(z.namelist()) >= 2, "Missing signed bundle")
+          report = artifact(46102530937, 15246006755, "425c0b448ee7777c025c0f7977e067d684005067a7f66ad2cbe97d2cd34af3ca")
+          with zipfile.ZipFile(io.BytesIO(report)) as z:
+              data = json.loads(z.read("reconciliation.json"))
+              require(data["run"] == 46048466661 and data["collection_cardinality_verified"] is True and data["all_44_jobs_successful"] is True, "Wrong regression report")
+              rows = [r for r in data["results"] if r["track"] == e["TRACK"]]
+              require({r["os"] for r in rows} == {"ubuntu-latest","windows-latest"} and len(rows) == 2 and all(r["source"] == e["SOURCE"] and r["passed"] == int(e["COUNT"]) and r["skipped"] == 0 for r in rows), "Regression count mismatch")
+          for name, raw in [(f"ManoStudio-{tag}-signed-verification.zip", signed), (f"ManoStudio-{tag}-regression-evidence.zip", report)]:
+              _, assets = draft()
+              digest = "sha256:" + sha(raw)
+              if name in assets:
+                  require(assets[name]["digest"] == digest, "Existing evidence mismatch")
+                  continue
+              p = pathlib.Path(name)
+              p.write_bytes(raw)
+              url = f"https://uploads.github.com/{endpoint}/assets?" + urlencode({"name": name})
+              uploaded = json.loads(gh("api","--method","POST",url,"--header","Content-Type: application/octet-stream","--input",str(p)))
+              require(uploaded["digest"] == digest, "Evidence upload mismatch")
+              _, assets = draft()
+              require(assets[name]["digest"] == digest, "Stored evidence mismatch")
+          r, _ = draft()
+          marker = "## Verified test and authenticity evidence"
+          if marker not in r["body"]:
+              body = r["body"] + "\n" + marker + "\n\n" + f"Reconciled regression: {e['COUNT']} passed per OS, no skips; signed post-build verification and regression evidence archives attached. These archives are evidence, not an Authenticode signature, independent full-node manifest, security approval, or redistribution clearance. Release remains private.\n"
+              gh("api","--method","PATCH",endpoint,"-f","body="+body)
+              draft()
+          print("Verified evidence retained on private draft; no publication.")
+          PY
