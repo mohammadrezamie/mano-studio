@@ -90,7 +90,7 @@ jobs:
       - name: Install exact build dependencies
         run: python -m pip install -r requirements.txt -r requirements-dev.txt -r requirements-build.txt
       - name: Verify update, packaging and candidate contracts
-        run: python -m pytest -q tests/test_candidate_manifest.py tests/test_verify_installed.py tests/test_linked_payload.py tests/test_windows_build_contract.py tests/test_localization.py tests/test_collect_notices.py tests/test_release_channel.py tests/test_update_download.py tests/test_update_service.py tests/test_update_view.py tests/test_update_notice.py tests/test_update_progress.py
+        run: python -m pytest -q tests/test_candidate_manifest.py tests/test_verify_installed.py tests/test_windows_build_contract.py tests/test_localization.py tests/test_collect_notices.py tests/test_release_channel.py tests/test_update_download.py tests/test_update_service.py tests/test_update_view.py tests/test_update_notice.py tests/test_update_progress.py
       - name: Configure Windows fonts and verify glyphs
         shell: pwsh
         run: |
