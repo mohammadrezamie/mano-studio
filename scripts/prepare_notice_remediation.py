@@ -8,7 +8,6 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import shutil
 import struct
 import sys
 import zipfile
@@ -16,7 +15,7 @@ import zipfile
 MESA = "_internal/PySide6/opengl32sw.dll"
 MESA_SHA = "18aedc7a4b610f53bcc7b7a5c5ed9293c7e86f030e3273ad54ed3bb1ebd36702"
 NOTICE_SHA = "e0d723b4a78cadc46609c86a14093b3840109c554a18f55b430660033b7dcc65"
-NOTICE = "third-party-notices/qt-upstream-REVIEW-ONLY.zip"
+NOTICE = "third-party-notices/qt-upstream"
 INVENTORY = "third-party-notices/inventory.json"
 
 
@@ -81,7 +80,7 @@ def main():
         z.extractall(dist)
     root=dist/"ManoStudio"
     before=inventory(root)
-    if before.get(MESA,{}).get("sha256")!=MESA_SHA or NOTICE in before:
+    if before.get(MESA,{}).get("sha256")!=MESA_SHA or (root/NOTICE).exists():
         raise ValueError("Unexpected reviewed payload")
     for name in before:
         if name==MESA or Path(name).suffix.lower() not in (".exe",".pyd",".dll"):
@@ -103,12 +102,18 @@ def main():
     (root/MESA).unlink()
     inv["binaries"]=[x for x in rows if x["path"]!=MESA]
     inv_path.write_text(json.dumps(inv,indent=2,ensure_ascii=False)+"\n",encoding="utf-8")
-    shutil.copyfile(a.notice,root/NOTICE)
+    from expand_qt_notices import expand
+    notice_count = expand(a.notice, root/NOTICE)
+    if notice_count != 236:
+        raise ValueError('Unexpected notice count')
+    expected_additions = {str(p.relative_to(root)).replace('\\', '/') for p in (root/NOTICE).rglob('*') if p.is_file()}
+    if len(expected_additions) != notice_count + 2:
+        raise ValueError('Unexpected expanded notice membership')
     after=inventory(root)
     removed=set(before)-set(after)
     added=set(after)-set(before)
     changed={k for k in set(before)&set(after) if before[k]!=after[k]}
-    if (removed,added,changed)!=({MESA},{NOTICE},{INVENTORY}):
+    if (removed,added,changed)!=({MESA},expected_additions,{INVENTORY}):
         raise ValueError("Unintended payload change")
     icon_from_exe(root/"ManoStudio.exe",a.candidate/"build/mano-studio.ico")
     report={"kind":"internal-notice-remediation-pilot","original_portable_sha256":a.portable_sha,
