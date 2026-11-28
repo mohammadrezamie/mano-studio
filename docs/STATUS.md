@@ -16,7 +16,7 @@ The owner has explicitly authorized all four lanes to remain active: public Stab
 - Earlier PR #70/#71 general Tests and Windows installer jobs were skipped by branch filters. Notice-only green jobs did not constitute full application acceptance. Exact-head workflows were added to both release branches; do not count skipped checks as passes.
 - Added separate full-verification workflows for Stable 1.0.1 and Beta 1.1.0-beta.2. The Beta candidate manifest had a real version-regex defect that rejected 1.1.0-beta.2; it now accepts semantic-version prereleases and tests reject an unmarked stable version.
 - Stable Ubuntu exact-head regression has now passed 1,578 tests in 80.26 seconds. No Windows pass is claimed yet.
-- The OpenSSL review document now covers the 10, 17 and 24 November 2026 advisories. The bundled runtime is 3.5.9; upstream has scheduled 3.5.10 for 1 December 2026. Do not claim 3.5.10 is already published or present in current candidates.
+- The [OpenSSL advisory review](OPENSSL_ADVISORY_REVIEW.md) covers the 10, 17 and 24 November 2026 advisories. The bundled runtime is 3.5.9; upstream has scheduled 3.5.10 for 1 December 2026. Do not claim 3.5.10 is already published or present in current candidates.
 
 ## Remaining release gates
 
