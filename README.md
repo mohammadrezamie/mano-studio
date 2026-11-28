@@ -33,16 +33,16 @@ and explore digital logic through interactive educational tools.
 
 Choose **Setup** for a normal installation or **Portable** to run without installing. Both contain the same application for their respective version, with the required Python and Qt runtime bundled.
 
-> **Release review:** The latest notice-corrected candidates passed Windows packaging, hosted installer acceptance, all 44 exact-source regression/visual jobs and signed post-build verification. Final security, corresponding-source/redistribution and independent native acceptance reviews remain pending. They are not publicly released yet. The download links below are temporary GitHub Actions review artifacts (sign-in may be required), not approved public distribution packages. Do not redistribute them.
+> **Release review — 28 November 2026:** No approved public download is available yet. The earlier frozen Stable and Beta candidates passed their own regression and hosted installer checks, but the current notice-corrected replacement candidates are different exact source revisions and are undergoing fresh verification. Follow [Stable PR #70](https://github.com/mohammadrezamie/mano-studio/pull/70) and [Beta PR #71](https://github.com/mohammadrezamie/mano-studio/pull/71) for current evidence. Earlier review artifacts and draft assets are superseded for this verification cycle; do not download or redistribute them. New Setup and Portable links will appear here only after the replacement candidates pass their exact-source checks and release approval.
 
 ### Download table
 
 | Version | Architecture | Setup — recommended | Portable | Release status |
 | :--- | :---: | :---: | :---: | :--- |
-| **1.0.0 Stable** | Windows x64 | [![Setup review](https://img.shields.io/badge/Setup-Review-2563EB?style=flat-square&logo=windows&logoColor=white)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466/artifacts/15221272367) | [![Portable 45 MB](https://img.shields.io/badge/ZIP-45.0%20MB-475569?style=flat-square)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466/artifacts/15221357225) | [Private draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-e438c6988649501c973e) |
-| **1.1.0-beta.1 Beta** | Windows x64 | [![Setup 31.1 MB](https://img.shields.io/badge/Setup-31.1%20MB-2563EB?style=flat-square&logo=windows&logoColor=white)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466/artifacts/15220751219) | [![Portable 45.1 MB](https://img.shields.io/badge/ZIP-45.1%20MB-475569?style=flat-square)](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466/artifacts/15220621215) | [Private prerelease draft](https://github.com/mohammadrezamie/mano-studio/releases/tag/untagged-786f71ed7a05b8f89b03) |
+| **1.0.0 Stable** | Windows x64 | Not publicly available | Not publicly available | Private draft · [replacement verification](https://github.com/mohammadrezamie/mano-studio/pull/70) |
+| **1.1.0-beta.1 Beta** | Windows x64 | Not publicly available | Not publicly available | Private prerelease draft · [replacement verification](https://github.com/mohammadrezamie/mano-studio/pull/71) |
 
-<sub>Sizes refer to the actual installer and portable ZIP, not the surrounding Actions archive. Setup review downloads arrive inside an archive; permanent EXE downloads will appear on the official Releases page after approval.</sub>
+<sub>These are release targets, not download links. Permanent installers and Portable ZIPs will be listed only after the exact replacement artifacts pass full regression, packaging, installation, provenance, security and redistribution review.</sub>
 
 [![Official GitHub Releases](https://img.shields.io/badge/GitHub-Official%20Releases-24292F?style=for-the-badge&logo=github&logoColor=white)](https://github.com/mohammadrezamie/mano-studio/releases)
 
@@ -61,7 +61,7 @@ Check **Settings → System → About → System type** before downloading.
 
 | Platform | Availability |
 | --- | --- |
-| Windows 11 x64 / Windows 10 x64 | Target platforms; both candidates passed two hosted Windows installer profiles. Independent clean physical/VM Windows 10/11 compatibility and interactive acceptance remain unverified. Use a security-supported Windows edition. |
+| Windows 11 x64 / Windows 10 x64 | Target platforms. Earlier candidates passed hosted Windows installer profiles; the current notice-corrected replacements are under fresh verification. Independent clean physical/VM Windows 10/11 compatibility and interactive acceptance remain unverified. Use a security-supported Windows edition. |
 | Windows x86 (32-bit) | Not available; current Qt/PySide6 dependencies lack official x86 Windows wheels. |
 | Windows ARM64 | No verified native package or emulation support yet. |
 | Linux / macOS | Source development only with compatible dependencies; no official installer. |
@@ -69,7 +69,7 @@ Check **Settings → System → About → System type** before downloading.
 
 Additional architecture feasibility is tracked in [#54](https://github.com/mohammadrezamie/mano-studio/issues/54). The standalone Python translator remains independent of desktop GUI dependencies.
 
-Verify the matching SHA-256 checksum when a package becomes available on the official Releases page. Neither current candidate is Authenticode-signed. Applicable security, redistribution and independent native acceptance reviews remain open. Both private drafts now contain the verified rebuilt assets, with historical assets explicitly marked OLD-REVIEW-ONLY. GitHub/Sigstore post-build verification passed; it is not Authenticode.
+Verify the matching SHA-256 checksum when a package becomes available on the official Releases page. Neither candidate is Authenticode-signed. Applicable security, redistribution and independent native acceptance reviews remain open. The private drafts still require refresh with the new exact-byte replacement packages; historical assets must remain excluded from public promotion. GitHub/Sigstore post-build verification of the earlier frozen candidates passed; it is not Authenticode.
 
 </details>
 
@@ -244,12 +244,14 @@ The dependency-free academic core is kept separate from the desktop shell and ed
 
 Two independent release tracks, one application. Stable focuses on reliability and Beta advances the educational features.
 
-| Channel | Version | Exact automated regression | Latest build and hosted installation |
+| Channel | Version | Previous frozen-candidate regression | Current replacement verification |
 | --- | --- | --- | --- |
-| Stable candidate | `1.0.0` | [1,578 passed per OS](https://github.com/mohammadrezamie/mano-studio/actions/runs/46102530937) | [Build passed](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466) · [Install passed](https://github.com/mohammadrezamie/mano-studio/actions/runs/46044104396) |
-| Beta candidate | `1.1.0-beta.1` | [2,302 passed per OS](https://github.com/mohammadrezamie/mano-studio/actions/runs/46102530937) | [Build passed](https://github.com/mohammadrezamie/mano-studio/actions/runs/46041711466) · [Install passed](https://github.com/mohammadrezamie/mano-studio/actions/runs/46043046471) |
+| Stable candidate | `1.0.0` | [1,578 passed per OS](https://github.com/mohammadrezamie/mano-studio/actions/runs/46102530937) | [PR #70](https://github.com/mohammadrezamie/mano-studio/pull/70) · [run 46110089096](https://github.com/mohammadrezamie/mano-studio/actions/runs/46110089096): Ubuntu passed; Windows queued at last check |
+| Beta candidate | `1.1.0-beta.1` | [2,302 passed per OS](https://github.com/mohammadrezamie/mano-studio/actions/runs/46102530937) | [PR #71](https://github.com/mohammadrezamie/mano-studio/pull/71) · [run 46110092703](https://github.com/mohammadrezamie/mano-studio/actions/runs/46110092703): Ubuntu running; Windows queued at last check |
 
-The [exact rebuilt candidate regression](https://github.com/mohammadrezamie/mano-studio/actions/runs/46048466661) passed all 44 jobs: ten test shards per platform per channel and four independent visual capture jobs. [Independent post-run reconciliation](https://github.com/mohammadrezamie/mano-studio/actions/runs/46102530937) verified 7,760 passing test executions across Windows and Linux, no skips or duplicate JUnit identities per OS/channel, and shard-union cardinality matching the recorded collections. This is not an independently collected full node-ID manifest. [Signed post-build asset verification](https://github.com/mohammadrezamie/mano-studio/actions/runs/46050465305) and [private draft refresh](https://github.com/mohammadrezamie/mano-studio/actions/runs/46067092359) passed both channels. Both private drafts contain verified rebuilt Setup, Portable and checksums, and a review-only Qt source bundle. Historical assets are explicitly retained under OLD-REVIEW-ONLY names and must be excluded before eventual publication. **Neither is a public release yet.** Applicable dependency security, redistribution and corresponding-source obligations, and independent native Windows acceptance remain open. Installers are not Authenticode-signed; automated in-app execution remains disabled.
+The [44-job exact-candidate regression](https://github.com/mohammadrezamie/mano-studio/actions/runs/46048466661), [7,760-execution reconciliation](https://github.com/mohammadrezamie/mano-studio/actions/runs/46102530937), and [signed post-build verification](https://github.com/mohammadrezamie/mano-studio/actions/runs/46050465305) apply to the **earlier frozen source revisions** (Stable `926272ff`, Beta `2dd55994`). They do not transfer automatically to the current notice-corrected PR #70/#71 source revisions. The replacement workflows must pass both operating systems and their dependent Windows Portable/Setup build, smoke, install/uninstall, exact hashes and candidate manifest before the private drafts can be refreshed. Neither release is public.
+
+The frozen candidates bundle OpenSSL 3.5.9, which remains within the upstream affected version range for November 2026 advisories. OpenSSL 3.5.10 is scheduled for 1 December 2026 and is not yet available as of this review. Qt/PySide corresponding-source and relink obligations, complete redistribution review, and independent native Windows acceptance remain open. The installers are not Authenticode-signed; automated in-app installation remains disabled until trusted publisher identity and end-to-end upgrade acceptance are available.
 
 Follow [Stable #4](https://github.com/mohammadrezamie/mano-studio/issues/4), [Beta #23](https://github.com/mohammadrezamie/mano-studio/issues/23), [Actions](https://github.com/mohammadrezamie/mano-studio/actions) and [Releases](https://github.com/mohammadrezamie/mano-studio/releases) for live evidence. Next-generation development continues independently on [maintenance/stable-next (1.0.1)](https://github.com/mohammadrezamie/mano-studio/tree/maintenance/stable-next) and [develop/next-beta (1.1.0-beta.2)](https://github.com/mohammadrezamie/mano-studio/tree/develop/next-beta).
 
