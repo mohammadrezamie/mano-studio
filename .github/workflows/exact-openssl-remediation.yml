@@ -109,7 +109,7 @@ jobs:
           import os, sys
           from pathlib import Path
           root=Path("candidate/dist/ManoStudio/_internal").resolve()
-          suffix=sys.argv[1]
+          suffix={'qt':'-x64','python':''}[sys.argv[1]]
           with os.add_dll_directory(str(root)):
               crypto=C.WinDLL(str(root / ("libcrypto-3"+suffix+".dll")))
               ssl=C.WinDLL(str(root / ("libssl-3"+suffix+".dll")))
@@ -131,9 +131,9 @@ jobs:
               ssl.SSL_CTX_free(ctx)
               print("PASS")
           '@ | Set-Content -Encoding ascii tls-smoke.py
-          python tls-smoke.py '-x64'
+          python tls-smoke.py qt
           if($LASTEXITCODE -ne 0){throw 'Qt OpenSSL DLL smoke failed'}
-          python tls-smoke.py ''
+          python tls-smoke.py python
           if($LASTEXITCODE -ne 0){throw 'Python OpenSSL DLL smoke failed'}
           'PASS' | Set-Content -Encoding ascii evidence/tls-context-smoke.txt
       - name: Run both portable platform smoke checks
