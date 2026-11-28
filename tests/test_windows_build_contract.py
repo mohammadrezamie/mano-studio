@@ -33,7 +33,7 @@ def test_unused_qt_virtual_keyboard_is_pruned_with_a_dependency_guard():
     expected = {
         "LGPL-3.0-only.txt": "65c5ca88a67c30becee01c5a8816d964b03862f9",
         "GPL-3.0-only.txt": "94a9ed024d3859793618152ea559a168bbcbb5e2",
-        "README.md": "6285e0ec3360d3384dda61f0d76811fa2099b5ae",
+        "README.md": "fa7204f4ce7d09a63afc090a470024c8d20616ee",
     }
     assert "qt-license-texts" in script
     assert "Copy-Item -LiteralPath" in script
@@ -73,3 +73,18 @@ def test_candidate_manifest_module_entry_point():
                             cwd=root, capture_output=True, text=True, timeout=15)
     assert result.returncode == 0, result.stderr
     assert "--sha" in result.stdout and "--root" in result.stdout
+
+
+def test_unused_qml_and_pdf_runtime_are_pruned_before_notice_collection():
+    script = BUILD_SCRIPT.read_text(encoding="utf-8")
+    assert "python -m installer.prune_qml $dist" in script
+    assert "python -m installer.prune_pdf $dist --apply" in script
+    assert script.index("python -m installer.prune_qml $dist") < script.index("python installer/collect_notices.py")
+    assert script.index("python -m installer.prune_pdf $dist --apply") < script.index("python installer/collect_notices.py")
+    assert script.index("python installer/collect_notices.py") < script.index("python -m installer.openssl_notice")
+
+
+def test_qt_imageformats_notice_collection_runs_once_after_upstream_license_copy():
+    script = BUILD_SCRIPT.read_text(encoding="utf-8")
+    assert script.count("python -m installer.qt_imageformats_notices") == 1
+    assert script.index("python -m installer.qt_imageformats_notices") > script.index("Copy-Item -LiteralPath")

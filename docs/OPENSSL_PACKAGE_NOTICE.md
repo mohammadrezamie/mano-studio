@@ -1,0 +1,3 @@
+# OpenSSL package notice correction
+
+Independent beta candidate follow-up. Bundle exact upstream OpenSSL 3.5.9 LICENSE.txt when recognized in the frozen crypto DLLs, with SHA-256 and recorded upstream Git blob identity. Unknown or ambiguous versions are reported, never assigned a guessed license. This is evidence, not clearance: actual distributor provenance, security advisory applicability, third-party notices and Qt LGPL corresponding-source obligations remain open. The existing draft release and its hashes are unchanged. Rebuild and verify a replacement candidate before promoting this packaging correction.
