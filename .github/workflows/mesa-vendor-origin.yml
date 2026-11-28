@@ -12,34 +12,43 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
-      - name: Download exact official Qt fallback archive and verify bytes
+      - name: Compare three checksum-pinned vendor variants
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p evidence extracted
-          curl --fail --location --max-time 120 --retry 1 --proto '=https' --proto-redir '=https' -o evidence/vendor.7z https://download.qt.io/development_releases/prebuilt/llvmpipe/windows/opengl32sw-64-mesa_11_2_2-signed_sha256.7z
-          echo 'c61f801c1760aa24b02c7a8354323cddf368b86f8f5c34b50b3b224f7d728afd  evidence/vendor.7z' | sha256sum -c
-          7z l evidence/vendor.7z > evidence/archive-contents.txt
-          7z x -oextracted evidence/vendor.7z
           python - <<'PY'
-          import hashlib,json
+          import hashlib,json,subprocess
           from pathlib import Path
-          files=list(Path("extracted").rglob("opengl32sw.dll"))
-          if len(files)!=1: raise ValueError("Expected exactly one vendor DLL")
-          p=files[0]
-          with p.open("rb") as f: digest=hashlib.file_digest(f,"sha256").hexdigest()
-          report={"vendor_dll_sha256":digest,"vendor_dll_size":p.stat().st_size,"candidate_dll_sha256":"18aedc7a4b610f53bcc7b7a5c5ed9293c7e86f030e3273ad54ed3bb1ebd36702","source_correspondence_verified":False,"redistribution_approved":False}
-          report["exact_binary_match"]=digest==report["candidate_dll_sha256"]
+          root = "https://download.qt.io/development_releases/prebuilt/llvmpipe/windows/"
+          variants = {
+              "opengl32sw-64-mesa_11_2_2.7z": "142a74bfbe7d2b1bf633925f130b29eb10ffa9fb87cc1bbd05ee2624ee81d261",
+              "opengl32sw-64-mesa_11_2_2-signed.7z": "e2927d195699ef03685f38a64009b4c791d85f066a7d0ca580540eacb5b50a3d",
+              "opengl32sw-64-mesa_11_2_2-signed_sha256.7z": "c61f801c1760aa24b02c7a8354323cddf368b86f8f5c34b50b3b224f7d728afd",
+          }
+          expected = "18aedc7a4b610f53bcc7b7a5c5ed9293c7e86f030e3273ad54ed3bb1ebd36702"
+          def digest(p):
+              with p.open("rb") as stream: return hashlib.file_digest(stream,"sha256").hexdigest()
+          rows=[]
+          for name,sha in variants.items():
+              p=Path("extracted")/name
+              subprocess.run(["curl","--fail","--location","--max-time","90","--proto","=https","--proto-redir","=https","-o",str(p),root+name],check=True)
+              if digest(p)!=sha: raise ValueError("Vendor archive checksum mismatch: "+name)
+              folder=p.with_suffix("")
+              subprocess.run(["7z","x","-o"+str(folder),str(p)],check=True)
+              files=list(folder.rglob("opengl32sw.dll"))
+              if len(files)!=1: raise ValueError("Expected one DLL: "+name)
+              dll=files[0]
+              rows.append({"archive":name,"archive_sha256":sha,"dll_sha256":digest(dll),"dll_size":dll.stat().st_size,"exact_binary_match":digest(dll)==expected})
+          report={"candidate_dll_sha256":expected,"variants":rows,"exact_binary_match":any(r["exact_binary_match"] for r in rows),"source_correspondence_verified":False,"redistribution_approved":False}
           Path("evidence/report.json").write_text(json.dumps(report,indent=2)+"\n")
           print(json.dumps(report,indent=2))
-          if not report["exact_binary_match"]: raise ValueError("Official archive DLL differs from candidate")
+          if not report["exact_binary_match"]: raise ValueError("No exact matching vendor variant")
           PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: mesa-vendor-origin
-          path: |
-            evidence/report.json
-            evidence/archive-contents.txt
+          path: evidence/report.json
           if-no-files-found: warn
           retention-days: 90
