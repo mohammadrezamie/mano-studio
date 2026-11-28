@@ -1,0 +1,93 @@
+name: Reconcile completed exact-candidate regression evidence
+on:
+  push:
+    branches: [release/notice-rebuild]
+    paths: ['.github/workflows/reconcile-candidate-regression.yml']
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  reconcile:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/notice-rebuild'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          run-id: '46048466661'
+          pattern: regression-*
+          github-token: ${{ github.token }}
+          path: evidence
+      - name: Cross-check JUnit membership, collection counts and exact sources
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          python - <<'PY'
+          import json, math, os, re, subprocess, xml.etree.ElementTree as ET
+          from pathlib import Path
+          def require(ok, reason):
+              if not ok:
+                  raise ValueError(reason)
+          def api(path):
+              return subprocess.check_output(["gh", "api", path])
+          base = "repos/" + os.environ["REPO"]
+          run = 46048466661
+          info = json.loads(api(f"{base}/actions/runs/{run}"))
+          require(info["head_sha"] == "3175568d4382a08a3c9be6e4ae0143f93a3c41a1" and info["conclusion"] == "success", "Wrong or incomplete regression run")
+          jobs = json.loads(api(f"{base}/actions/runs/{run}/jobs?per_page=100"))["jobs"]
+          require(len(jobs) == 44 and all(j["conclusion"] == "success" for j in jobs), "Incomplete regression jobs")
+          by_name = {j["name"]: j for j in jobs}
+          sources = {"stable":"926272ff0ebfa4731cfb0b00c149c7e12b4d5a56", "beta":"2dd55994d36f2596dd3d17ea54dd3c3e43829ae2"}
+          root = Path("evidence")
+          expected_dirs = {f"regression-{track}-{osname}-{shard}" for track in sources for osname in ("ubuntu-latest","windows-latest") for shard in range(10)}
+          require({p.name for p in root.iterdir()} == expected_dirs, "Missing or unexpected shard artifact")
+          results = []
+          for track, source in sources.items():
+              for osname in ("ubuntu-latest", "windows-latest"):
+                  seen, collected, skips = set(), set(), 0
+                  shard_rows = []
+                  for shard in range(10):
+                      folder = root / f"regression-{track}-{osname}-{shard}"
+                      ctx = dict(line.split("=",1) for line in (folder/"regression-context.txt").read_text(encoding="utf-8-sig").splitlines())
+                      require(ctx == {"track":track,"source":source,"os":osname,"shard":str(shard)}, "Wrong shard context")
+                      require((folder/"regression-python.txt").read_text(encoding="utf-8-sig").strip() == "Python 3.14.10", "Wrong Python version")
+                      job = by_name[f"{track} / {osname} / shard {shard}"]
+                      raw = subprocess.check_output(["gh","api","--allow-escape-sequences",f"{base}/actions/jobs/{job['id']}/logs"])
+                      log = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", raw.decode("utf-8", errors="replace"))
+                      matches = re.findall(r"Mano deterministic shard (\d+)/(\d+): (\d+) selected from (\d+) collected", log)
+                      require(len(matches) == 1, f"Missing or ambiguous terminal collection count: {job['name']}")
+                      index, total, selected, count = map(int,matches[0])
+                      require((index,total) == (shard+1,10) and 0 < selected <= count, "Wrong shard selection")
+                      collected.add(count)
+                      xml = ET.parse(folder/f"regression-shard-{shard}.xml").getroot()
+                      suites = [xml] if xml.tag == "testsuite" else xml.findall("testsuite")
+                      require(len(suites) == 1, "Expected a single JUnit suite")
+                      suite = suites[0]
+                      cases = suite.findall("testcase")
+                      require(int(suite.attrib["tests"]) == len(cases) == selected and int(suite.attrib["failures"]) == 0 and int(suite.attrib["errors"]) == 0, "JUnit count or failure mismatch")
+                      skipped = 0
+                      for case in cases:
+                          key = (case.attrib["classname"],case.attrib["name"])
+                          require(key not in seen, "Duplicate JUnit identity: " + repr(key))
+                          seen.add(key)
+                          require(case.find("failure") is None and case.find("error") is None, "Failed testcase")
+                          duration = float(case.attrib["time"])
+                          require(math.isfinite(duration) and duration >= 0, "Invalid duration")
+                          skipped += case.find("skipped") is not None
+                      require(skipped == int(suite.attrib["skipped"]), "Skip count mismatch")
+                      skips += skipped
+                      shard_rows.append({"shard":shard,"selected":selected,"collected":count,"skipped":skipped,"job_id":job["id"]})
+                  require(len(collected) == 1 and len(seen) == next(iter(collected)), "Shard union count differs from collected count")
+                  results.append({"track":track,"os":osname,"source":source,"tests":len(seen),"passed":len(seen)-skips,"skipped":skips,"shards":shard_rows})
+          report = {"kind":"post-run JUnit reconciliation","run":run,"results":results,"all_44_jobs_successful":True,"collection_cardinality_verified":True,"independent_full_nodeid_manifest_verified":False,"public_release_approved":False}
+          Path("reconciliation.json").write_text(json.dumps(report,indent=2)+"\n",encoding="utf-8")
+          print(json.dumps(report,indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: exact-candidate-regression-reconciliation
+          path: reconciliation.json
+          if-no-files-found: error
+          retention-days: 90
