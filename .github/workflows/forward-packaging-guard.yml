@@ -1,0 +1,44 @@
+name: Forward packaging guard acceptance
+on:
+  push:
+    branches: [fix/beta-next-packaging, fix/stable-next-mesa]
+    paths: ['.github/workflows/forward-packaging-guard.yml','installer/build.ps1','installer/prune_mesa.py','tests/test_prune_mesa.py']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    if: github.repository == 'mohammadrezamie/mano-studio'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest
+      - name: Verify guarded Mesa removal tests
+        run: python -m pytest -q --junitxml=mesa-tests.xml tests/test_prune_mesa.py
+      - name: Parse PowerShell installer without executing it
+        shell: pwsh
+        run: |
+          $tokens=$null
+          $errors=$null
+          $ast=[System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path installer/build.ps1).Path,[ref]$tokens,[ref]$errors)
+          if($errors.Count){$errors | Format-List;throw 'PowerShell parse failure'}
+          $param=@($ast.ParamBlock.Parameters | ForEach-Object {$_.Name.VariablePath.UserPath})
+          if('LeanMesa' -notin $param){throw 'Missing optional LeanMesa switch'}
+          $calls=@($ast.FindAll({param($node) $node -is [System.Management.Automation.Language.CommandAst] -and $node.Extent.Text -match '^python -m PyInstaller '},$true))
+          if($calls.Count -ne 1){throw 'Expected one PyInstaller build command'}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mesa-contracts-${{ matrix.os }}
+          path: mesa-tests.xml
+          if-no-files-found: warn
