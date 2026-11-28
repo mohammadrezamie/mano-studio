@@ -135,7 +135,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Glyph preflight failed.' }
       - name: Build portable application
         shell: pwsh
-        run: ./installer/build.ps1 -PortableOnly
+        run: ./installer/build.ps1 -PortableOnly -LeanPdf
       - name: Smoke test frozen portable application
         shell: pwsh
         run: |
