@@ -53,11 +53,26 @@ class Preferences(QDialog):
         self.settings = workspace.settings
         self.fa = workspace.language == "fa"
         self.thread = None
+        self.reopen_for_language = False
         self.asset = None
         self.stop = None
         self.setWindowTitle(self.text("Settings", "تنظیمات"))
         self.resize(500, 400)
         layout = QVBoxLayout(self)
+        language_title = QLabel(self.text("Language", "زبان"))
+        language_title.setObjectName("section")
+        layout.addWidget(language_title)
+        self.language_choice = QComboBox()
+        self.language_choice.setAccessibleName(self.text("Interface language", "زبان رابط کاربری"))
+        self.language_choice.addItem("English", "en")
+        self.language_choice.addItem("فارسی", "fa")
+        self.language_choice.setCurrentIndex(self.language_choice.findData(workspace.language))
+        layout.addWidget(self.language_choice)
+        self.apply_language = MotionButton(self.text("Apply language", "اعمال زبان"))
+        self.apply_language.setEnabled(False)
+        self.language_choice.currentIndexChanged.connect(self.language_selection_changed)
+        self.apply_language.clicked.connect(self.commit_language)
+        layout.addWidget(self.apply_language)
         title = QLabel(self.text("Appearance", "ظاهر"))
         title.setObjectName("section")
         layout.addWidget(title)
@@ -133,6 +148,21 @@ class Preferences(QDialog):
     def text(self, en, fa):
         return fa if self.fa else en
 
+    def language_selection_changed(self, *_):
+        self.apply_language.setEnabled(self.thread is None and
+                                      self.language_choice.currentData() != self.workspace.language)
+
+    def commit_language(self):
+        # Never dismiss a dialog while its worker owns an active update operation.
+        if self.thread is not None:
+            return
+        language = self.language_choice.currentData()
+        if language not in ("en", "fa") or language == self.workspace.language:
+            return
+        self.workspace.languages.setCurrentIndex(self.workspace.languages.findData(language))
+        self.reopen_for_language = True
+        self.accept()
+
     def change(self, key, value):
         self.settings.setValue(key, value)
         self.settings.sync()
@@ -142,6 +172,8 @@ class Preferences(QDialog):
         if self.thread is not None:
             return
         self.check.setEnabled(False)
+        self.language_choice.setEnabled(False)
+        self.apply_language.setEnabled(False)
         self.notes.clear()
         self.download_progress.hide()
         self.notes.hide()
@@ -189,6 +221,8 @@ class Preferences(QDialog):
         if not path:
             return
         self.check.setEnabled(False)
+        self.language_choice.setEnabled(False)
+        self.apply_language.setEnabled(False)
         self.download_button.setEnabled(False)
         self.stop=Event()
         self.download_progress.setValue(0)
@@ -244,6 +278,8 @@ class Preferences(QDialog):
         self.stop = None
         self.cancel_download_button.hide()
         self.check.setEnabled(True)
+        self.language_choice.setEnabled(True)
+        self.language_selection_changed()
         self.download_button.setEnabled(self.asset is not None)
 
     def done(self, result):
