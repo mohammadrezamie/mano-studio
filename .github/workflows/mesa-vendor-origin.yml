@@ -1,0 +1,45 @@
+name: Verify exact Mesa fallback vendor origin
+on:
+  push:
+    branches: [release/source-evidence]
+    paths: ['.github/workflows/mesa-vendor-origin.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  vendor:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Download exact official Qt fallback archive and verify bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence extracted
+          curl --fail --location --max-time 120 --retry 1 --proto '=https' --proto-redir '=https' -o evidence/vendor.7z https://download.qt.io/development_releases/prebuilt/llvmpipe/windows/opengl32sw-64-mesa_11_2_2-signed_sha256.7z
+          echo 'c61f801c1760aa24b02c7a8354323cddf368b86f8f5c34b50b3b224f7d728afd  evidence/vendor.7z' | sha256sum -c
+          7z l evidence/vendor.7z > evidence/archive-contents.txt
+          7z x -oextracted evidence/vendor.7z
+          python - <<'PY'
+          import hashlib,json
+          from pathlib import Path
+          files=list(Path("extracted").rglob("opengl32sw.dll"))
+          if len(files)!=1: raise ValueError("Expected exactly one vendor DLL")
+          p=files[0]
+          with p.open("rb") as f: digest=hashlib.file_digest(f,"sha256").hexdigest()
+          report={"vendor_dll_sha256":digest,"vendor_dll_size":p.stat().st_size,"candidate_dll_sha256":"18aedc7a4b610f53bcc7b7a5c5ed9293c7e86f030e3273ad54ed3bb1ebd36702","source_correspondence_verified":False,"redistribution_approved":False}
+          report["exact_binary_match"]=digest==report["candidate_dll_sha256"]
+          Path("evidence/report.json").write_text(json.dumps(report,indent=2)+"\n")
+          print(json.dumps(report,indent=2))
+          if not report["exact_binary_match"]: raise ValueError("Official archive DLL differs from candidate")
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mesa-vendor-origin
+          path: |
+            evidence/report.json
+            evidence/archive-contents.txt
+          if-no-files-found: warn
+          retention-days: 90
