@@ -1,5 +1,8 @@
 name: Promote individually approved release
 on:
+  push:
+    branches: [release/public-promotion-preflight]
+    paths: ['.github/workflows/promote-approved-release.yml', 'scripts/test_release_promotion.py']
   workflow_dispatch:
     inputs:
       track:
@@ -14,8 +17,19 @@ on:
         default: false
 permissions: {}
 jobs:
+  contract-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 scripts/test_release_promotion.py
   promote:
-    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/main'
+    needs: contract-tests
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
