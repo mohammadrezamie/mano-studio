@@ -15,3 +15,7 @@ A reusable child overlay highlights ten actual controls in the translator worksp
 ## Illustrated introduction (stacked feature)
 
 Four workspace pages use five original candidate screenshots, reused by Git blob identity from the verified README gallery. Persian editor capture is localized; other workspace preview images are explicitly identified as English in Persian captions. Images scale to available width, remain entirely offline, and fall back to text if unavailable. Existing packaging includes docs as runtime data. Provenance and SHA-256 retained in docs/assets/onboarding/provenance.json. This is an older actual candidate preview, not a claim of final next-generation appearance. Visual and native acceptance remain pending.
+
+## Downgrade-safe state recovery
+
+An existing unreadable or future-version onboarding record, even without legacy settings, now bypasses first-run setup. The app uses its validated existing language or English and preserves the original record rather than overwriting it during wizard navigation. Language changes remain available and do not alter unknown onboarding schemas. Added four state regression cases; validation pending.

@@ -60,3 +60,14 @@ def test_language_preserves_unknown_schema():
     update_language(store, "fa")
     assert store[KEY] == '{"version":99}'
     assert store["language"] == "fa"
+
+
+@pytest.mark.parametrize("raw", ["broken", '{"version":99,"language":"fa"}', '[]', None])
+def test_existing_unreadable_state_without_legacy_settings_is_not_fresh(raw):
+    store = Settings({KEY: raw})
+    assert read_state(store) == SetupState("en", LAST_PAGE, True)
+    assert store == {KEY: raw}
+    from onboarding_state import update_language
+    update_language(store, "fa")
+    assert store[KEY] == raw
+    assert read_state(store) == SetupState("fa", LAST_PAGE, True)

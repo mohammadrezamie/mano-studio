@@ -60,7 +60,9 @@ def read_state(settings):
     language = settings.value("language", "en")
     if language not in ("en", "fa"):
         language = "en"
-    existing = any(settings.contains(k) for k in LEGACY_KEYS)
+    # An unreadable existing record is not a fresh installation. Bypass the
+    # wizard rather than overwriting a newer schema or corrupt state on exit.
+    existing = settings.contains(KEY) or any(settings.contains(k) for k in LEGACY_KEYS)
     return SetupState(language, LAST_PAGE if existing else 0, existing)
 
 
