@@ -7,6 +7,7 @@ from ui.theme import PALETTES, apply_theme
 from ui.strings import FA
 from ui.brand import brand_icon
 from ui.splash import splash_pixmap
+from ui.typography import apply_ui_font
 
 from update_service import VERSION
 
@@ -84,11 +85,14 @@ def main():
     app.setApplicationName("ManoStudio")
     settings = QSettings()
     language = settings.value("language", "en")
+    if language not in ("en", "fa"):
+        language = "en"
     theme = settings.value("theme", "dark")
     if theme not in PALETTES:
         theme = "dark"
     app.setLayoutDirection(Qt.LayoutDirection.RightToLeft if language == "fa" else Qt.LayoutDirection.LeftToRight)
     app.setStyle("Fusion")
+    apply_ui_font(app, language)
     glass_enabled = settings.value("glass_enabled", True, type=bool)
     apply_theme(app, theme, glass_enabled)
     app.setWindowIcon(brand_icon(theme,glass_enabled))
@@ -102,6 +106,7 @@ def main():
     window = Workspace(settings)
     window.show()
     splash.finish(window)
+    window.update_notice.schedule()
     return app.exec()
 
 

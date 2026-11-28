@@ -1,5 +1,6 @@
-param([switch]$PortableOnly, [switch]$ReuseFrozen, [switch]$LeanPdf)
+param([switch]$PortableOnly, [switch]$ReuseFrozen, [switch]$LeanPdf, [switch]$LeanMesa)
 $ErrorActionPreference = 'Stop'
+if ($ReuseFrozen -and $LeanMesa) { throw 'LeanMesa requires a fresh frozen build.' }
 Set-Location (Join-Path $PSScriptRoot '..')
 if (-not [Environment]::Is64BitProcess) { throw 'Use 64-bit Python and PowerShell.' }
 $version = (python -c "from update_service import VERSION; print(VERSION)").Trim()
@@ -16,20 +17,31 @@ if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed.' }
 $dist = Join-Path $PWD 'dist\ManoStudio'
 python -m installer.prune_qt $dist
 if ($LASTEXITCODE -ne 0) { throw 'Qt payload pruning failed.' }
+python -m installer.prune_qml $dist
+if ($LASTEXITCODE -ne 0) { throw 'Qt QML pruning failed.' }
 if ($LeanPdf) {
     python -m installer.prune_pdf $dist --apply
     if ($LASTEXITCODE -ne 0) { throw 'Experimental Qt PDF pruning rejected.' }
+}
+if ($LeanMesa) {
+    python -m installer.prune_mesa $dist
+    if ($LASTEXITCODE -ne 0) { throw 'Experimental Mesa pruning rejected.' }
 }
 $notices = Join-Path $dist 'third-party-notices'
 New-Item -ItemType Directory -Force $notices | Out-Null
 # Preserve notices shipped in the installed distributions; legal review is still required before public release.
 python installer/collect_notices.py $notices
 if ($LASTEXITCODE -ne 0) { throw 'Notice collection failed.' }
+python -m installer.openssl_notice $dist (Join-Path $notices 'openssl')
+if ($LASTEXITCODE -ne 0) { throw 'OpenSSL notice collection failed.' }
 $qtTexts = Join-Path $notices 'qt-license-texts'
 New-Item -ItemType Directory -Force $qtTexts | Out-Null
 foreach ($name in @('LGPL-3.0-only.txt','GPL-3.0-only.txt','README.md')) {
     Copy-Item -LiteralPath (Join-Path $PSScriptRoot "licenses\$name") -Destination $qtTexts
 }
+$qtImageFormats = Join-Path $qtTexts 'qtimageformats'
+python -m installer.qt_imageformats_notices (Join-Path $PSScriptRoot 'licenses\qtimageformats') $qtImageFormats
+if ($LASTEXITCODE -ne 0) { throw 'Qt Image Formats notice collection failed.' }
 }
 if (-not (Test-Path 'dist\ManoStudio\ManoStudio.exe')) { throw 'Frozen app missing.' }
 if ($PortableOnly) { exit 0 }

@@ -10,11 +10,11 @@ def _check(tags):
         opener=lambda *a, **k: io.BytesIO(json.dumps(payload).encode()))
 
 
-def test_v1_version_and_no_self_update():
-    assert VERSION == "1.0.0"
-    assert _check(["v0.3.0-beta.1", "v1.0.0-rc.1", "v1.0.0"]) is None
+def test_v1_maintenance_version_and_no_self_update():
+    assert VERSION == "1.0.1"
+    assert _check(["v0.3.0-beta.1", "v1.0.0-rc.1", "v1.0.0", "v1.0.1"]) is None
 
 
 def test_future_version_and_stable_order():
-    assert _check(["v1.0.0", "v1.0.1"]) == "v1.0.1"
+    assert _check(["v1.0.1", "v1.0.2"]) == "v1.0.2"
     assert version_key("1.0.0") > version_key("1.0.0-rc.1")

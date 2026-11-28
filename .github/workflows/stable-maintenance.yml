@@ -1,0 +1,42 @@
+name: Stable maintenance focused acceptance
+on:
+  push:
+    branches: [maintenance/stable-next]
+permissions:
+  contents: read
+concurrency:
+  group: stable-maintenance
+  cancel-in-progress: true
+jobs:
+  typography:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libgl1 libxkbcommon0 libdbus-1-3 fonts-noto-core fonts-dejavu-core
+      - run: python -m pip install -r requirements.txt -r requirements-dev.txt
+      - if: runner.os == 'Windows'
+        shell: pwsh
+        run: '"QT_QPA_FONTDIR=$env:WINDIR\Fonts" >> $env:GITHUB_ENV'
+      - run: python render_preflight.py
+      - run: python -m pytest -q --junitxml=stable-updates.xml tests/test_update_service.py tests/test_release_channel.py tests/test_update_download.py tests/test_update_progress.py tests/test_update_view.py tests/test_update_notice.py
+      - run: python -m pytest -q --junitxml=stable-workspace.xml tests/test_typography.py tests/test_workspace.py -k 'font_selection or readability_defaults or settings or instructor_source_and_splash or translation_and_stale_output'
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: stable-maintenance-junit-${{ matrix.os }}-${{ github.sha }}
+          path: stable-*.xml
+          if-no-files-found: error
