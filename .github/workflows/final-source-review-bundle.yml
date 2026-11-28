@@ -1,0 +1,102 @@
+name: Consolidate exact candidate source review evidence
+on:
+  push:
+    branches: [release/source-evidence]
+    paths: ['.github/workflows/final-source-review-bundle.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  source:
+    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Retrieve pinned source and runtime build evidence archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir input bundle
+          for id in 15220635288 15254421633 15253354382 15255358903; do
+            gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > "input/$id.zip"
+          done
+          cat > input/checksums <<'EOF'
+          e8ad1e1e7c1ca7b7e5e793e54007fe85ad1e3ed95b215c4dba507c8feb9ef129  input/15220635288.zip
+          bdbc7de8af96940c472c7f0ed24a9ae5602ecad730adc419ad53646cc4b0c78d  input/15254421633.zip
+          ff82f990a505c2eaf09843937f887a6839a743039eea7efe5837c929b1fbc934  input/15253354382.zip
+          10abed1141d34415260297800b49bbd24968e51572256ee5c945c64618b1c7fb  input/15255358903.zip
+          EOF
+          sha256sum -c input/checksums
+          python - <<'PY'
+          import hashlib, json, zipfile
+          from pathlib import Path
+          def read(id):
+              z=zipfile.ZipFile(f"input/{id}.zip")
+              if z.testzip() or len(z.namelist()) != len(set(z.namelist())):
+                  raise ValueError("Invalid evidence ZIP")
+              return z
+          def copy(z, name, dest):
+              p=Path(dest)
+              p.parent.mkdir(parents=True, exist_ok=True)
+              p.write_bytes(z.read(name))
+          with read(15220635288) as z:
+              m=json.loads(z.read("manifest.json"))
+              if len(m["archives"]) != 6:
+                  raise ValueError("Expected six reviewed source archives")
+              for row in m["archives"]:
+                  b=z.read(row["file"])
+                  if len(b)!=row["bytes"] or hashlib.sha256(b).hexdigest()!=row["sha256"]:
+                      raise ValueError("Source digest mismatch")
+              for name in z.namelist():
+                  if name.endswith("/"):
+                      continue
+                  if not all(p not in ("", ".", "..") for p in name.split("/")) or "\\" in name:
+                      raise ValueError("Unexpected source path")
+                  copy(z,name,"bundle/qt/"+name)
+          with read(15254421633) as z:
+              m=json.loads(z.read("report.json"))
+              name="qttranslations-everywhere-src-6.12.0.tar.xz"
+              if hashlib.sha256(z.read(name)).hexdigest() != "85929c0c30d6f273f23bd879bb69803ea17b010ab73cab2f8abf95357f6f6bbb":
+                  raise ValueError("Translation archive digest mismatch")
+              for name in ("archive-url.txt", "checksum-url.txt", "report.json", "vendor.sha256", name):
+                  copy(z,name,"bundle/qt/qttranslations/"+name)
+          for id,family in [(15253354382,"qt"),(15255358903,"python")]:
+              with read(id) as z:
+                  r=json.loads(z.read("build-report.json").decode("utf-8-sig"))
+                  if r["source"] != "ee8e3a49f3d9ef5bc8aeaa9eac19e8df236d9dbb" or r["upstream_tests"]!="PASS":
+                      raise ValueError("Unexpected build provenance")
+                  for name in ("build-report.json","advisory-ancestors.txt","config.txt","source.txt","LICENSE.txt","VERSION.dat"):
+                      copy(z,name,f"bundle/openssl/{family}/"+name)
+                  if family=="python":
+                      copy(z,"99-mano-python.conf","bundle/openssl/python/99-mano-python.conf")
+          PY
+      - name: Archive exact OpenSSL source revision and record Git identity
+        shell: bash
+        run: |
+          set -euo pipefail
+          source=ee8e3a49f3d9ef5bc8aeaa9eac19e8df236d9dbb
+          git clone --filter=blob:none --no-checkout https://github.com/openssl/openssl.git upstream
+          git -C upstream checkout --detach "$source"
+          test "$(git -C upstream rev-parse HEAD)" = "$source"
+          test -z "$(git -C upstream status --porcelain)"
+          for family in qt python; do
+            while read -r sha rest; do
+              git -C upstream merge-base --is-ancestor "$sha" "$source"
+            done < "bundle/openssl/$family/advisory-ancestors.txt"
+          done
+          git -C upstream log -1 --format=fuller > bundle/openssl/git-source.txt
+          git -C upstream rev-parse HEAD^{tree} > bundle/openssl/git-tree.txt
+          git -C upstream archive --format=tar --prefix=openssl-$source/ "$source" | gzip -n > "bundle/openssl/openssl-$source.tar.gz"
+          git -C upstream ls-tree -r "$source" > bundle/openssl/git-file-tree.txt
+          printf '%s\n' 'Source review only. Qt exact vendor build correspondence, full redistribution review, native desktop acceptance and release approval remain unresolved. OpenSSL source snapshot is not an official release. No executables are included.' > bundle/README.txt
+          cp input/checksums bundle/input-artifact-checksums.txt
+          (cd bundle && find . -type f ! -name SHA256SUMS -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS && sha256sum -c SHA256SUMS)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-source-evidence-REVIEW-ONLY
+          path: bundle/
+          if-no-files-found: error
+          retention-days: 90
