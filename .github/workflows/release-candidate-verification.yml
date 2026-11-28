@@ -4,6 +4,10 @@ on:
     branches:
       - release/stable-openssl-notice
       - release/beta-openssl-notice
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+      - '*.md'
 permissions:
   contents: read
 concurrency:
