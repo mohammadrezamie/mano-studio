@@ -1,7 +1,10 @@
 """First-run language choice and a short, bilingual workspace introduction."""
-from PySide6.QtCore import Qt
+from pathlib import Path
+import sys
+from PySide6.QtCore import Qt, QSize
+from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (QApplication, QDialog, QVBoxLayout, QHBoxLayout, QLabel, QRadioButton,
-                               QButtonGroup, QPushButton, QProgressBar, QFrame)
+                               QButtonGroup, QPushButton, QProgressBar, QFrame, QSizePolicy)
 from onboarding_state import LAST_PAGE, read_state, save_state
 from ui.brand import BrandMark
 from ui.credits import THANKS
@@ -29,13 +32,26 @@ PAGES = (
 )
 
 
+PREVIEWS = {2: ("editor.png", "persian.png"), 3: ("computer.png", "computer.png"),
+            4: ("logic.png", "logic.png"), 5: ("learning.png", "learning.png")}
+
+
+def preview_path(page, language):
+    """Resolve shipped, verified captures without accessing the network."""
+    names = PREVIEWS.get(page)
+    if names is None:
+        return None
+    root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
+    return root / "docs" / "assets" / "onboarding" / names[language == "fa"]
+
+
 class Onboarding(QDialog):
     def __init__(self, settings, theme="dark", parent=None):
         super().__init__(parent)
         self.settings = settings
         self.state = read_state(settings)
         self.setWindowTitle("Mano Studio")
-        self.resize(580, 400)
+        self.resize(660, 620)
         self.setMinimumWidth(380)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(24, 20, 24, 20)
@@ -67,6 +83,16 @@ class Onboarding(QDialog):
         self.credits.setWordWrap(True)
         self.credits.setObjectName("muted")
         outer.addWidget(self.credits)
+        self.preview = QLabel()
+        self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.preview.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.preview.setFixedHeight(230)
+        outer.addWidget(self.preview)
+        self.preview_caption = QLabel()
+        self.preview_caption.setWordWrap(True)
+        self.preview_caption.setObjectName("muted")
+        outer.addWidget(self.preview_caption)
+        self.preview_pixmap = QPixmap()
         outer.addStretch()
         self.progress = QProgressBar()
         self.progress.setRange(1, LAST_PAGE + 1)
@@ -117,6 +143,19 @@ class Onboarding(QDialog):
         self.languages.setVisible(self.state.page == 0)
         self.credits.setText(THANKS[fa])
         self.credits.setVisible(self.state.page == 1)
+        path = preview_path(self.state.page, self.state.language)
+        self.preview_pixmap = QPixmap(str(path)) if path is not None else QPixmap()
+        available = not self.preview_pixmap.isNull()
+        self.preview.setVisible(available)
+        self.preview_caption.setVisible(available)
+        if available:
+            caption = ("نمای واقعی نسخه آزمایشی؛ تصویر انگلیسی" if fa and self.state.page != 2
+                       else "نمای واقعی نسخه آزمایشی" if fa else "Actual candidate workspace preview")
+            self.preview_caption.setText(caption)
+            self.preview.setAccessibleName(title[fa] + " — " + caption)
+            self.scale_preview()
+        else:
+            self.preview.clear()
         self.progress.setValue(self.state.page + 1)
         self.counter.setText(f"مرحله {self.state.page+1} از {LAST_PAGE+1}" if fa
                              else f"Step {self.state.page+1} of {LAST_PAGE+1}")
@@ -124,6 +163,19 @@ class Onboarding(QDialog):
         self.previous.setEnabled(self.state.page > 0)
         self.next.setText(("شروع کار" if fa else "Start using Mano Studio")
                           if self.state.page == LAST_PAGE else ("بعدی" if fa else "Next"))
+
+    def scale_preview(self):
+        if self.preview_pixmap.isNull():
+            return
+        width = max(1, self.contentsRect().width()-48)
+        self.preview.setPixmap(self.preview_pixmap.scaled(
+            QSize(width, self.preview.height()), Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation))
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if hasattr(self, "preview_pixmap"):
+            self.scale_preview()
 
     def reject(self):
         save_state(self.settings, self.state)
