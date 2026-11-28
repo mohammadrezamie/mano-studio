@@ -59,23 +59,35 @@ def inventory(raw):
                 if not isinstance(row, dict):
                     warnings.append({"path": str(p), "kind": "invalid_entry"})
                     continue
-                ref = row.get("LicenseFile")
-                if not isinstance(ref, str) or not ref:
+                license_refs = []
+                all_refs = []
+                for key in ("LicenseFile", "LicenseFiles", "CopyrightFile", "CopyrightFiles"):
+                    val = row.get(key)
+                    if val is None:
+                        continue
+                    refs = [val] if isinstance(val, str) else val
+                    if not isinstance(refs, list) or not all(isinstance(x, str) and x for x in refs):
+                        warnings.append({"path": str(p), "kind": "invalid_reference_field", "field": key})
+                        continue
+                    all_refs.extend(refs)
+                    if key.startswith("License"):
+                        license_refs.extend(refs)
+                if not license_refs:
                     warnings.append({"path": str(p), "kind": "no_explicit_license_file", "name": row.get("Name")})
-                    continue
-                # Some upstream paths contain ..; normalize only within the archive root.
-                parts = list(p.parent.parts)
-                if ref.startswith("/") or "\\" in ref or ":" in ref:
-                    warnings.append({"path": str(p), "kind": "unsupported_license_reference", "reference": ref})
-                    continue
-                for part in PurePosixPath(ref).parts:
-                    if part == "..":
-                        if len(parts) <= 1:
-                            raise ValueError("License reference escapes source root")
-                        parts.pop()
-                    else:
-                        parts.append(part)
-                references.add("/".join(parts))
+                for ref in all_refs:
+                    # Some upstream paths contain ..; normalize only within the archive root.
+                    parts = list(p.parent.parts)
+                    if ref.startswith("/") or "\\" in ref or ":" in ref:
+                        warnings.append({"path": str(p), "kind": "unsupported_license_reference", "reference": ref})
+                        continue
+                    for part in PurePosixPath(ref).parts:
+                        if part == "..":
+                            if len(parts) <= 1:
+                                raise ValueError("License reference escapes source root")
+                            parts.pop()
+                        else:
+                            parts.append(part)
+                    references.add("/".join(parts))
     with tarfile.open(fileobj=io.BytesIO(raw), mode="r|xz") as tar:
         for member in tar:
             if not member.isfile():
