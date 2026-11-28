@@ -1,15 +1,15 @@
 name: Build separate notice remediation review packages
 on:
   push:
-    branches: [release/source-evidence]
-    paths: ['.github/workflows/notice-remediation-pilot.yml','scripts/prepare_notice_remediation.py']
+    branches: [release/source-evidence, release/accessible-qt-notices]
+    paths: ['.github/workflows/notice-remediation-pilot.yml','scripts/prepare_notice_remediation.py','scripts/expand_qt_notices.py']
   workflow_dispatch:
 permissions:
   contents: read
   actions: read
 jobs:
   package:
-    if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
+    if: github.repository == 'mohammadrezamie/mano-studio' && (github.ref == 'refs/heads/release/source-evidence' || github.ref == 'refs/heads/release/accessible-qt-notices')
     runs-on: windows-latest
     timeout-minutes: 25
     strategy:
