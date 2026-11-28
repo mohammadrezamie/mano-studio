@@ -11,7 +11,7 @@ jobs:
   build:
     if: github.repository == 'mohammadrezamie/mano-studio' && github.ref == 'refs/heads/release/source-evidence'
     runs-on: windows-2022
-    timeout-minutes: 150
+    timeout-minutes: 180
     steps:
       - uses: actions/setup-python@v5
         with:
@@ -24,10 +24,14 @@ jobs:
           github-token: ${{ github.token }}
           path: source-review
       - name: Verify original vendor sources and apply explicit probe patch
+        timeout-minutes: 15
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
           $root = Join-Path $env:RUNNER_TEMP 'mano-qt-src'
+          $seven = Join-Path $env:ProgramFiles '7-Zip/7z.exe'
+          if(!(Test-Path $seven)){throw '7-Zip missing from runner'}
+          New-Item -ItemType Directory -Force evidence | Out-Null
           New-Item -ItemType Directory -Force $root | Out-Null
           $modules = @{
             'qtbase'='a951bd163c7b80fc6b8c88d7668fb56abf91c152373e13c10666763238131307'
@@ -36,8 +40,18 @@ jobs:
           foreach($m in $modules.Keys){
             $archive=@(Get-ChildItem source-review -Recurse -File -Filter "$m-*.tar.xz")
             if($archive.Count -ne 1 -or (Get-FileHash $archive[0].FullName -Algorithm SHA256).Hash.ToLower() -ne $modules[$m]){throw "Wrong source $m"}
-            tar -xf $archive[0].FullName -C $root
-            if($LASTEXITCODE -ne 0){throw "Source extraction failed $m"}
+            Write-Host "Verified $m; decompressing XZ to temporary tar"
+            $intermediate=Join-Path $root ($m+'-archive')
+            New-Item -ItemType Directory -Force $intermediate | Out-Null
+            & $seven x -y "-o$intermediate" $archive[0].FullName
+            if($LASTEXITCODE -ne 0){throw "XZ decompression failed $m"}
+            $tar=@(Get-ChildItem $intermediate -File -Filter '*.tar')
+            if($tar.Count -ne 1){throw "Expected one tar for $m"}
+            Write-Host "Extracting $m tar"
+            & $seven x -y "-o$root" $tar[0].FullName
+            if($LASTEXITCODE -ne 0){throw "Tar extraction failed $m"}
+            Remove-Item -LiteralPath $intermediate -Recurse -Force
+            Write-Host "Extracted $m"
           }
           $source = Join-Path $root 'qtsvg-everywhere-src-6.12.0/src/svg/qsvgrenderer.cpp'
           if(!(Test-Path $source)){throw 'Expected QtSvg source missing'}
@@ -50,6 +64,7 @@ jobs:
           Copy-Item $source evidence/qsvgrenderer.cpp
           "QT_SOURCE_ROOT=$root" >> $env:GITHUB_ENV
       - name: Build shared QtBase and modified QtSvg from verified source
+        timeout-minutes: 155
         shell: cmd
         run: |
           call "%ProgramFiles%\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
